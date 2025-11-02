@@ -1,16 +1,12 @@
 defmodule PhoenixCodemirrorWeb.EditorLive do
   use PhoenixCodemirrorWeb, :live_view
-  require Logger
 
   @impl true
   def mount(%{"doc_id" => doc_id}, _session, socket) do
     user_id = generate_user_id()
 
-    Logger.info("User #{user_id} mounting document #{doc_id}")
-
     if connected?(socket) do
       Phoenix.PubSub.subscribe(PhoenixCodemirror.PubSub, "document:#{doc_id}")
-      Logger.info("User #{user_id} subscribed to document:#{doc_id}")
     end
 
     {:ok,
@@ -31,41 +27,23 @@ defmodule PhoenixCodemirrorWeb.EditorLive do
   def handle_event("yjs_update", %{"update" => update, "user_id" => user_id}, socket) do
     doc_id = socket.assigns.doc_id
 
-    Logger.info(
-      "Received Yjs update from user #{user_id} for doc #{doc_id}. Update size: #{String.length(update)}"
-    )
-
     # Store the Yjs update
     store_yjs_update(doc_id, update)
 
     # Broadcast to other clients
-    result =
-      Phoenix.PubSub.broadcast_from(
-        PhoenixCodemirror.PubSub,
-        self(),
-        "document:#{doc_id}",
-        {:yjs_update, %{update: update, user_id: user_id}}
-      )
-
-    case result do
-      :ok ->
-        Logger.info("Successfully broadcast Yjs update for doc #{doc_id}")
-
-      {:error, reason} ->
-        Logger.error("Failed to broadcast Yjs update: #{inspect(reason)}")
-    end
+    Phoenix.PubSub.broadcast_from(
+      PhoenixCodemirror.PubSub,
+      self(),
+      "document:#{doc_id}",
+      {:yjs_update, %{update: update, user_id: user_id}}
+    )
 
     {:noreply, socket}
   end
 
   @impl true
-  def handle_info({:yjs_update, %{update: update, user_id: user_id}}, socket) do
-    Logger.info(
-      "Received broadcast from user #{user_id}. Update size: #{String.length(update)}. Applying to client."
-    )
-
+  def handle_info({:yjs_update, %{update: update, user_id: _user_id}}, socket) do
     # broadcast_from already ensures we don't receive our own messages
-    # So we can safely apply all updates we receive
     {:noreply, push_event(socket, "yjs_update", %{update: update})}
   end
 
@@ -76,11 +54,9 @@ defmodule PhoenixCodemirrorWeb.EditorLive do
         content = "# Welcome to Collaborative Markdown Editor\n\nStart typing..."
         :persistent_term.put({:doc, doc_id}, content)
         :persistent_term.put({:yjs_updates, doc_id}, [])
-        Logger.info("Created new document #{doc_id}")
         content
 
       content ->
-        Logger.info("Retrieved existing document #{doc_id}")
         content
     end
   end
@@ -91,7 +67,6 @@ defmodule PhoenixCodemirrorWeb.EditorLive do
     current_updates = :persistent_term.get({:yjs_updates, doc_id}, [])
     all_updates = (current_updates ++ [update]) |> Enum.take(-100)
     :persistent_term.put({:yjs_updates, doc_id}, all_updates)
-    Logger.debug("Stored Yjs update for doc #{doc_id}. Total updates: #{length(all_updates)}")
   end
 
   defp generate_user_id do

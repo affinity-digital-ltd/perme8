@@ -1,127 +1,64 @@
 import { Editor, rootCtx, editorViewCtx } from '@milkdown/core'
 import { commonmark } from '@milkdown/preset-commonmark'
 import { nord } from '@milkdown/theme-nord'
-import { history } from '@milkdown/plugin-history'
-import * as Y from 'yjs'
-import { ySyncPlugin, yCursorPlugin, yUndoPlugin } from 'y-prosemirror'
+import { CollaborationManager } from './collaboration'
 
+/**
+ * MilkdownEditor Hook
+ *
+ * Responsibilities:
+ * - UI lifecycle management (mounted/destroyed)
+ * - Milkdown editor initialization
+ * - Phoenix LiveView communication
+ * - Delegates collaboration logic to CollaborationManager
+ */
 export const MilkdownEditor = {
   mounted() {
-    const initialContent = this.el.dataset.content || "# Welcome\n\nStart typing..."
+    // Initialize collaboration manager
+    this.collaborationManager = new CollaborationManager()
+    this.collaborationManager.initialize()
 
-    // Generate user ID in JavaScript to ensure uniqueness per tab
-    const userId = 'user_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
-
-    console.log('Mounting editor for user:', userId)
-
-    // Store user ID
-    this.userId = userId
-
-    // Create Yjs document and shared type
-    this.ydoc = new Y.Doc()
-    this.yXmlFragment = this.ydoc.get('prosemirror', Y.XmlFragment)
-
-    console.log('Created Yjs doc and XmlFragment:', this.yXmlFragment)
-
-    // Listen for Yjs updates and send to server via Phoenix LiveView
-    this.ydoc.on('update', (update, origin) => {
-      console.log('🔄 Yjs update event. Origin:', origin, 'Update size:', update.length)
-
-      // Don't send updates that came from remote
-      if (origin !== 'remote') {
-        // Convert update to base64 for transport
-        const updateBase64 = btoa(String.fromCharCode(...update))
-
-        console.log('📤 Sending Yjs update to server. Size:', updateBase64.length)
-        this.pushEvent('yjs_update', {
-          update: updateBase64,
-          user_id: this.userId
-        })
-      } else {
-        console.log('⏭️ Skipping send for remote update')
-      }
+    // Set up callback for local updates to send to server
+    this.collaborationManager.onLocalUpdate((updateBase64, userId) => {
+      this.pushEvent('yjs_update', {
+        update: updateBase64,
+        user_id: userId
+      })
     })
 
     // Listen for remote Yjs updates from server
     this.handleEvent('yjs_update', ({ update }) => {
-      console.log('📥 Received Yjs update from server. Size:', update.length)
-
-      try {
-        // Convert base64 back to Uint8Array
-        const updateArray = Uint8Array.from(atob(update), c => c.charCodeAt(0))
-
-        console.log('Applying update to Yjs doc. Array size:', updateArray.length)
-
-        // Apply the update with 'remote' origin to prevent echo
-        Y.applyUpdate(this.ydoc, updateArray, 'remote')
-
-        console.log('✅ Yjs update applied successfully')
-      } catch (error) {
-        console.error('❌ Error applying Yjs update:', error)
-      }
+      this.collaborationManager.applyRemoteUpdate(update)
     })
 
-    // Create Milkdown editor WITHOUT collab plugin
-    // We'll manually add y-prosemirror plugins instead
+    // Create Milkdown editor WITHOUT history/keymap (we'll add them later as raw plugins)
     const editor = Editor.make()
       .config((ctx) => {
         ctx.set(rootCtx, this.el)
       })
       .use(nord)
       .use(commonmark)
-      .use(history)
 
-    // Store the editor instance
     this.editor = editor
 
-    // Create the editor
+    // Create the editor and configure collaboration
     editor.create().then(() => {
-      console.log('✅ Milkdown editor created successfully')
-
-      // Now manually inject y-prosemirror plugins
       this.editor.action((ctx) => {
         const view = ctx.get(editorViewCtx)
-
-        console.log('📌 Binding y-prosemirror to editor')
-
-        // Create y-prosemirror plugins
-        const ySync = ySyncPlugin(this.yXmlFragment)
-        const yUndo = yUndoPlugin()
-
-        // Get the current state
         const state = view.state
 
-        // Create new state with y-prosemirror plugins
-        const newState = state.reconfigure({
-          plugins: [...state.plugins, ySync, yUndo]
-        })
-
-        // Update the view with the new state
+        // Configure ProseMirror with collaboration + undo/redo plugins
+        const newState = this.collaborationManager.configureProseMirrorPlugins(view, state)
         view.updateState(newState)
-
-        console.log('✅ y-prosemirror plugins injected')
-        console.log('Editor is ready for collaborative input')
-
-        // Add debug listeners
-        const editorDom = view.dom
-        editorDom.addEventListener('input', () => {
-          console.log('🔤 Input event detected!')
-        })
-
-        editorDom.addEventListener('keydown', (e) => {
-          console.log('⌨️ Keydown event detected:', e.key)
-        })
       })
     }).catch((error) => {
-      console.error('❌ Failed to create Milkdown editor:', error)
-      console.error('Error stack:', error.stack)
+      console.error('Failed to create Milkdown editor:', error)
     })
   },
 
   destroyed() {
-    console.log('Destroying editor')
-    if (this.ydoc) {
-      this.ydoc.destroy()
+    if (this.collaborationManager) {
+      this.collaborationManager.destroy()
     }
     if (this.editor) {
       this.editor.destroy()
