@@ -26,9 +26,22 @@ export const MilkdownEditor = {
       })
     })
 
+    // Set up callback for awareness updates
+    this.collaborationManager.onAwarenessUpdate((updateBase64, userId) => {
+      this.pushEvent('awareness_update', {
+        update: updateBase64,
+        user_id: userId
+      })
+    })
+
     // Listen for remote Yjs updates from server
     this.handleEvent('yjs_update', ({ update }) => {
       this.collaborationManager.applyRemoteUpdate(update)
+    })
+
+    // Listen for remote awareness updates from server
+    this.handleEvent('awareness_update', ({ update }) => {
+      this.collaborationManager.applyRemoteAwarenessUpdate(update)
     })
 
     // Create Milkdown editor WITHOUT history/keymap (we'll add them later as raw plugins)

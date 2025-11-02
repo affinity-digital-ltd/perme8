@@ -1,6 +1,9 @@
 import * as Y from 'yjs'
 import { ySyncPlugin, yUndoPlugin, ySyncPluginKey, undo, redo } from 'y-prosemirror'
 import { keymap } from 'prosemirror-keymap'
+import { Plugin } from '@milkdown/prose/state'
+import { Awareness, encodeAwarenessUpdate, applyAwarenessUpdate } from 'y-protocols/awareness'
+import { createAwarenessPlugin } from './awareness-plugin'
 
 /**
  * CollaborationManager handles all Yjs collaboration logic.
@@ -10,16 +13,21 @@ import { keymap } from 'prosemirror-keymap'
  * - Handles local and remote updates
  * - Configures ProseMirror plugins for collaboration
  * - Manages per-client undo/redo via Y.UndoManager
+ * - Manages awareness for cursor and selection tracking
  *
  * @class CollaborationManager
  */
 export class CollaborationManager {
   constructor(config = {}) {
     this.userId = this._generateUserId()
+    this.userName = config.userName || `User ${this.userId.substring(5, 9)}`
     this.ydoc = null
     this.yXmlFragment = null
+    this.awareness = null
     this.onLocalUpdateCallback = null
+    this.onAwarenessUpdateCallback = null
     this.yjsUndoManager = null
+    this.editorView = null
 
     // Configuration
     this.config = {
@@ -36,8 +44,21 @@ export class CollaborationManager {
     this.ydoc = new Y.Doc()
     this.yXmlFragment = this.ydoc.get('prosemirror', Y.XmlFragment)
 
+    // Create awareness instance
+    this.awareness = new Awareness(this.ydoc)
+
+    // Set local awareness state
+    this.awareness.setLocalState({
+      userId: this.userId,
+      userName: this.userName,
+      selection: null
+    })
+
     // Listen for local Yjs updates
     this.ydoc.on('update', this._handleYjsUpdate.bind(this))
+
+    // Listen for awareness changes
+    this.awareness.on('change', this._handleAwarenessChange.bind(this))
   }
 
   /**
@@ -45,6 +66,7 @@ export class CollaborationManager {
    *
    * Strategy:
    * - Apply ySyncPlugin for Yjs collaboration
+   * - Apply awareness plugin for cursor/selection tracking
    * - Apply history and keymap plugins AFTER ySyncPlugin so they can filter properly
    *
    * @param {EditorView} view - ProseMirror editor view
@@ -52,9 +74,12 @@ export class CollaborationManager {
    * @returns {EditorState} New editor state with collaboration plugins
    */
   configureProseMirrorPlugins(view, state) {
-    if (!this.ydoc || !this.yXmlFragment) {
+    if (!this.ydoc || !this.yXmlFragment || !this.awareness) {
       throw new Error('CollaborationManager not initialized. Call initialize() first.')
     }
+
+    // Store editor view for later use
+    this.editorView = view
 
     // Step 1: Apply ySyncPlugin for collaboration
     const ySync = ySyncPlugin(this.yXmlFragment)
@@ -92,9 +117,15 @@ export class CollaborationManager {
       'Mod-Shift-z': redo
     })
 
-    // Step 7: Apply both plugins
+    // Step 7: Add awareness plugin for cursor/selection tracking
+    const awarenessPlugin = createAwarenessPlugin(this.awareness, this.userId)
+
+    // Step 8: Add selection tracking plugin
+    const selectionPlugin = this._createSelectionPlugin()
+
+    // Step 9: Apply all plugins
     newState = view.state.reconfigure({
-      plugins: [...view.state.plugins, yUndo, undoRedoKeymap]
+      plugins: [...view.state.plugins, yUndo, undoRedoKeymap, awarenessPlugin, selectionPlugin]
     })
 
     return newState
@@ -127,6 +158,32 @@ export class CollaborationManager {
   }
 
   /**
+   * Set callback for when awareness updates occur.
+   *
+   * @param {Function} callback - Callback function that receives (awarenessUpdate, userId)
+   * @returns {void}
+   */
+  onAwarenessUpdate(callback) {
+    this.onAwarenessUpdateCallback = callback
+  }
+
+  /**
+   * Apply remote awareness update.
+   *
+   * @param {string} updateBase64 - Base64 encoded awareness update
+   * @returns {void}
+   */
+  applyRemoteAwarenessUpdate(updateBase64) {
+    try {
+      const updateArray = Uint8Array.from(atob(updateBase64), c => c.charCodeAt(0))
+      applyAwarenessUpdate(this.awareness, updateArray, 'remote')
+    } catch (error) {
+      console.error('Error applying remote awareness update:', error)
+      throw error
+    }
+  }
+
+  /**
    * Get the user ID for this client.
    *
    * @returns {string} User ID
@@ -154,12 +211,18 @@ export class CollaborationManager {
       this.yjsUndoManager.destroy()
       this.yjsUndoManager = null
     }
+    if (this.awareness) {
+      this.awareness.destroy()
+      this.awareness = null
+    }
     if (this.ydoc) {
       this.ydoc.destroy()
       this.ydoc = null
     }
     this.yXmlFragment = null
+    this.editorView = null
     this.onLocalUpdateCallback = null
+    this.onAwarenessUpdateCallback = null
   }
 
   /**
@@ -176,6 +239,52 @@ export class CollaborationManager {
       const updateBase64 = btoa(String.fromCharCode(...update))
       this.onLocalUpdateCallback(updateBase64, this.userId)
     }
+  }
+
+  /**
+   * Handle awareness changes.
+   *
+   * @private
+   * @param {Object} changes - Awareness change event
+   * @returns {void}
+   */
+  _handleAwarenessChange(changes) {
+    // Notify ProseMirror that awareness changed
+    if (this.editorView) {
+      const tr = this.editorView.state.tr
+      tr.setMeta('awarenessChanged', true)
+      this.editorView.dispatch(tr)
+    }
+
+    // Send awareness updates to server
+    if (this.onAwarenessUpdateCallback) {
+      const update = encodeAwarenessUpdate(this.awareness, Array.from(changes.added).concat(Array.from(changes.updated)))
+      const updateBase64 = btoa(String.fromCharCode(...update))
+      this.onAwarenessUpdateCallback(updateBase64, this.userId)
+    }
+  }
+
+  /**
+   * Create a plugin to track local selection changes.
+   *
+   * @private
+   * @returns {Plugin} ProseMirror plugin
+   */
+  _createSelectionPlugin() {
+    return new Plugin({
+      view: () => ({
+        update: (view) => {
+          const { state } = view
+          const { selection } = state
+
+          // Update local awareness state with selection
+          this.awareness.setLocalStateField('selection', {
+            anchor: selection.anchor,
+            head: selection.head
+          })
+        }
+      })
+    })
   }
 
   /**

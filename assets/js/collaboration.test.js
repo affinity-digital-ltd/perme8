@@ -108,6 +108,86 @@ describe('CollaborationManager', () => {
     })
   })
 
+  describe('awareness', () => {
+    beforeEach(() => {
+      collaborationManager.initialize()
+    })
+
+    it('should create awareness instance on initialization', () => {
+      expect(collaborationManager.awareness).toBeDefined()
+      expect(collaborationManager.awareness.doc).toBe(collaborationManager.ydoc)
+    })
+
+    it('should set local awareness state with user info', () => {
+      const localState = collaborationManager.awareness.getLocalState()
+
+      expect(localState.userId).toBe(collaborationManager.getUserId())
+      expect(localState.userName).toBeDefined()
+      expect(localState.selection).toBeNull()
+    })
+
+    it('should call onAwarenessUpdate callback when awareness changes', () => {
+      return new Promise((resolve) => {
+        const mockCallback = vi.fn((updateBase64, userId) => {
+          expect(typeof updateBase64).toBe('string')
+          expect(userId).toBe(collaborationManager.getUserId())
+          resolve()
+        })
+
+        collaborationManager.onAwarenessUpdate(mockCallback)
+
+        // Trigger awareness update by changing local state
+        collaborationManager.awareness.setLocalStateField('selection', {
+          anchor: 0,
+          head: 5
+        })
+      })
+    })
+
+    it('should apply remote awareness updates', () => {
+      const remoteUserId = 'user_remote'
+      const remoteUserName = 'Remote User'
+
+      // Create a simulated remote awareness update
+      const remoteAwareness = new (require('y-protocols/awareness').Awareness)(new Y.Doc())
+      remoteAwareness.setLocalState({
+        userId: remoteUserId,
+        userName: remoteUserName,
+        selection: { anchor: 5, head: 10 }
+      })
+
+      const update = require('y-protocols/awareness').encodeAwarenessUpdate(
+        remoteAwareness,
+        [remoteAwareness.clientID]
+      )
+      const updateBase64 = btoa(String.fromCharCode(...update))
+
+      // Apply remote awareness update
+      collaborationManager.applyRemoteAwarenessUpdate(updateBase64)
+
+      // Check if remote state was applied
+      const states = collaborationManager.awareness.getStates()
+      const remoteState = Array.from(states.values()).find(
+        state => state.userId === remoteUserId
+      )
+
+      expect(remoteState).toBeDefined()
+      expect(remoteState.userName).toBe(remoteUserName)
+      expect(remoteState.selection).toEqual({ anchor: 5, head: 10 })
+
+      remoteAwareness.destroy()
+    })
+
+    it('should clean up awareness on destroy', () => {
+      const awareness = collaborationManager.awareness
+
+      collaborationManager.destroy()
+
+      // Awareness should be cleaned up
+      expect(collaborationManager.awareness).toBeNull()
+    })
+  })
+
   describe('SOLID principles compliance', () => {
     it('should have single responsibility (collaboration only)', () => {
       // CollaborationManager should only handle Yjs collaboration
@@ -119,6 +199,7 @@ describe('CollaborationManager', () => {
         m.includes('Yjs') ||
         m.includes('Update') ||
         m.includes('Plugin') ||
+        m.includes('Awareness') ||
         m === 'initialize' ||
         m === 'destroy' ||
         m === 'constructor'
@@ -136,10 +217,17 @@ describe('CollaborationManager', () => {
       collaborationManager.onLocalUpdate(callback)
 
       expect(collaborationManager.onLocalUpdateCallback).toBe(callback)
+
+      // onAwarenessUpdate also uses callback injection
+      const awarenessCallback = vi.fn()
+      collaborationManager.onAwarenessUpdate(awarenessCallback)
+
+      expect(collaborationManager.onAwarenessUpdateCallback).toBe(awarenessCallback)
     })
 
     it('should not have unnecessary abstractions', () => {
       // Undo logic is handled directly by Y.UndoManager (from yjs)
+      // Awareness is handled directly by Y.Awareness (from y-protocols)
       // No unnecessary wrapper classes
       const methods = Object.getOwnPropertyNames(CollaborationManager.prototype)
 

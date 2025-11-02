@@ -42,9 +42,30 @@ defmodule PhoenixCodemirrorWeb.EditorLive do
   end
 
   @impl true
+  def handle_event("awareness_update", %{"update" => update, "user_id" => user_id}, socket) do
+    doc_id = socket.assigns.doc_id
+
+    # Broadcast awareness updates to other clients
+    Phoenix.PubSub.broadcast_from(
+      PhoenixCodemirror.PubSub,
+      self(),
+      "document:#{doc_id}",
+      {:awareness_update, %{update: update, user_id: user_id}}
+    )
+
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_info({:yjs_update, %{update: update, user_id: _user_id}}, socket) do
     # broadcast_from already ensures we don't receive our own messages
     {:noreply, push_event(socket, "yjs_update", %{update: update})}
+  end
+
+  @impl true
+  def handle_info({:awareness_update, %{update: update, user_id: _user_id}}, socket) do
+    # broadcast_from already ensures we don't receive our own messages
+    {:noreply, push_event(socket, "awareness_update", %{update: update})}
   end
 
   # Storage functions
