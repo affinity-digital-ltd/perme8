@@ -1,6 +1,7 @@
 import { Editor, rootCtx, editorViewCtx } from '@milkdown/core'
 import { commonmark } from '@milkdown/preset-commonmark'
 import { nord } from '@milkdown/theme-nord'
+import { clipboard } from '@milkdown/plugin-clipboard'
 import { CollaborationManager } from './collaboration'
 
 /**
@@ -51,6 +52,7 @@ export const MilkdownEditor = {
       })
       .use(nord)
       .use(commonmark)
+      .use(clipboard)
 
     this.editor = editor
 
