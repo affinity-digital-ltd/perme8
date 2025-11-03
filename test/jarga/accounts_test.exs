@@ -73,17 +73,21 @@ defmodule Jarga.AccountsTest do
       assert "has already been taken" in errors_on(changeset).email
 
       # Now try with the upper cased email too, to check that email case is ignored.
-      {:error, changeset} = Accounts.register_user(valid_user_attributes(email: String.upcase(email)))
+      {:error, changeset} =
+        Accounts.register_user(valid_user_attributes(email: String.upcase(email)))
+
       assert "has already been taken" in errors_on(changeset).email
     end
 
     test "registers users without password" do
       email = unique_user_email()
+
       attrs = %{
         email: email,
         first_name: "Test",
         last_name: "User"
       }
+
       {:ok, user} = Accounts.register_user(attrs)
       assert user.email == email
       assert is_nil(user.hashed_password)

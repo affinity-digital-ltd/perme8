@@ -6,10 +6,8 @@ defmodule JargaWeb.UserLive.Login do
   @impl true
   def render(assigns) do
     ~H"""
-
+    <Layouts.app flash={@flash} current_scope={@current_scope}>
       <div class="mx-auto max-w-sm space-y-4">
-        <Layouts.flash_group flash={@flash} />
-
         <div class="text-center">
           <.header>
             <p>Log in</p>
@@ -38,15 +36,15 @@ defmodule JargaWeb.UserLive.Login do
         </div>
 
         <.form
-          :let={f}
-          for={@form}
+          for={@magic_form}
           id="login_form_magic"
           action={~p"/users/log-in"}
           phx-submit="submit_magic"
         >
           <.input
             readonly={!!@current_scope}
-            field={f[:email]}
+            field={@magic_form[:email]}
+            id="login_form_magic_email"
             type="email"
             label="Email"
             autocomplete="username"
@@ -61,8 +59,7 @@ defmodule JargaWeb.UserLive.Login do
         <div class="divider">or</div>
 
         <.form
-          :let={f}
-          for={@form}
+          for={@password_form}
           id="login_form_password"
           action={~p"/users/log-in"}
           phx-submit="submit_password"
@@ -70,19 +67,26 @@ defmodule JargaWeb.UserLive.Login do
         >
           <.input
             readonly={!!@current_scope}
-            field={f[:email]}
+            field={@password_form[:email]}
+            id="login_form_password_email"
             type="email"
             label="Email"
             autocomplete="username"
             required
           />
           <.input
-            field={@form[:password]}
+            field={@password_form[:password]}
+            id="login_form_password_password"
             type="password"
             label="Password"
             autocomplete="current-password"
           />
-          <.button variant="primary" class="w-full" name={@form[:remember_me].name} value="true">
+          <.button
+            variant="primary"
+            class="w-full"
+            name={@password_form[:remember_me].name}
+            value="true"
+          >
             Log in and stay logged in <span aria-hidden="true">→</span>
           </.button>
           <.button variant="soft-primary" class="w-full mt-2">
@@ -90,7 +94,7 @@ defmodule JargaWeb.UserLive.Login do
           </.button>
         </.form>
       </div>
-    
+    </Layouts.app>
     """
   end
 
@@ -100,9 +104,11 @@ defmodule JargaWeb.UserLive.Login do
       Phoenix.Flash.get(socket.assigns.flash, :email) ||
         get_in(socket.assigns, [:current_scope, Access.key(:user), Access.key(:email)])
 
-    form = to_form(%{"email" => email}, as: "user")
+    magic_form = to_form(%{"email" => email}, as: "user")
+    password_form = to_form(%{"email" => email}, as: "user")
 
-    {:ok, assign(socket, form: form, trigger_submit: false)}
+    {:ok,
+     assign(socket, magic_form: magic_form, password_form: password_form, trigger_submit: false)}
   end
 
   @impl true

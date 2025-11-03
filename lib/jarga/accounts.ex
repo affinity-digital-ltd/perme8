@@ -233,7 +233,9 @@ defmodule Jarga.Accounts do
             # Delete the magic link token after confirmation
             Repo.delete!(token)
             {:ok, {confirmed_user, []}}
-          error -> error
+
+          error ->
+            error
         end
 
       {%User{confirmed_at: nil} = user, _token} ->

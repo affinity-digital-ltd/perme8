@@ -97,43 +97,45 @@ defmodule JargaWeb.CoreComponents do
   slot :inner_block, required: true
 
   def button(%{rest: rest} = assigns) do
-    variant_classes = case assigns.variant do
-      "primary" -> "btn-primary"
-      "secondary" -> "btn-secondary"
-      "accent" -> "btn-accent"
-      "neutral" -> "btn-neutral"
-      "info" -> "btn-info"
-      "success" -> "btn-success"
-      "warning" -> "btn-warning"
-      "error" -> "btn-error"
-      "ghost" -> "btn-ghost"
-      "link" -> "btn-link"
-      "outline" -> "btn-outline"
-      "outline-primary" -> "btn-outline btn-primary"
-      "outline-secondary" -> "btn-outline btn-secondary"
-      "outline-accent" -> "btn-outline btn-accent"
-      "outline-info" -> "btn-outline btn-info"
-      "outline-success" -> "btn-outline btn-success"
-      "outline-warning" -> "btn-outline btn-warning"
-      "outline-error" -> "btn-outline btn-error"
-      "soft" -> "btn-soft"
-      "soft-primary" -> "btn-soft btn-primary"
-      "soft-secondary" -> "btn-soft btn-secondary"
-      "soft-accent" -> "btn-soft btn-accent"
-      "soft-info" -> "btn-soft btn-info"
-      "soft-success" -> "btn-soft btn-success"
-      "soft-warning" -> "btn-soft btn-warning"
-      "soft-error" -> "btn-soft btn-error"
-    end
+    variant_classes =
+      case assigns.variant do
+        "primary" -> "btn-primary"
+        "secondary" -> "btn-secondary"
+        "accent" -> "btn-accent"
+        "neutral" -> "btn-neutral"
+        "info" -> "btn-info"
+        "success" -> "btn-success"
+        "warning" -> "btn-warning"
+        "error" -> "btn-error"
+        "ghost" -> "btn-ghost"
+        "link" -> "btn-link"
+        "outline" -> "btn-outline"
+        "outline-primary" -> "btn-outline btn-primary"
+        "outline-secondary" -> "btn-outline btn-secondary"
+        "outline-accent" -> "btn-outline btn-accent"
+        "outline-info" -> "btn-outline btn-info"
+        "outline-success" -> "btn-outline btn-success"
+        "outline-warning" -> "btn-outline btn-warning"
+        "outline-error" -> "btn-outline btn-error"
+        "soft" -> "btn-soft"
+        "soft-primary" -> "btn-soft btn-primary"
+        "soft-secondary" -> "btn-soft btn-secondary"
+        "soft-accent" -> "btn-soft btn-accent"
+        "soft-info" -> "btn-soft btn-info"
+        "soft-success" -> "btn-soft btn-success"
+        "soft-warning" -> "btn-soft btn-warning"
+        "soft-error" -> "btn-soft btn-error"
+      end
 
-    size_class = case assigns.size do
-      "xs" -> "btn-xs"
-      "sm" -> "btn-sm"
-      "md" -> "btn-md"
-      "lg" -> "btn-lg"
-      "xl" -> "btn-xl"
-      nil -> nil
-    end
+    size_class =
+      case assigns.size do
+        "xs" -> "btn-xs"
+        "sm" -> "btn-sm"
+        "md" -> "btn-md"
+        "lg" -> "btn-lg"
+        "xl" -> "btn-xl"
+        nil -> nil
+      end
 
     button_classes = ["btn", variant_classes, size_class, assigns.class]
 

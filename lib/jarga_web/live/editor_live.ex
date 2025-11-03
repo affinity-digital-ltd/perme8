@@ -97,25 +97,27 @@ defmodule JargaWeb.EditorLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="h-screen flex flex-col">
-      <div class="bg-gray-800 text-white p-4">
-        <h1 class="text-2xl font-bold">Collaborative Markdown Editor (WYSIWYG + Yjs)</h1>
-        <p class="text-sm text-gray-300">
-          Document ID: <%= @doc_id %> | User ID: <%= @user_id %>
-        </p>
-      </div>
+    <Layouts.app flash={@flash} current_scope={@current_scope}>
+      <div class="h-screen flex flex-col">
+        <div class="bg-gray-800 text-white p-4">
+          <h1 class="text-2xl font-bold">Collaborative Markdown Editor (WYSIWYG + Yjs)</h1>
+          <p class="text-sm text-gray-300">
+            Document ID: {@doc_id} | User ID: {@user_id}
+          </p>
+        </div>
 
-      <div class="flex-1 p-4">
-        <div
-          id="editor-container"
-          phx-hook="MilkdownEditor"
-          phx-update="ignore"
-          data-content={@content}
-          class="border border-gray-300 rounded-lg h-full"
-        >
+        <div class="flex-1 p-4">
+          <div
+            id="editor-container"
+            phx-hook="MilkdownEditor"
+            phx-update="ignore"
+            data-content={@content}
+            class="border border-gray-300 rounded-lg h-full"
+          >
+          </div>
         </div>
       </div>
-    </div>
+    </Layouts.app>
     """
   end
 end

@@ -154,11 +154,12 @@ defmodule JargaWeb.EditorLiveTest do
       Phoenix.PubSub.subscribe(Jarga.PubSub, "document:#{doc_id}")
 
       # EditorLive doesn't need to know about subscribers
-      assert :ok == Phoenix.PubSub.broadcast(
-        Jarga.PubSub,
-        "document:#{doc_id}",
-        {:custom_event, %{}}
-      )
+      assert :ok ==
+               Phoenix.PubSub.broadcast(
+                 Jarga.PubSub,
+                 "document:#{doc_id}",
+                 {:custom_event, %{}}
+               )
 
       assert_receive {:custom_event, %{}}, 1000
     end

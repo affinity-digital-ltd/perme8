@@ -5,18 +5,18 @@ defmodule Jarga.Accounts.User do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "users" do
-    field :first_name, :string
-    field :last_name, :string
-    field :email, :string
-    field :password, :string, virtual: true, redact: true
-    field :hashed_password, :string, redact: true
-    field :role, :string
-    field :status, :string
-    field :avatar_url, :string
-    field :confirmed_at, :utc_datetime
-    field :authenticated_at, :utc_datetime, virtual: true
-    field :last_login, :naive_datetime
-    field :date_created, :naive_datetime
+    field(:first_name, :string)
+    field(:last_name, :string)
+    field(:email, :string)
+    field(:password, :string, virtual: true, redact: true)
+    field(:hashed_password, :string, redact: true)
+    field(:role, :string)
+    field(:status, :string)
+    field(:avatar_url, :string)
+    field(:confirmed_at, :utc_datetime)
+    field(:authenticated_at, :utc_datetime, virtual: true)
+    field(:last_login, :naive_datetime)
+    field(:date_created, :naive_datetime)
 
     # Legacy timestamp fields - not using standard inserted_at/updated_at
     # timestamps(type: :utc_datetime)
@@ -128,6 +128,7 @@ defmodule Jarga.Accounts.User do
       if password do
         changeset
         |> validate_length(:password, min: 12, max: 72)
+
         # Examples of additional password validation:
         # |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
         # |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")

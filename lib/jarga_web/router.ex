@@ -21,8 +21,12 @@ defmodule JargaWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
-    live "/editor", EditorLive
-    live "/editor/:doc_id", EditorLive
+
+    live_session :editor,
+      on_mount: [{JargaWeb.UserAuth, :mount_current_scope}] do
+      live "/editor", EditorLive
+      live "/editor/:doc_id", EditorLive
+    end
   end
 
   # Other scopes may use custom stacks.
