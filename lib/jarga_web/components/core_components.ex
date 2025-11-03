@@ -181,6 +181,8 @@ defmodule JargaWeb.CoreComponents do
 
       <.input field={@form[:email]} type="email" />
       <.input name="my-input" errors={["oh no!"]} />
+      <.input field={@form[:username]} variant="primary" size="lg" />
+      <.input field={@form[:bio]} type="textarea" variant="ghost" />
   """
   attr :id, :any, default: nil
   attr :name, :any
@@ -202,6 +204,14 @@ defmodule JargaWeb.CoreComponents do
   attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
   attr :class, :string, default: nil, doc: "the input class to use over defaults"
   attr :error_class, :string, default: nil, doc: "the input error class to use over defaults"
+
+  attr :variant, :string,
+    default: nil,
+    doc: "the input variant style (ghost, neutral, primary, secondary, accent, info, success, warning, error)"
+
+  attr :size, :string,
+    default: nil,
+    doc: "the input size (xs, sm, md, lg, xl)"
 
   attr :rest, :global,
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
@@ -235,7 +245,11 @@ defmodule JargaWeb.CoreComponents do
             name={@name}
             value="true"
             checked={@checked}
-            class={@class || "checkbox checkbox-sm"}
+            class={[
+              @class || "checkbox checkbox-sm",
+              input_variant_class("checkbox", @variant),
+              input_size_class("checkbox", @size)
+            ]}
             {@rest}
           />{@label}
         </span>
@@ -253,7 +267,12 @@ defmodule JargaWeb.CoreComponents do
         <select
           id={@id}
           name={@name}
-          class={[@class || "w-full select", @errors != [] && (@error_class || "select-error")]}
+          class={[
+            @class || "w-full select",
+            @errors != [] && (@error_class || "select-error"),
+            input_variant_class("select", @variant),
+            input_size_class("select", @size)
+          ]}
           multiple={@multiple}
           {@rest}
         >
@@ -276,7 +295,9 @@ defmodule JargaWeb.CoreComponents do
           name={@name}
           class={[
             @class || "w-full textarea",
-            @errors != [] && (@error_class || "textarea-error")
+            @errors != [] && (@error_class || "textarea-error"),
+            input_variant_class("textarea", @variant),
+            input_size_class("textarea", @size)
           ]}
           {@rest}
         >{Phoenix.HTML.Form.normalize_value("textarea", @value)}</textarea>
@@ -299,7 +320,9 @@ defmodule JargaWeb.CoreComponents do
           value={Phoenix.HTML.Form.normalize_value(@type, @value)}
           class={[
             @class || "w-full input",
-            @errors != [] && (@error_class || "input-error")
+            @errors != [] && (@error_class || "input-error"),
+            input_variant_class("input", @variant),
+            input_size_class("input", @size)
           ]}
           {@rest}
         />
@@ -317,6 +340,38 @@ defmodule JargaWeb.CoreComponents do
       {render_slot(@inner_block)}
     </p>
     """
+  end
+
+  # Helper to generate DaisyUI variant classes for inputs
+  defp input_variant_class(_base, nil), do: nil
+
+  defp input_variant_class(base, variant) do
+    case variant do
+      "ghost" -> "#{base}-ghost"
+      "neutral" -> "#{base}-neutral"
+      "primary" -> "#{base}-primary"
+      "secondary" -> "#{base}-secondary"
+      "accent" -> "#{base}-accent"
+      "info" -> "#{base}-info"
+      "success" -> "#{base}-success"
+      "warning" -> "#{base}-warning"
+      "error" -> "#{base}-error"
+      _ -> nil
+    end
+  end
+
+  # Helper to generate DaisyUI size classes for inputs
+  defp input_size_class(_base, nil), do: nil
+
+  defp input_size_class(base, size) do
+    case size do
+      "xs" -> "#{base}-xs"
+      "sm" -> "#{base}-sm"
+      "md" -> "#{base}-md"
+      "lg" -> "#{base}-lg"
+      "xl" -> "#{base}-xl"
+      _ -> nil
+    end
   end
 
   @doc """
@@ -421,11 +476,11 @@ defmodule JargaWeb.CoreComponents do
 
   def list(assigns) do
     ~H"""
-    <ul class="list">
-      <li :for={item <- @item} class="list-row">
-        <div class="list-col-grow">
+    <ul class="menu menu-vertical w-full bg-base-200 rounded-box">
+      <li :for={item <- @item}>
+        <div class="flex flex-col items-start">
           <div class="font-bold">{item.title}</div>
-          <div>{render_slot(item)}</div>
+          <div class="text-sm opacity-70">{render_slot(item)}</div>
         </div>
       </li>
     </ul>
