@@ -196,6 +196,7 @@ defmodule JargaWeb.AppLive.PagesTest do
   end
 
   describe "collaborative editing" do
+    # Cannot be async because we use GenServer for debouncing
     setup %{conn: conn} do
       user = user_fixture()
       workspace = workspace_fixture(user)
@@ -210,31 +211,81 @@ defmodule JargaWeb.AppLive.PagesTest do
       # Subscribe to see the broadcast
       Phoenix.PubSub.subscribe(Jarga.PubSub, "page:#{page.id}")
 
-      # Simulate yjs update from client (real-time, no database save)
+      # Simulate yjs update from client
       update_data = Base.encode64(<<1, 2, 3, 4>>)
+      complete_state = Base.encode64(<<1, 2, 3, 4, 5, 6, 7, 8>>)
       user_id = "user_123"
+      markdown = "# Test"
 
       lv
       |> element("#editor-container")
-      |> render_hook("yjs_update", %{"update" => update_data, "user_id" => user_id})
+      |> render_hook("yjs_update", %{
+        "update" => update_data,
+        "complete_state" => complete_state,
+        "user_id" => user_id,
+        "markdown" => markdown
+      })
 
       # Should receive broadcast immediately
       assert_receive {:yjs_update, %{update: ^update_data, user_id: ^user_id}}
     end
 
-    test "saves note content with debounced save_note event", %{conn: conn, user: user, workspace: workspace, page: page} do
+    test "debounces database saves on server side", %{conn: conn, user: user, workspace: workspace, page: page} do
       {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/pages/#{page.slug}")
 
-      # Simulate debounced save event (happens after user stops typing)
+      # Simulate multiple rapid updates
       complete_state = Base.encode64(<<1, 2, 3, 4, 5, 6, 7, 8>>)
       markdown = "# Test Content"
 
+      # Send 3 rapid updates
+      for i <- 1..3 do
+        update_data = Base.encode64(<<i>>)
+        lv
+        |> element("#editor-container")
+        |> render_hook("yjs_update", %{
+          "update" => update_data,
+          "complete_state" => complete_state,
+          "user_id" => "user_123",
+          "markdown" => markdown
+        })
+      end
+
+      # Allow the debouncer GenServer to access the test database
+      debouncer_pid = JargaWeb.PageSaveDebouncer.get_debouncer_pid(page.id)
+      if debouncer_pid do
+        Ecto.Adapters.SQL.Sandbox.allow(Jarga.Repo, self(), debouncer_pid)
+      end
+
+      # Wait for debounce (2 seconds + buffer)
+      Process.sleep(2500)
+
+      # Wait for the GenServer to complete any pending saves
+      JargaWeb.PageSaveDebouncer.wait_for_save(page.id)
+
+      # Note should be updated with the final state
+      page = Pages.get_page!(user, page.id) |> Jarga.Repo.preload(:page_components)
+      note_component = Enum.find(page.page_components, fn pc -> pc.component_type == "note" end)
+      note = Jarga.Repo.get!(Jarga.Notes.Note, note_component.component_id)
+
+      assert note.yjs_state == Base.decode64!(complete_state)
+      assert note.note_content["markdown"] == markdown
+    end
+
+    test "force_save bypasses debouncing", %{conn: conn, user: user, workspace: workspace, page: page} do
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/pages/#{page.slug}")
+
+      # Simulate force save (e.g., on page unload)
+      complete_state = Base.encode64(<<9, 10, 11, 12, 13, 14, 15, 16>>)
+      markdown = "# Force Saved Content"
+
       lv
       |> element("#editor-container")
-      |> render_hook("save_note", %{"complete_state" => complete_state, "markdown" => markdown})
+      |> render_hook("force_save", %{
+        "complete_state" => complete_state,
+        "markdown" => markdown
+      })
 
-      # Note should be updated in database
-      # Reload the note to check
+      # Should save immediately without waiting for debounce
       page = Pages.get_page!(user, page.id) |> Jarga.Repo.preload(:page_components)
       note_component = Enum.find(page.page_components, fn pc -> pc.component_type == "note" end)
       note = Jarga.Repo.get!(Jarga.Notes.Note, note_component.component_id)
@@ -251,11 +302,18 @@ defmodule JargaWeb.AppLive.PagesTest do
 
       # Simulate yjs update
       update_data = Base.encode64(<<5, 6, 7, 8>>)
+      complete_state = Base.encode64(<<5, 6, 7, 8, 9, 10>>)
       user_id = "user_456"
+      markdown = "## Section"
 
       lv
       |> element("#editor-container")
-      |> render_hook("yjs_update", %{"update" => update_data, "user_id" => user_id})
+      |> render_hook("yjs_update", %{
+        "update" => update_data,
+        "complete_state" => complete_state,
+        "user_id" => user_id,
+        "markdown" => markdown
+      })
 
       # Should receive broadcast
       assert_receive {:yjs_update, %{update: ^update_data, user_id: ^user_id}}

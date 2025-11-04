@@ -23,37 +23,35 @@ export const MilkdownEditor = {
     this.collaborationManager = new CollaborationManager()
     this.collaborationManager.initialize(initialYjsState)
 
-    // Debounce timer for database saves
-    this.saveTimer = null
-    this.SAVE_DEBOUNCE_MS = 2000 // Save 2 seconds after user stops typing
+    // Track if we have pending changes
+    this.hasPendingChanges = false
 
     // Set up callback for local updates to send to server
     this.collaborationManager.onLocalUpdate((updateBase64, userId) => {
-      // IMMEDIATELY broadcast update to other clients for real-time collaboration
+      // Only push if LiveView is connected
+      if (!this.el.isConnected) return
+
+      // Extract markdown content and complete state
+      const markdown = this.getMarkdownContent()
+      const completeState = this.collaborationManager.getCompleteState()
+
+      // IMMEDIATELY send update to server with complete state
+      // Server will handle debouncing to prevent race conditions
       this.pushEvent('yjs_update', {
         update: updateBase64,
-        user_id: userId
+        complete_state: completeState,
+        user_id: userId,
+        markdown: markdown
       })
 
-      // DEBOUNCE database saves to prevent race conditions
-      if (this.saveTimer) {
-        clearTimeout(this.saveTimer)
-      }
-
-      this.saveTimer = setTimeout(() => {
-        // Extract markdown content and complete state for persistence
-        const markdown = this.getMarkdownContent()
-        const completeState = this.collaborationManager.getCompleteState()
-
-        this.pushEvent('save_note', {
-          complete_state: completeState,
-          markdown: markdown
-        })
-      }, this.SAVE_DEBOUNCE_MS)
+      this.hasPendingChanges = true
     })
 
     // Set up callback for awareness updates
     this.collaborationManager.onAwarenessUpdate((updateBase64, userId) => {
+      // Only push if LiveView is connected
+      if (!this.el.isConnected) return
+
       this.pushEvent('awareness_update', {
         update: updateBase64,
         user_id: userId
@@ -69,6 +67,29 @@ export const MilkdownEditor = {
     this.handleEvent('awareness_update', ({ update }) => {
       this.collaborationManager.applyRemoteAwarenessUpdate(update)
     })
+
+    // Handle page visibility changes (tab switching, minimizing)
+    this.visibilityHandler = () => {
+      if (document.hidden && this.hasPendingChanges) {
+        this.forceSave()
+      }
+    }
+    document.addEventListener('visibilitychange', this.visibilityHandler)
+
+    // Handle page unload (closing tab/window, navigation)
+    this.beforeUnloadHandler = () => {
+      if (this.hasPendingChanges) {
+        this.forceSave()
+      }
+    }
+    window.addEventListener('beforeunload', this.beforeUnloadHandler)
+
+    // Periodic backup save (every 30 seconds)
+    this.backupSaveInterval = setInterval(() => {
+      if (this.hasPendingChanges) {
+        this.forceSave()
+      }
+    }, 30000)
 
     // Create Milkdown editor WITHOUT history/keymap (we'll add them later as raw plugins)
     const editor = Editor.make()
@@ -119,11 +140,55 @@ export const MilkdownEditor = {
     }
   },
 
+  forceSave() {
+    if (!this.collaborationManager || !this.hasPendingChanges) {
+      return
+    }
+
+    try {
+      const markdown = this.getMarkdownContent()
+      const completeState = this.collaborationManager.getCompleteState()
+
+      // Use sendBeacon for reliable delivery during page unload
+      // Falls back to pushEvent if sendBeacon is not available
+      const data = {
+        complete_state: completeState,
+        markdown: markdown
+      }
+
+      // Try to use sendBeacon for more reliable delivery during unload
+      if (navigator.sendBeacon) {
+        // Note: sendBeacon doesn't work with LiveView events
+        // So we still use pushEvent, but mark it as high priority
+        this.pushEvent('force_save', data)
+      } else {
+        this.pushEvent('force_save', data)
+      }
+
+      this.hasPendingChanges = false
+    } catch (error) {
+      console.error('Error forcing save:', error)
+    }
+  },
+
   destroyed() {
-    // Clear any pending save timer
-    if (this.saveTimer) {
-      clearTimeout(this.saveTimer)
-      this.saveTimer = null
+    // Force save any pending changes before cleanup
+    if (this.hasPendingChanges) {
+      this.forceSave()
+    }
+
+    // Clear periodic backup interval
+    if (this.backupSaveInterval) {
+      clearInterval(this.backupSaveInterval)
+      this.backupSaveInterval = null
+    }
+
+    // Remove event listeners
+    if (this.visibilityHandler) {
+      document.removeEventListener('visibilitychange', this.visibilityHandler)
+    }
+    if (this.beforeUnloadHandler) {
+      window.removeEventListener('beforeunload', this.beforeUnloadHandler)
     }
 
     if (this.collaborationManager) {

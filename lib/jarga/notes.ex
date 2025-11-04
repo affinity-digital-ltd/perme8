@@ -100,6 +100,33 @@ defmodule Jarga.Notes do
   end
 
   @doc """
+  Updates a note using page-level authorization.
+
+  This allows workspace members to edit notes in public pages they have access to,
+  following the page's authorization model rather than note ownership.
+
+  ## Examples
+
+      iex> update_note_via_page(user, note_id, %{note_content: content})
+      {:ok, %Note{}}
+
+      iex> update_note_via_page(user, unauthorized_note_id, %{note_content: content})
+      {:error, :unauthorized}
+
+  """
+  def update_note_via_page(%User{} = user, note_id, attrs) do
+    case Authorization.verify_note_access_via_page(user, note_id) do
+      {:ok, note} ->
+        note
+        |> Note.changeset(attrs)
+        |> Repo.update()
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
   Deletes a note.
 
   Only the owner of the note can delete it.

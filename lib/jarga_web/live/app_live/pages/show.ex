@@ -45,11 +45,12 @@ defmodule JargaWeb.AppLive.Pages.Show do
   end
 
   @impl true
-  def handle_event("yjs_update", %{"update" => update, "user_id" => user_id}, socket) do
+  def handle_event("yjs_update", %{"update" => update, "complete_state" => complete_state, "user_id" => user_id, "markdown" => markdown}, socket) do
     page = socket.assigns.page
+    note = socket.assigns.note
+    current_user = socket.assigns.current_scope.user
 
-    # ONLY broadcast the incremental update to other clients
-    # DO NOT save to database here - that's handled by the debounced save_note event
+    # 1. IMMEDIATELY broadcast the incremental update to other clients
     Phoenix.PubSub.broadcast_from(
       Jarga.PubSub,
       self(),
@@ -57,26 +58,35 @@ defmodule JargaWeb.AppLive.Pages.Show do
       {:yjs_update, %{update: update, user_id: user_id}}
     )
 
+    # 2. Send to debouncer for eventual database save (server-side debouncing)
+    complete_state_binary = Base.decode64!(complete_state)
+    JargaWeb.PageSaveDebouncer.request_save(
+      page.id,
+      current_user,
+      note.id,
+      complete_state_binary,
+      markdown
+    )
+
     {:noreply, socket}
   end
 
   @impl true
-  def handle_event("save_note", %{"complete_state" => complete_state, "markdown" => markdown}, socket) do
+  def handle_event("force_save", %{"complete_state" => complete_state, "markdown" => markdown}, socket) do
     note = socket.assigns.note
     current_user = socket.assigns.current_scope.user
 
-    # This is the debounced save - only happens after user stops typing
+    # Force immediate save (bypasses debouncing)
+    # Used when user closes tab or switches away
     complete_state_binary = Base.decode64!(complete_state)
 
-    # Update the note with complete yjs state and markdown content
     update_attrs = %{
       yjs_state: complete_state_binary,
       note_content: %{"markdown" => markdown}
     }
 
-    case Notes.update_note(current_user, note.id, update_attrs) do
+    case Notes.update_note_via_page(current_user, note.id, update_attrs) do
       {:ok, updated_note} ->
-        # Update socket assigns with new note
         {:noreply, assign(socket, :note, updated_note)}
 
       {:error, _changeset} ->
@@ -221,87 +231,89 @@ defmodule JargaWeb.AppLive.Pages.Show do
   def render(assigns) do
     ~H"""
     <Layouts.admin flash={@flash} current_scope={@current_scope}>
-      <div class="h-screen flex flex-col">
-        <!-- Header -->
-        <div class="bg-gray-800 text-white p-4 flex items-center justify-between">
-          <div class="flex items-center space-x-4">
-            <!-- Breadcrumb -->
-            <nav class="flex items-center space-x-2 text-sm">
-              <.link navigate={~p"/app/workspaces"} class="hover:underline">
-                Workspaces
-              </.link>
-              <span>/</span>
-              <.link navigate={~p"/app/workspaces/#{@workspace.slug}"} class="hover:underline">
-                {@workspace.name}
-              </.link>
-              <%= if @project do %>
-                <span>/</span>
-                <.link navigate={~p"/app/workspaces/#{@workspace.slug}/projects/#{@project.slug}"} class="hover:underline">
-                  {@project.name}
-                </.link>
-              <% end %>
-              <span>/</span>
-              <span class="text-gray-300">Page</span>
-            </nav>
-          </div>
+      <div class="h-screen flex flex-col space-y-4">
+        <!-- Breadcrumbs -->
+        <%= if @project do %>
+          <.breadcrumbs>
+            <:crumb navigate={~p"/app"}>Home</:crumb>
+            <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
+            <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:crumb>
+            <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}/projects/#{@project.slug}"}>
+              {@project.name}
+            </:crumb>
+            <:crumb>{@page.title}</:crumb>
+          </.breadcrumbs>
+        <% else %>
+          <.breadcrumbs>
+            <:crumb navigate={~p"/app"}>Home</:crumb>
+            <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
+            <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:crumb>
+            <:crumb>{@page.title}</:crumb>
+          </.breadcrumbs>
+        <% end %>
 
-          <div class="flex items-center space-x-4">
-            <!-- Share toggle button -->
-            <button
-              type="button"
-              phx-click="toggle_public"
-              class={"px-3 py-1 rounded text-sm " <> if @page.is_public, do: "bg-green-600 text-white", else: "bg-gray-600 text-gray-300 hover:bg-gray-500"}
-            >
-              <%= if @page.is_public, do: "🌐 Shared", else: "🔒 Private" %>
-            </button>
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-end gap-2">
+          <!-- Share toggle button -->
+          <.button
+            variant={if @page.is_public, do: "primary", else: "ghost"}
+            size="sm"
+            phx-click="toggle_public"
+          >
+            <.icon name={if @page.is_public, do: "hero-globe-alt", else: "hero-lock-closed"} class="size-4" />
+            <%= if @page.is_public, do: "Shared", else: "Private" %>
+          </.button>
 
-            <!-- Pin button -->
-            <button
-              type="button"
-              phx-click="toggle_pin"
-              class={"px-3 py-1 rounded text-sm " <> if @page.is_pinned, do: "bg-yellow-500 text-white", else: "bg-gray-600 text-gray-300 hover:bg-gray-500"}
-            >
-              <%= if @page.is_pinned, do: "📌 Pinned", else: "📌 Pin" %>
-            </button>
+          <!-- Pin button -->
+          <.button
+            variant={if @page.is_pinned, do: "warning", else: "ghost"}
+            size="sm"
+            phx-click="toggle_pin"
+          >
+            <.icon name="hero-star" class="size-4" />
+            <%= if @page.is_pinned, do: "Pinned", else: "Pin" %>
+          </.button>
 
-            <!-- Delete button -->
-            <button
-              type="button"
-              phx-click="delete_page"
-              data-confirm="Are you sure you want to delete this page?"
-              class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm"
-            >
-              Delete
-            </button>
-          </div>
+          <!-- Delete button -->
+          <.button
+            variant="error"
+            size="sm"
+            phx-click="delete_page"
+            data-confirm="Are you sure you want to delete this page?"
+          >
+            <.icon name="hero-trash" class="size-4" />
+            Delete
+          </.button>
         </div>
 
         <!-- Title Section -->
-        <div class="bg-white border-b px-6 py-4">
+        <div class="border-b border-base-300 pb-4">
           <%= if @editing_title do %>
-            <form phx-submit="update_title" class="flex items-center space-x-2">
+            <form phx-submit="update_title" class="flex items-center gap-2">
               <input
                 type="text"
                 name="page[title]"
                 value={@page_form[:title].value}
-                class="flex-1 text-2xl font-bold border-b-2 border-blue-500 focus:outline-none"
+                class="flex-1 text-2xl font-bold input input-bordered focus:input-primary"
                 autofocus
               />
-              <button type="submit" class="px-3 py-1 bg-blue-500 text-white rounded text-sm">
+              <.button type="submit" variant="primary" size="sm">
                 Save
-              </button>
-              <button
+              </.button>
+              <.button
                 type="button"
+                variant="ghost"
+                size="sm"
                 phx-click="cancel_edit_title"
-                class="px-3 py-1 bg-gray-300 text-gray-700 rounded text-sm"
               >
                 Cancel
-              </button>
+              </.button>
             </form>
           <% else %>
             <h1
-              class="text-2xl font-bold cursor-pointer hover:text-blue-600"
+              class="text-2xl font-bold cursor-pointer hover:text-primary transition-colors"
               phx-click="start_edit_title"
+              title="Click to edit title"
             >
               {@page.title}
             </h1>
@@ -309,14 +321,14 @@ defmodule JargaWeb.AppLive.Pages.Show do
         </div>
 
         <!-- Editor -->
-        <div class="flex-1 p-6 overflow-auto">
+        <div class="flex-1 overflow-auto">
           <div
             id="editor-container"
             phx-hook="MilkdownEditor"
             phx-update="ignore"
             data-yjs-state={if @note.yjs_state, do: Base.encode64(@note.yjs_state), else: ""}
             data-initial-content={get_initial_markdown(@note)}
-            class="border border-gray-300 rounded-lg h-full min-h-[600px]"
+            class="border border-base-300 rounded-lg h-full min-h-[600px]"
           >
           </div>
         </div>

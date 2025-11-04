@@ -37,3 +37,6 @@ config :phoenix, :plug_init_mode, :runtime
 # Enable helpful, but potentially expensive runtime checks
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
+
+# Enable SQL sandbox for GenServer processes in tests
+config :jarga, :sql_sandbox, true
