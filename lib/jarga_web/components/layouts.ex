@@ -144,6 +144,12 @@ defmodule JargaWeb.Layouts do
                 </.link>
               </li>
               <li>
+                <.link navigate={~p"/app/workspaces"} class="flex items-center gap-3">
+                  <.icon name="hero-rectangle-group" class="size-5" />
+                  <span>Workspaces</span>
+                </.link>
+              </li>
+              <li>
                 <.link navigate={~p"/users/settings"} class="flex items-center gap-3">
                   <.icon name="hero-cog-6-tooth" class="size-5" />
                   <span>Settings</span>

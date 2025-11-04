@@ -53,6 +53,10 @@ defmodule JargaWeb.Router do
     live_session :app,
       on_mount: [{JargaWeb.UserAuth, :require_authenticated}] do
       live "/", AppLive.Dashboard, :index
+      live "/workspaces", AppLive.Workspaces.Index, :index
+      live "/workspaces/new", AppLive.Workspaces.New, :new
+      live "/workspaces/:id/edit", AppLive.Workspaces.Edit, :edit
+      live "/workspaces/:id", AppLive.Workspaces.Show, :show
       live "/editor", EditorLive
       live "/editor/:doc_id", EditorLive
     end
