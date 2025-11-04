@@ -21,6 +21,7 @@ defmodule Jarga.Workspaces.UseCases.RemoveMember do
   alias Jarga.Workspaces.WorkspaceMember
   alias Jarga.Workspaces.Policies.MembershipPolicy
   alias Jarga.Workspaces.Infrastructure.MembershipRepository
+  alias Jarga.Workspaces.Services.EmailAndPubSubNotifier
 
   @doc """
   Executes the remove member use case.
@@ -32,7 +33,8 @@ defmodule Jarga.Workspaces.UseCases.RemoveMember do
     - `:workspace_id` - ID of the workspace
     - `:member_email` - Email of the member to remove
 
-  - `opts` - Keyword list of options (currently unused)
+  - `opts` - Keyword list of options:
+    - `:notifier` - Notification service implementation (default: EmailAndPubSubNotifier)
 
   ## Returns
 
@@ -40,17 +42,21 @@ defmodule Jarga.Workspaces.UseCases.RemoveMember do
   - `{:error, reason}` - Operation failed
   """
   @impl true
-  def execute(params, _opts \\ []) do
+  def execute(params, opts \\ []) do
     %{
       actor: actor,
       workspace_id: workspace_id,
       member_email: member_email
     } = params
 
-    with {:ok, _workspace} <- verify_actor_membership(actor, workspace_id),
+    notifier = Keyword.get(opts, :notifier, EmailAndPubSubNotifier)
+
+    with {:ok, workspace} <- verify_actor_membership(actor, workspace_id),
          {:ok, member} <- find_member(workspace_id, member_email),
-         :ok <- validate_can_remove(member) do
-      delete_member(member)
+         :ok <- validate_can_remove(member),
+         {:ok, deleted_member} <- delete_member(member) do
+      notify_user_if_joined(deleted_member, workspace, notifier)
+      {:ok, deleted_member}
     end
   end
 
@@ -89,4 +95,12 @@ defmodule Jarga.Workspaces.UseCases.RemoveMember do
   defp delete_member(member) do
     Repo.delete(member)
   end
+
+  # Notify user if they had already joined (not just a pending invitation)
+  defp notify_user_if_joined(%WorkspaceMember{user: user, joined_at: joined_at}, workspace, notifier)
+       when not is_nil(user) and not is_nil(joined_at) do
+    notifier.notify_user_removed(user, workspace)
+  end
+
+  defp notify_user_if_joined(_member, _workspace, _notifier), do: :ok
 end

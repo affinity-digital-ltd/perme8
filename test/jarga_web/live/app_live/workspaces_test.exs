@@ -6,6 +6,8 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
   import Jarga.WorkspacesFixtures
   import Jarga.ProjectsFixtures
 
+  alias Jarga.{Projects, Workspaces}
+
   describe "workspaces index page" do
     test "redirects if user is not logged in", %{conn: conn} do
       assert {:error, redirect} = live(conn, ~p"/app/workspaces")
@@ -82,6 +84,44 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
                lv |> element("a", "New Workspace") |> render_click()
 
       assert redirect_path == ~p"/app/workspaces/new"
+    end
+
+    test "updates workspace list in real-time when user is added to a workspace", %{conn: conn, user: user} do
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces")
+
+      # Verify no workspaces initially
+      assert render(lv) =~ "No workspaces yet"
+
+      # Create a workspace with another user and invite current user
+      other_user = user_fixture()
+      workspace = workspace_fixture(other_user, %{name: "Team Workspace"})
+
+      # Add the user to the workspace (this will trigger the PubSub broadcast)
+      {:ok, {:member_added, _member}} = Workspaces.invite_member(other_user, workspace.id, user.email, :member)
+
+      # Verify workspace appears in the UI
+      assert render(lv) =~ "Team Workspace"
+      assert lv |> element("[data-workspace-id='#{workspace.id}']") |> has_element?()
+    end
+
+    test "updates workspace list in real-time when user is removed from a workspace", %{conn: conn, user: user} do
+      # Create a workspace with two members
+      other_user = user_fixture()
+      workspace = workspace_fixture(other_user, %{name: "To Be Removed"})
+      {:ok, {:member_added, _member}} = Workspaces.invite_member(other_user, workspace.id, user.email, :member)
+
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces")
+
+      # Verify workspace is displayed
+      assert render(lv) =~ "To Be Removed"
+      assert lv |> element("[data-workspace-id='#{workspace.id}']") |> has_element?()
+
+      # Remove the user from the workspace (this will trigger the PubSub broadcast)
+      {:ok, _deleted_member} = Workspaces.remove_member(other_user, workspace.id, user.email)
+
+      # Verify workspace is removed from the UI
+      refute render(lv) =~ "To Be Removed"
+      refute lv |> element("[data-workspace-id='#{workspace.id}']") |> has_element?()
     end
   end
 
@@ -321,6 +361,38 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
 
       assert path == ~p"/app/workspaces"
       assert %{"error" => "Workspace not found"} = flash
+    end
+
+    test "updates project list in real-time when project is added", %{conn: conn, user: user, workspace: workspace} do
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
+
+      # Verify no projects initially
+      refute lv |> element("[data-project-id]") |> has_element?()
+
+      # Create a project (simulating another user or process)
+      {:ok, project} = Projects.create_project(user, workspace.id, %{name: "New Project"})
+
+      # Verify project appears in the UI
+      assert render(lv) =~ "New Project"
+      assert lv |> element("[data-project-id='#{project.id}']") |> has_element?()
+    end
+
+    test "updates project list in real-time when project is removed", %{conn: conn, user: user, workspace: workspace} do
+      # Create a project
+      project = project_fixture(user, workspace, %{name: "To Delete"})
+
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
+
+      # Verify project is displayed
+      assert render(lv) =~ "To Delete"
+      assert lv |> element("[data-project-id='#{project.id}']") |> has_element?()
+
+      # Delete the project (simulating another user or process)
+      {:ok, _} = Projects.delete_project(user, workspace.id, project.id)
+
+      # Verify project is removed from the UI
+      refute render(lv) =~ "To Delete"
+      refute lv |> element("[data-project-id='#{project.id}']") |> has_element?()
     end
   end
 

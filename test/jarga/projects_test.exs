@@ -7,6 +7,13 @@ defmodule Jarga.ProjectsTest do
   import Jarga.WorkspacesFixtures
   import Jarga.ProjectsFixtures
 
+  defmodule MockNotifier do
+    @behaviour Jarga.Projects.Services.NotificationService
+
+    def notify_project_created(_project), do: :ok
+    def notify_project_deleted(_project, _workspace_id), do: :ok
+  end
+
   describe "list_projects_for_workspace/2" do
     test "returns empty list when workspace has no projects" do
       user = user_fixture()
@@ -138,6 +145,50 @@ defmodule Jarga.ProjectsTest do
       attrs = %{name: "Project"}
 
       assert {:error, :workspace_not_found} = Projects.create_project(user, Ecto.UUID.generate(), attrs)
+    end
+
+    test "uses mock notifier when provided via opts" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+
+      attrs = %{name: "Mock Notifier Test"}
+
+      # Pass MockNotifier via opts to avoid real broadcast
+      assert {:ok, project} = Projects.create_project(user, workspace.id, attrs, notifier: MockNotifier)
+      assert project.name == "Mock Notifier Test"
+    end
+
+    # Integration test: verifies default notifier broadcasts to PubSub
+    test "broadcasts project_added message to workspace topic on success (integration)" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+
+      # Subscribe to the workspace topic
+      Phoenix.PubSub.subscribe(Jarga.PubSub, "workspace:#{workspace.id}")
+
+      attrs = %{name: "Broadcast Test Project"}
+
+      assert {:ok, project} = Projects.create_project(user, workspace.id, attrs)
+
+      # Verify the broadcast was sent
+      assert_receive {:project_added, project_id}
+      assert project_id == project.id
+    end
+
+    # Integration test: verifies no broadcast on failure
+    test "does not broadcast when project creation fails (integration)" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+
+      # Subscribe to the workspace topic
+      Phoenix.PubSub.subscribe(Jarga.PubSub, "workspace:#{workspace.id}")
+
+      attrs = %{name: ""}
+
+      assert {:error, _changeset} = Projects.create_project(user, workspace.id, attrs)
+
+      # Verify no broadcast was sent
+      refute_receive {:project_added, _}, 100
     end
   end
 
@@ -291,6 +342,46 @@ defmodule Jarga.ProjectsTest do
       project = project_fixture(user, workspace2)
 
       assert {:error, :project_not_found} = Projects.delete_project(user, workspace1.id, project.id)
+    end
+
+    test "uses mock notifier when provided via opts" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+      project = project_fixture(user, workspace)
+
+      # Pass MockNotifier via opts to avoid real broadcast
+      assert {:ok, deleted_project} = Projects.delete_project(user, workspace.id, project.id, notifier: MockNotifier)
+      assert deleted_project.id == project.id
+    end
+
+    # Integration test: verifies default notifier broadcasts to PubSub
+    test "broadcasts project_removed message to workspace topic on success (integration)" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+      project = project_fixture(user, workspace)
+
+      # Subscribe to the workspace topic
+      Phoenix.PubSub.subscribe(Jarga.PubSub, "workspace:#{workspace.id}")
+
+      assert {:ok, deleted_project} = Projects.delete_project(user, workspace.id, project.id)
+
+      # Verify the broadcast was sent
+      assert_receive {:project_removed, project_id}
+      assert project_id == deleted_project.id
+    end
+
+    # Integration test: verifies no broadcast on failure
+    test "does not broadcast when project deletion fails (integration)" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+
+      # Subscribe to the workspace topic
+      Phoenix.PubSub.subscribe(Jarga.PubSub, "workspace:#{workspace.id}")
+
+      assert {:error, :project_not_found} = Projects.delete_project(user, workspace.id, Ecto.UUID.generate())
+
+      # Verify no broadcast was sent
+      refute_receive {:project_removed, _}, 100
     end
   end
 

@@ -10,6 +10,7 @@ defmodule Jarga.Workspaces.UseCases.RemoveMemberTest do
   defmodule MockNotifier do
     def notify_existing_user(_user, _workspace, _inviter), do: :ok
     def notify_new_user(_email, _workspace, _inviter), do: :ok
+    def notify_user_removed(_user, _workspace), do: :ok
   end
 
   describe "execute/2 - successful removal" do
@@ -74,6 +75,63 @@ defmodule Jarga.Workspaces.UseCases.RemoveMemberTest do
       # Verify invitation is removed
       members = Workspaces.list_members(workspace.id)
       assert length(members) == 1
+    end
+
+    test "broadcasts workspace_removed message when member is removed" do
+      owner = user_fixture()
+      workspace = workspace_fixture(owner)
+      member = user_fixture()
+
+      # Add member
+      {:ok, {:member_added, _}} =
+        InviteMember.execute(
+          %{inviter: owner, workspace_id: workspace.id, email: member.email, role: :admin},
+          notifier: MockNotifier
+        )
+
+      # Subscribe to the user topic
+      Phoenix.PubSub.subscribe(Jarga.PubSub, "user:#{member.id}")
+
+      # Remove member using default notifier (EmailAndPubSubNotifier)
+      params = %{
+        actor: owner,
+        workspace_id: workspace.id,
+        member_email: member.email
+      }
+
+      assert {:ok, _deleted_member} = RemoveMember.execute(params, [])
+
+      # Verify the broadcast was sent
+      assert_receive {:workspace_removed, workspace_id}
+      assert workspace_id == workspace.id
+    end
+
+    test "does not broadcast when removing pending invitation" do
+      owner = user_fixture()
+      workspace = workspace_fixture(owner)
+      email = "pending@example.com"
+
+      # Create pending invitation
+      {:ok, {:invitation_sent, _}} =
+        InviteMember.execute(
+          %{inviter: owner, workspace_id: workspace.id, email: email, role: :admin},
+          notifier: MockNotifier
+        )
+
+      # Subscribe to a hypothetical user topic (no user exists yet)
+      Phoenix.PubSub.subscribe(Jarga.PubSub, "user:any")
+
+      # Remove invitation using default notifier
+      params = %{
+        actor: owner,
+        workspace_id: workspace.id,
+        member_email: email
+      }
+
+      assert {:ok, _deleted_invitation} = RemoveMember.execute(params, [])
+
+      # Verify no broadcast was sent (pending invitations have no user)
+      refute_receive {:workspace_removed, _}, 100
     end
   end
 

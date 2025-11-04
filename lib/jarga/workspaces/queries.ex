@@ -125,7 +125,8 @@ defmodule Jarga.Workspaces.Queries do
   def find_member_by_email(workspace_id, email) do
     from wm in WorkspaceMember,
       where: wm.workspace_id == ^workspace_id,
-      where: fragment("LOWER(?)", wm.email) == ^String.downcase(email)
+      where: fragment("LOWER(?)", wm.email) == ^String.downcase(email),
+      preload: [:user, :workspace]
   end
 
   @doc """

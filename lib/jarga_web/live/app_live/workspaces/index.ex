@@ -75,6 +75,29 @@ defmodule JargaWeb.AppLive.Workspaces.Index do
     user = socket.assigns.current_scope.user
     workspaces = Workspaces.list_workspaces_for_user(user)
 
+    # Subscribe to user-specific PubSub topic for real-time updates
+    if connected?(socket) do
+      Phoenix.PubSub.subscribe(Jarga.PubSub, "user:#{user.id}")
+    end
+
     {:ok, assign(socket, workspaces: workspaces)}
+  end
+
+  @impl true
+  def handle_info({:workspace_invitation, _workspace_id, _workspace_name, _inviter_name}, socket) do
+    # Reload workspaces when user is added to a workspace
+    user = socket.assigns.current_scope.user
+    workspaces = Workspaces.list_workspaces_for_user(user)
+
+    {:noreply, assign(socket, workspaces: workspaces)}
+  end
+
+  @impl true
+  def handle_info({:workspace_removed, _workspace_id}, socket) do
+    # Reload workspaces when user is removed from a workspace
+    user = socket.assigns.current_scope.user
+    workspaces = Workspaces.list_workspaces_for_user(user)
+
+    {:noreply, assign(socket, workspaces: workspaces)}
   end
 end

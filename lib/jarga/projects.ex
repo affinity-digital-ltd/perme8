@@ -20,7 +20,7 @@ defmodule Jarga.Projects do
   alias Jarga.Accounts.User
   alias Jarga.Projects.{Project, Queries}
   alias Jarga.Projects.Policies.Authorization
-  alias Jarga.Workspaces
+  alias Jarga.Projects.UseCases.{CreateProject, DeleteProject}
 
   @doc """
   Returns the list of projects for a given workspace.
@@ -59,25 +59,15 @@ defmodule Jarga.Projects do
       {:error, :unauthorized}
 
   """
-  def create_project(%User{} = user, workspace_id, attrs) do
-    # First verify the user is a member of the workspace
-    case Workspaces.verify_membership(user, workspace_id) do
-      {:ok, _workspace} ->
-        # Convert atom keys to string keys to avoid mixed keys
-        string_attrs =
-          attrs
-          |> Enum.map(fn {k, v} -> {to_string(k), v} end)
-          |> Enum.into(%{})
-          |> Map.put("user_id", user.id)
-          |> Map.put("workspace_id", workspace_id)
-
-        %Project{}
-        |> Project.changeset(string_attrs)
-        |> Repo.insert()
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+  def create_project(%User{} = user, workspace_id, attrs, opts \\ []) do
+    CreateProject.execute(
+      %{
+        actor: user,
+        workspace_id: workspace_id,
+        attrs: attrs
+      },
+      opts
+    )
   end
 
   @doc """
@@ -171,13 +161,14 @@ defmodule Jarga.Projects do
       {:error, :unauthorized}
 
   """
-  def delete_project(%User{} = user, workspace_id, project_id) do
-    case Authorization.verify_project_access(user, workspace_id, project_id) do
-      {:ok, project} ->
-        Repo.delete(project)
-
-      {:error, reason} ->
-        {:error, reason}
-    end
+  def delete_project(%User{} = user, workspace_id, project_id, opts \\ []) do
+    DeleteProject.execute(
+      %{
+        actor: user,
+        workspace_id: workspace_id,
+        project_id: project_id
+      },
+      opts
+    )
   end
 end

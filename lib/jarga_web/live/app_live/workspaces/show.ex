@@ -129,6 +129,7 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
                       <.input
                         field={@invite_form[:email]}
                         type="email"
+                        label="Email"
                         placeholder="user@example.com"
                         required
                       />
@@ -138,6 +139,7 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
                       <.input
                         field={@invite_form[:role]}
                         type="select"
+                        label="Role"
                         options={[
                           {"Admin", "admin"},
                           {"Member", "member"},
@@ -147,11 +149,14 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
                       />
                     </div>
 
-                    <div class="flex items-end">
-                      <.button type="submit" variant="primary" class="w-full sm:w-auto">
-                        <.icon name="hero-user-plus" class="size-4" />
-                        Invite
-                      </.button>
+                    <div class="fieldset mb-2 w-full sm:w-auto">
+                      <label>
+                        <span class="label mb-1">&nbsp;</span>
+                        <.button type="submit" variant="primary" class="w-full">
+                          <.icon name="hero-user-plus" class="size-4" />
+                          Invite
+                        </.button>
+                      </label>
                     </div>
                   </.form>
                 </div>
@@ -229,12 +234,12 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
                             </td>
                             <td>
                               <%= if member.joined_at do %>
-                                <div class="badge badge-success badge-xs gap-1">
+                                <div class="badge badge-success badge-sm gap-1">
                                   <div class="w-1.5 h-1.5 rounded-full bg-success-content"></div>
                                   Active
                                 </div>
                               <% else %>
-                                <div class="badge badge-warning badge-xs gap-1">
+                                <div class="badge badge-warning badge-sm gap-1">
                                   <.icon name="hero-clock" class="size-3" />
                                   Pending
                                 </div>
@@ -346,6 +351,11 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
       {:ok, workspace} ->
         projects = Projects.list_projects_for_workspace(user, workspace.id)
         members = Workspaces.list_members(workspace.id)
+
+        # Subscribe to workspace-specific PubSub topic for real-time updates
+        if connected?(socket) do
+          Phoenix.PubSub.subscribe(Jarga.PubSub, "workspace:#{workspace.id}")
+        end
 
         {:ok,
          socket
@@ -534,5 +544,25 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, "Failed to remove member")}
     end
+  end
+
+  @impl true
+  def handle_info({:project_added, _project_id}, socket) do
+    # Reload projects when a new project is added
+    user = socket.assigns.current_scope.user
+    workspace_id = socket.assigns.workspace.id
+    projects = Projects.list_projects_for_workspace(user, workspace_id)
+
+    {:noreply, assign(socket, projects: projects)}
+  end
+
+  @impl true
+  def handle_info({:project_removed, _project_id}, socket) do
+    # Reload projects when a project is removed
+    user = socket.assigns.current_scope.user
+    workspace_id = socket.assigns.workspace.id
+    projects = Projects.list_projects_for_workspace(user, workspace_id)
+
+    {:noreply, assign(socket, projects: projects)}
   end
 end
