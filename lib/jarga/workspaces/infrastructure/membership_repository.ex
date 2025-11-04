@@ -38,6 +38,25 @@ defmodule Jarga.Workspaces.Infrastructure.MembershipRepository do
   end
 
   @doc """
+  Finds a workspace by slug and verifies the user is a member.
+
+  Returns the workspace if the user is a member, nil otherwise.
+
+  ## Examples
+
+      iex> get_workspace_for_user_by_slug(user, "my-workspace")
+      %Workspace{}
+
+      iex> get_workspace_for_user_by_slug(non_member, "my-workspace")
+      nil
+
+  """
+  def get_workspace_for_user_by_slug(%User{} = user, slug, repo \\ Repo) do
+    Queries.for_user_by_slug(user, slug)
+    |> repo.one()
+  end
+
+  @doc """
   Checks if a workspace exists.
 
   ## Examples
@@ -104,5 +123,34 @@ defmodule Jarga.Workspaces.Infrastructure.MembershipRepository do
   def list_members(workspace_id, repo \\ Repo) do
     Queries.list_members(workspace_id)
     |> repo.all()
+  end
+
+  @doc """
+  Checks if a workspace slug already exists.
+
+  ## Examples
+
+      iex> slug_exists?("my-workspace", nil)
+      true
+
+      iex> slug_exists?("new-slug", nil)
+      false
+
+  """
+  def slug_exists?(slug, excluding_id \\ nil, repo \\ Repo) do
+    import Ecto.Query
+
+    query =
+      from w in Jarga.Workspaces.Workspace,
+        where: w.slug == ^slug
+
+    query =
+      if excluding_id do
+        from w in query, where: w.id != ^excluding_id
+      else
+        query
+      end
+
+    repo.exists?(query)
   end
 end

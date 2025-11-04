@@ -12,14 +12,14 @@ defmodule JargaWeb.AppLive.Projects.Show do
         <.breadcrumbs>
           <:crumb navigate={~p"/app"}>Home</:crumb>
           <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
-          <:crumb navigate={~p"/app/workspaces/#{@workspace.id}"}>{@workspace.name}</:crumb>
+          <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:crumb>
           <:crumb>{@project.name}</:crumb>
         </.breadcrumbs>
 
         <div class="flex items-center justify-end">
           <div class="flex gap-2">
             <.link
-              navigate={~p"/app/workspaces/#{@workspace.id}/projects/#{@project.id}/edit"}
+              navigate={~p"/app/workspaces/#{@workspace.slug}/projects/#{@project.slug}/edit"}
               class="btn btn-ghost"
             >
               <.icon name="hero-pencil" class="size-5" />
@@ -74,12 +74,12 @@ defmodule JargaWeb.AppLive.Projects.Show do
   end
 
   @impl true
-  def mount(%{"workspace_id" => workspace_id, "id" => project_id}, _session, socket) do
+  def mount(%{"workspace_slug" => workspace_slug, "project_slug" => project_slug}, _session, socket) do
     user = socket.assigns.current_scope.user
 
     # This will raise if user is not a member
-    workspace = Workspaces.get_workspace!(user, workspace_id)
-    project = Projects.get_project!(user, workspace_id, project_id)
+    workspace = Workspaces.get_workspace_by_slug!(user, workspace_slug)
+    project = Projects.get_project_by_slug!(user, workspace.id, project_slug)
 
     {:ok,
      socket
@@ -98,7 +98,7 @@ defmodule JargaWeb.AppLive.Projects.Show do
         {:noreply,
          socket
          |> put_flash(:info, "Project deleted successfully")
-         |> push_navigate(to: ~p"/app/workspaces/#{workspace_id}")}
+         |> push_navigate(to: ~p"/app/workspaces/#{socket.assigns.workspace.slug}")}
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, "Failed to delete project")}

@@ -12,7 +12,7 @@ defmodule JargaWeb.AppLive.Workspaces.Edit do
         <.breadcrumbs>
           <:crumb navigate={~p"/app"}>Home</:crumb>
           <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
-          <:crumb navigate={~p"/app/workspaces/#{@workspace.id}"}>{@workspace.name}</:crumb>
+          <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:crumb>
           <:crumb>Edit</:crumb>
         </.breadcrumbs>
 
@@ -20,7 +20,7 @@ defmodule JargaWeb.AppLive.Workspaces.Edit do
           <.header>
             Edit Workspace
             <:subtitle>
-              <.link navigate={~p"/app/workspaces/#{@workspace.id}"} class="text-sm hover:underline">
+              <.link navigate={~p"/app/workspaces/#{@workspace.slug}"} class="text-sm hover:underline">
                 ← Back to {@workspace.name}
               </.link>
             </:subtitle>
@@ -58,7 +58,7 @@ defmodule JargaWeb.AppLive.Workspaces.Edit do
               />
 
               <div class="flex gap-2 justify-end">
-                <.link navigate={~p"/app/workspaces/#{@workspace.id}"} class="btn btn-ghost">
+                <.link navigate={~p"/app/workspaces/#{@workspace.slug}"} class="btn btn-ghost">
                   Cancel
                 </.link>
                 <.button type="submit" variant="primary">
@@ -74,11 +74,11 @@ defmodule JargaWeb.AppLive.Workspaces.Edit do
   end
 
   @impl true
-  def mount(%{"workspace_id" => workspace_id}, _session, socket) do
+  def mount(%{"workspace_slug" => workspace_slug}, _session, socket) do
     user = socket.assigns.current_scope.user
 
     # This will raise if user is not a member
-    workspace = Workspaces.get_workspace!(user, workspace_id)
+    workspace = Workspaces.get_workspace_by_slug!(user, workspace_slug)
     changeset = Workspaces.Workspace.changeset(workspace, %{})
 
     {:ok,
@@ -97,7 +97,7 @@ defmodule JargaWeb.AppLive.Workspaces.Edit do
         {:noreply,
          socket
          |> put_flash(:info, "Workspace updated successfully")
-         |> push_navigate(to: ~p"/app/workspaces/#{workspace.id}")}
+         |> push_navigate(to: ~p"/app/workspaces/#{workspace.slug}")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}

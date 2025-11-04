@@ -82,6 +82,23 @@ defmodule Jarga.Workspaces.Queries do
   end
 
   @doc """
+  Finds a workspace by slug for a specific user.
+
+  Returns a query that finds a workspace only if the user is a member.
+
+  ## Examples
+
+      iex> for_user_by_slug(user, "my-workspace") |> Repo.one()
+      %Workspace{}
+
+  """
+  def for_user_by_slug(%User{} = user, slug) do
+    base()
+    |> for_user(user)
+    |> where([w], w.slug == ^slug)
+  end
+
+  @doc """
   Checks if a workspace exists by ID.
 
   ## Examples

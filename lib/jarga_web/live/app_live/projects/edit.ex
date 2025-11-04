@@ -12,8 +12,8 @@ defmodule JargaWeb.AppLive.Projects.Edit do
         <.breadcrumbs>
           <:crumb navigate={~p"/app"}>Home</:crumb>
           <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
-          <:crumb navigate={~p"/app/workspaces/#{@workspace.id}"}>{@workspace.name}</:crumb>
-          <:crumb navigate={~p"/app/workspaces/#{@workspace.id}/projects/#{@project.id}"}>
+          <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:crumb>
+          <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}/projects/#{@project.slug}"}>
             {@project.name}
           </:crumb>
           <:crumb>Edit</:crumb>
@@ -24,7 +24,7 @@ defmodule JargaWeb.AppLive.Projects.Edit do
             Edit Project
             <:subtitle>
               <.link
-                navigate={~p"/app/workspaces/#{@workspace.id}/projects/#{@project.id}"}
+                navigate={~p"/app/workspaces/#{@workspace.slug}/projects/#{@project.slug}"}
                 class="text-sm hover:underline"
               >
                 ← Back to {@project.name}
@@ -55,7 +55,7 @@ defmodule JargaWeb.AppLive.Projects.Edit do
 
               <div class="flex gap-2 justify-end">
                 <.link
-                  navigate={~p"/app/workspaces/#{@workspace.id}/projects/#{@project.id}"}
+                  navigate={~p"/app/workspaces/#{@workspace.slug}/projects/#{@project.slug}"}
                   class="btn btn-ghost"
                 >
                   Cancel
@@ -73,12 +73,12 @@ defmodule JargaWeb.AppLive.Projects.Edit do
   end
 
   @impl true
-  def mount(%{"workspace_id" => workspace_id, "id" => project_id}, _session, socket) do
+  def mount(%{"workspace_slug" => workspace_slug, "project_slug" => project_slug}, _session, socket) do
     user = socket.assigns.current_scope.user
 
     # This will raise if user is not a member
-    workspace = Workspaces.get_workspace!(user, workspace_id)
-    project = Projects.get_project!(user, workspace_id, project_id)
+    workspace = Workspaces.get_workspace_by_slug!(user, workspace_slug)
+    project = Projects.get_project_by_slug!(user, workspace.id, project_slug)
     changeset = Projects.Project.changeset(project, %{})
 
     {:ok,
@@ -99,7 +99,7 @@ defmodule JargaWeb.AppLive.Projects.Edit do
         {:noreply,
          socket
          |> put_flash(:info, "Project updated successfully")
-         |> push_navigate(to: ~p"/app/workspaces/#{workspace_id}/projects/#{project.id}")}
+         |> push_navigate(to: ~p"/app/workspaces/#{socket.assigns.workspace.slug}/projects/#{project.slug}")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}

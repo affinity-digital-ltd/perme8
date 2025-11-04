@@ -101,4 +101,25 @@ defmodule Jarga.Projects.Queries do
     |> for_user(user)
     |> where([p], p.id == ^project_id)
   end
+
+  @doc """
+  Finds a project by slug within a workspace for a specific user.
+
+  Returns a query that finds a project only if:
+  - The project exists with the given slug
+  - The project belongs to the specified workspace
+  - The user is a member of the workspace
+
+  ## Examples
+
+      iex> for_user_by_slug(user, workspace_id, "my-project") |> Repo.one()
+      %Project{}
+
+  """
+  def for_user_by_slug(%User{} = user, workspace_id, slug) do
+    base()
+    |> for_workspace(workspace_id)
+    |> for_user(user)
+    |> where([p], p.slug == ^slug)
+  end
 end

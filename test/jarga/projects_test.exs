@@ -293,4 +293,131 @@ defmodule Jarga.ProjectsTest do
       assert {:error, :project_not_found} = Projects.delete_project(user, workspace1.id, project.id)
     end
   end
+
+  describe "project slugs" do
+    test "generates slug from name on create" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+      attrs = %{name: "My Awesome Project"}
+
+      assert {:ok, project} = Projects.create_project(user, workspace.id, attrs)
+      assert project.slug == "my-awesome-project"
+    end
+
+    test "generates slug with special characters removed" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+      attrs = %{name: "My Project! @#$%"}
+
+      assert {:ok, project} = Projects.create_project(user, workspace.id, attrs)
+      assert project.slug == "my-project"
+    end
+
+    test "generates slug with consecutive spaces normalized" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+      attrs = %{name: "My    Multiple   Spaces"}
+
+      assert {:ok, project} = Projects.create_project(user, workspace.id, attrs)
+      assert project.slug == "my-multiple-spaces"
+    end
+
+    test "handles slug collisions within same workspace by appending random suffix" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+      attrs = %{name: "Duplicate Name"}
+
+      assert {:ok, project1} = Projects.create_project(user, workspace.id, attrs)
+      assert project1.slug == "duplicate-name"
+
+      assert {:ok, project2} = Projects.create_project(user, workspace.id, attrs)
+      # Should have random suffix appended
+      assert project2.slug =~ ~r/^duplicate-name-[a-z0-9]+$/
+      assert project2.slug != project1.slug
+    end
+
+    test "allows same slug in different workspaces" do
+      user = user_fixture()
+      workspace1 = workspace_fixture(user, %{name: "Workspace 1"})
+      workspace2 = workspace_fixture(user, %{name: "Workspace 2"})
+      attrs = %{name: "Same Name"}
+
+      assert {:ok, project1} = Projects.create_project(user, workspace1.id, attrs)
+      assert project1.slug == "same-name"
+
+      assert {:ok, project2} = Projects.create_project(user, workspace2.id, attrs)
+      # Should have same slug since they're in different workspaces
+      assert project2.slug == "same-name"
+    end
+
+    test "updates slug when name changes" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+      project = project_fixture(user, workspace, %{name: "Original Name"})
+
+      assert project.slug == "original-name"
+
+      assert {:ok, updated_project} = Projects.update_project(user, workspace.id, project.id, %{name: "New Name"})
+      assert updated_project.slug == "new-name"
+    end
+
+    test "handles slug collision on update within same workspace" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+      project1 = project_fixture(user, workspace, %{name: "First Project"})
+      project2 = project_fixture(user, workspace, %{name: "Second Project"})
+
+      assert project1.slug == "first-project"
+      assert project2.slug == "second-project"
+
+      # Try to update project2 to have same name as project1
+      assert {:ok, updated} = Projects.update_project(user, workspace.id, project2.id, %{name: "First Project"})
+      # Should have random suffix to avoid collision
+      assert updated.slug =~ ~r/^first-project-[a-z0-9]+$/
+      assert updated.slug != project1.slug
+    end
+  end
+
+  describe "get_project_by_slug!/3" do
+    test "returns project when user is member and slug matches" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+      project = project_fixture(user, workspace, %{name: "My Project"})
+
+      assert fetched = Projects.get_project_by_slug!(user, workspace.id, "my-project")
+      assert fetched.id == project.id
+      assert fetched.name == project.name
+    end
+
+    test "raises when project doesn't exist with that slug" do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Projects.get_project_by_slug!(user, workspace.id, "nonexistent")
+      end
+    end
+
+    test "raises when user is not a member of workspace" do
+      user = user_fixture()
+      other_user = user_fixture()
+      workspace = workspace_fixture(other_user)
+      _project = project_fixture(other_user, workspace, %{name: "Other Project"})
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Projects.get_project_by_slug!(user, workspace.id, "other-project")
+      end
+    end
+
+    test "raises when project with slug belongs to different workspace" do
+      user = user_fixture()
+      workspace1 = workspace_fixture(user)
+      workspace2 = workspace_fixture(user)
+      _project = project_fixture(user, workspace2, %{name: "Project"})
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Projects.get_project_by_slug!(user, workspace1.id, "project")
+      end
+    end
+  end
 end

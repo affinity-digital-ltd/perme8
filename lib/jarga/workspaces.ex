@@ -146,6 +146,61 @@ defmodule Jarga.Workspaces do
   end
 
   @doc """
+  Gets a single workspace by slug for a user.
+
+  Returns `{:ok, workspace}` if the user is a member, or an error tuple otherwise.
+
+  ## Returns
+
+  - `{:ok, workspace}` - User is a member of the workspace
+  - `{:error, :unauthorized}` - Workspace exists but user is not a member
+  - `{:error, :workspace_not_found}` - Workspace does not exist
+
+  ## Examples
+
+      iex> get_workspace_by_slug(user, "my-workspace")
+      {:ok, %Workspace{}}
+
+      iex> get_workspace_by_slug(user, "non-member-workspace")
+      {:error, :unauthorized}
+
+      iex> get_workspace_by_slug(user, "non-existent-slug")
+      {:error, :workspace_not_found}
+
+  """
+  def get_workspace_by_slug(%User{} = user, slug) do
+    case MembershipRepository.get_workspace_for_user_by_slug(user, slug) do
+      nil ->
+        # We could check if the workspace exists, but for slugs it's simpler
+        # to just return :workspace_not_found since slugs are meant to be user-facing
+        {:error, :workspace_not_found}
+
+      workspace ->
+        {:ok, workspace}
+    end
+  end
+
+  @doc """
+  Gets a single workspace by slug for a user.
+
+  Raises `Ecto.NoResultsError` if the Workspace does not exist or
+  if the user is not a member of the workspace.
+
+  ## Examples
+
+      iex> get_workspace_by_slug!(user, "my-workspace")
+      %Workspace{}
+
+      iex> get_workspace_by_slug!(user, "non-existent-slug")
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_workspace_by_slug!(%User{} = user, slug) do
+    Queries.for_user_by_slug(user, slug)
+    |> Repo.one!()
+  end
+
+  @doc """
   Updates a workspace for a user.
 
   The user must be a member of the workspace to update it.

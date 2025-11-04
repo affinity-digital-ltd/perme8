@@ -159,14 +159,14 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
     end
 
     test "renders workspace show page", %{conn: conn, workspace: workspace} do
-      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       assert html =~ "Test Workspace"
       assert html =~ "Projects"
     end
 
     test "displays empty state when workspace has no projects", %{conn: conn, workspace: workspace} do
-      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       assert html =~ "No projects yet"
     end
@@ -175,7 +175,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
       project1 = project_fixture(user, workspace, %{name: "Project Alpha"})
       project2 = project_fixture(user, workspace, %{name: "Project Beta"})
 
-      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       assert html =~ "Project Alpha"
       assert html =~ "Project Beta"
@@ -188,7 +188,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
       _my_project = project_fixture(user, workspace, %{name: "My Project"})
       _other_project = project_fixture(user, other_workspace, %{name: "Other Project"})
 
-      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       assert html =~ "My Project"
       refute html =~ "Other Project"
@@ -200,19 +200,19 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
         description: "This is a test project description"
       })
 
-      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       assert html =~ "This is a test project description"
     end
 
     test "has a new project button", %{conn: conn, workspace: workspace} do
-      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       assert lv |> element("button", "New Project") |> has_element?()
     end
 
     test "opens new project modal when clicking new project button", %{conn: conn, workspace: workspace} do
-      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       html = lv |> element("button", "New Project") |> render_click()
 
@@ -221,7 +221,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
     end
 
     test "creates project with valid data", %{conn: conn, user: user, workspace: workspace} do
-      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       # Open the modal
       lv |> element("button", "New Project") |> render_click()
@@ -242,7 +242,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
     end
 
     test "creates project with full data", %{conn: conn, workspace: workspace} do
-      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       # Open the modal
       lv |> element("button", "New Project") |> render_click()
@@ -263,7 +263,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
     end
 
     test "displays validation errors for invalid data", %{conn: conn, workspace: workspace} do
-      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       # Open the modal
       lv |> element("button", "New Project") |> render_click()
@@ -278,7 +278,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
     end
 
     test "can close the new project modal", %{conn: conn, workspace: workspace} do
-      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       # Open the modal
       html = lv |> element("button", "New Project") |> render_click()
@@ -291,7 +291,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
 
     test "redirects if user is not logged in", %{workspace: workspace} do
       conn = build_conn()
-      assert {:error, redirect} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      assert {:error, redirect} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       assert {:redirect, %{to: path, flash: flash}} = redirect
       assert path == ~p"/users/log-in"
@@ -305,10 +305,10 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
       conn = build_conn() |> log_in_user(user)
 
       {:error, {:live_redirect, %{to: path, flash: flash}}} =
-        live(conn, ~p"/app/workspaces/#{workspace.id}")
+        live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       assert path == ~p"/app/workspaces"
-      assert %{"error" => "You don't have access to this workspace"} = flash
+      assert %{"error" => "Workspace not found"} = flash
     end
 
     test "redirects with error when workspace does not exist" do
@@ -332,7 +332,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
     end
 
     test "renders edit workspace form", %{conn: conn, workspace: workspace} do
-      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.id}/edit")
+      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/edit")
 
       assert html =~ "Edit Workspace"
       assert html =~ "Test Workspace"
@@ -340,7 +340,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
     end
 
     test "updates workspace with valid data", %{conn: conn, workspace: workspace} do
-      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.id}/edit")
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/edit")
 
       result =
         lv
@@ -351,16 +351,17 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
         |> render_submit()
 
       assert {:error, {:live_redirect, %{to: path, flash: _flash}}} = result
-      assert path == ~p"/app/workspaces/#{workspace.id}"
+      # Slug changes when name changes
+      assert path == ~p"/app/workspaces/updated-workspace"
 
       # Verify workspace was updated
-      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/updated-workspace")
       assert html =~ "Updated Workspace"
       assert html =~ "Updated Description"
     end
 
     test "displays validation errors for invalid data", %{conn: conn, workspace: workspace} do
-      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.id}/edit")
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/edit")
 
       html =
         lv
@@ -371,14 +372,14 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
     end
 
     test "has a cancel button that returns to workspace show", %{conn: conn, workspace: workspace} do
-      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.id}/edit")
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/edit")
 
       assert lv |> element("a", "Cancel") |> has_element?()
     end
 
     test "redirects if user is not logged in", %{workspace: workspace} do
       conn = build_conn()
-      assert {:error, redirect} = live(conn, ~p"/app/workspaces/#{workspace.id}/edit")
+      assert {:error, redirect} = live(conn, ~p"/app/workspaces/#{workspace.slug}/edit")
 
       assert {:redirect, %{to: path, flash: flash}} = redirect
       assert path == ~p"/users/log-in"
@@ -392,7 +393,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
       conn = build_conn() |> log_in_user(user)
 
       assert_raise Ecto.NoResultsError, fn ->
-        live(conn, ~p"/app/workspaces/#{workspace.id}/edit")
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/edit")
       end
     end
   end
@@ -405,7 +406,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
     end
 
     test "deletes workspace from show page", %{conn: conn, user: user, workspace: workspace} do
-      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       # Click delete button
       result = lv |> element("button", "Delete Workspace") |> render_click()
@@ -420,7 +421,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
     test "deletes workspace and its projects", %{conn: conn, user: user, workspace: workspace} do
       project = project_fixture(user, workspace)
 
-      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       # Click delete button
       lv |> element("button", "Delete Workspace") |> render_click()
@@ -430,7 +431,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
     end
 
     test "shows delete confirmation", %{conn: conn, workspace: workspace} do
-      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.id}")
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       html = render(lv)
       assert html =~ "Delete Workspace"

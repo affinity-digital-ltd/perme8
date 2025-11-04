@@ -102,6 +102,27 @@ defmodule Jarga.Projects do
   end
 
   @doc """
+  Gets a single project by slug for a user in a workspace.
+
+  Raises `Ecto.NoResultsError` if the Project does not exist with that slug,
+  if the user is not a member of the workspace, or if the project
+  doesn't belong to the specified workspace.
+
+  ## Examples
+
+      iex> get_project_by_slug!(user, workspace_id, "my-project")
+      %Project{}
+
+      iex> get_project_by_slug!(user, workspace_id, "non-existent-slug")
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_project_by_slug!(%User{} = user, workspace_id, slug) do
+    Queries.for_user_by_slug(user, workspace_id, slug)
+    |> Repo.one!()
+  end
+
+  @doc """
   Updates a project for a user in a workspace.
 
   The user must be a member of the workspace to update projects.

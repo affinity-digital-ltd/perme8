@@ -18,7 +18,7 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
 
         <div class="flex items-center justify-end">
           <div class="flex gap-2">
-            <.link navigate={~p"/app/workspaces/#{@workspace.id}/edit"} class="btn btn-ghost">
+            <.link navigate={~p"/app/workspaces/#{@workspace.slug}/edit"} class="btn btn-ghost">
               <.icon name="hero-pencil" class="size-5" />
               Edit
             </.link>
@@ -69,7 +69,7 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
             <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <%= for project <- @projects do %>
                 <.link
-                  navigate={~p"/app/workspaces/#{@workspace.id}/projects/#{project.id}"}
+                  navigate={~p"/app/workspaces/#{@workspace.slug}/projects/#{project.slug}"}
                   class="card bg-base-200 hover:bg-base-300 transition-colors"
                   data-project-id={project.id}
                 >
@@ -95,127 +95,195 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
       <%!-- Members Management Modal --%>
       <%= if @show_members_modal do %>
         <div class="modal modal-open">
-          <div class="modal-box max-w-4xl">
-            <h3 class="font-bold text-lg mb-4">Manage Members</h3>
-
-            <%!-- Invite Section --%>
-            <div class="mb-6">
-              <h4 class="font-semibold mb-3">Invite New Member</h4>
-              <.form
-                for={@invite_form}
-                id="invite-form"
-                phx-submit="invite_member"
-                class="flex gap-2"
-              >
-                <.input
-                  field={@invite_form[:email]}
-                  type="email"
-                  placeholder="user@example.com"
-                  class="flex-1"
-                  required
-                />
-
-                <.input
-                  field={@invite_form[:role]}
-                  type="select"
-                  options={[
-                    {"Admin", "admin"},
-                    {"Member", "member"},
-                    {"Guest", "guest"}
-                  ]}
-                  class="w-32"
-                  required
-                />
-
-                <.button type="submit" variant="primary">
-                  <.icon name="hero-user-plus" class="size-4" />
-                  Invite
-                </.button>
-              </.form>
-            </div>
-
-            <div class="divider"></div>
-
-            <%!-- Members List --%>
-            <div>
-              <h4 class="font-semibold mb-3">
-                Current Members ({length(@members)})
-              </h4>
-
-              <div class="overflow-x-auto max-h-96">
-                <table class="table table-sm">
-                  <thead>
-                    <tr>
-                      <th>Email</th>
-                      <th>Role</th>
-                      <th>Status</th>
-                      <th>Joined</th>
-                      <th class="text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <%= for member <- @members do %>
-                      <tr>
-                        <td class="font-medium">{member.email}</td>
-                        <td>
-                          <%= if member.role == :owner do %>
-                            <span class="badge badge-primary badge-sm">Owner</span>
-                          <% else %>
-                            <select
-                              class="select select-xs select-bordered"
-                              phx-change="change_role"
-                              phx-value-email={member.email}
-                            >
-                              <option value="admin" selected={member.role == :admin}>Admin</option>
-                              <option value="member" selected={member.role == :member}>
-                                Member
-                              </option>
-                              <option value="guest" selected={member.role == :guest}>Guest</option>
-                            </select>
-                          <% end %>
-                        </td>
-                        <td>
-                          <%= if member.joined_at do %>
-                            <span class="badge badge-success badge-xs">Active</span>
-                          <% else %>
-                            <span class="badge badge-warning badge-xs">Pending</span>
-                          <% end %>
-                        </td>
-                        <td class="text-sm text-base-content/70">
-                          <%= if member.joined_at do %>
-                            {Calendar.strftime(member.joined_at, "%b %d, %Y")}
-                          <% else %>
-                            <span class="text-base-content/50">—</span>
-                          <% end %>
-                        </td>
-                        <td class="text-right">
-                          <%= if member.role != :owner do %>
-                            <.button
-                              variant="error"
-                              size="xs"
-                              phx-click="remove_member"
-                              phx-value-email={member.email}
-                              data-confirm="Are you sure you want to remove this member?"
-                            >
-                              <.icon name="hero-x-mark" class="size-3" />
-                              Remove
-                            </.button>
-                          <% end %>
-                        </td>
-                      </tr>
-                    <% end %>
-                  </tbody>
-                </table>
+          <div class="modal-box max-w-4xl max-h-[90vh] flex flex-col p-0">
+            <%!-- Modal Header --%>
+            <div class="sticky top-0 bg-base-100 border-b border-base-300 px-6 py-4 z-10">
+              <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold">Manage Members</h3>
+                <button
+                  phx-click="hide_members_modal"
+                  class="btn btn-sm btn-circle btn-ghost"
+                  aria-label="Close"
+                >
+                  <.icon name="hero-x-mark" class="size-5" />
+                </button>
               </div>
             </div>
 
-            <div class="modal-action">
-              <.button variant="ghost" phx-click="hide_members_modal">
-                Close
-              </.button>
+            <%!-- Modal Body --%>
+            <div class="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+              <%!-- Invite Section --%>
+              <div class="card bg-base-200">
+                <div class="card-body p-4">
+                  <h4 class="font-semibold mb-3 flex items-center gap-2">
+                    <.icon name="hero-envelope" class="size-5 text-primary" />
+                    Invite New Member
+                  </h4>
+                  <.form
+                    for={@invite_form}
+                    id="invite-form"
+                    phx-submit="invite_member"
+                    class="flex flex-col sm:flex-row gap-2"
+                  >
+                    <div class="flex-1">
+                      <.input
+                        field={@invite_form[:email]}
+                        type="email"
+                        placeholder="user@example.com"
+                        required
+                      />
+                    </div>
+
+                    <div class="w-full sm:w-40">
+                      <.input
+                        field={@invite_form[:role]}
+                        type="select"
+                        options={[
+                          {"Admin", "admin"},
+                          {"Member", "member"},
+                          {"Guest", "guest"}
+                        ]}
+                        required
+                      />
+                    </div>
+
+                    <div class="flex items-end">
+                      <.button type="submit" variant="primary" class="w-full sm:w-auto">
+                        <.icon name="hero-user-plus" class="size-4" />
+                        Invite
+                      </.button>
+                    </div>
+                  </.form>
+                </div>
+              </div>
+
+              <%!-- Members List --%>
+              <div>
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="font-semibold flex items-center gap-2">
+                    <.icon name="hero-user-group" class="size-5 text-primary" />
+                    Team Members
+                  </h4>
+                  <span class="badge badge-neutral badge-sm">
+                    {length(@members)} {if length(@members) == 1, do: "member", else: "members"}
+                  </span>
+                </div>
+
+                <%= if @members == [] do %>
+                  <div class="card bg-base-200">
+                    <div class="card-body text-center py-8">
+                      <.icon name="hero-users" class="size-12 mx-auto opacity-50 mb-2" />
+                      <p class="text-base-content/70">No members yet</p>
+                    </div>
+                  </div>
+                <% else %>
+                  <div class="overflow-x-auto rounded-lg border border-base-300">
+                    <table class="table table-sm">
+                      <thead class="bg-base-200">
+                        <tr>
+                          <th class="font-semibold">Member</th>
+                          <th class="font-semibold">Role</th>
+                          <th class="font-semibold">Status</th>
+                          <th class="font-semibold">Joined</th>
+                          <th class="font-semibold text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <%= for member <- @members do %>
+                          <tr class="hover">
+                            <td>
+                              <div class="flex items-center gap-2">
+                                <div class="avatar placeholder">
+                                  <div class="bg-neutral text-neutral-content w-8 rounded-full">
+                                    <span class="text-xs">
+                                      {member.email |> String.slice(0..1) |> String.upcase()}
+                                    </span>
+                                  </div>
+                                </div>
+                                <span class="font-medium">{member.email}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <%= if member.role == :owner do %>
+                                <div class="badge badge-primary badge-sm gap-1">
+                                  <.icon name="hero-star-solid" class="size-3" />
+                                  Owner
+                                </div>
+                              <% else %>
+                                <select
+                                  class="select select-xs select-bordered"
+                                  phx-change="change_role"
+                                  phx-value-email={member.email}
+                                >
+                                  <option value="admin" selected={member.role == :admin}>
+                                    Admin
+                                  </option>
+                                  <option value="member" selected={member.role == :member}>
+                                    Member
+                                  </option>
+                                  <option value="guest" selected={member.role == :guest}>
+                                    Guest
+                                  </option>
+                                </select>
+                              <% end %>
+                            </td>
+                            <td>
+                              <%= if member.joined_at do %>
+                                <div class="badge badge-success badge-xs gap-1">
+                                  <div class="w-1.5 h-1.5 rounded-full bg-success-content"></div>
+                                  Active
+                                </div>
+                              <% else %>
+                                <div class="badge badge-warning badge-xs gap-1">
+                                  <.icon name="hero-clock" class="size-3" />
+                                  Pending
+                                </div>
+                              <% end %>
+                            </td>
+                            <td class="text-sm text-base-content/70">
+                              <%= if member.joined_at do %>
+                                {Calendar.strftime(member.joined_at, "%b %d, %Y")}
+                              <% else %>
+                                <span class="text-base-content/50 italic">Not yet</span>
+                              <% end %>
+                            </td>
+                            <td class="text-right">
+                              <%= if member.role != :owner do %>
+                                <.button
+                                  variant="ghost"
+                                  size="xs"
+                                  phx-click="remove_member"
+                                  phx-value-email={member.email}
+                                  data-confirm="Are you sure you want to remove this member?"
+                                  class="text-error hover:bg-error hover:text-error-content"
+                                >
+                                  <.icon name="hero-trash" class="size-4" />
+                                </.button>
+                              <% else %>
+                                <span class="text-base-content/30 text-xs">—</span>
+                              <% end %>
+                            </td>
+                          </tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+
+            <%!-- Modal Footer --%>
+            <div class="sticky bottom-0 bg-base-100 border-t border-base-300 px-6 py-4">
+              <div class="flex justify-end">
+                <.button variant="neutral" phx-click="hide_members_modal">
+                  Done
+                </.button>
+              </div>
             </div>
           </div>
-          <div class="modal-backdrop" phx-click="hide_members_modal"></div>
+          <form method="dialog" class="modal-backdrop" phx-click="hide_members_modal">
+            <button>close</button>
+          </form>
         </div>
       <% end %>
 
@@ -271,13 +339,13 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
   end
 
   @impl true
-  def mount(%{"id" => workspace_id}, _session, socket) do
+  def mount(%{"slug" => workspace_slug}, _session, socket) do
     user = socket.assigns.current_scope.user
 
-    case Workspaces.get_workspace(user, workspace_id) do
+    case Workspaces.get_workspace_by_slug(user, workspace_slug) do
       {:ok, workspace} ->
-        projects = Projects.list_projects_for_workspace(user, workspace_id)
-        members = Workspaces.list_members(workspace_id)
+        projects = Projects.list_projects_for_workspace(user, workspace.id)
+        members = Workspaces.list_members(workspace.id)
 
         {:ok,
          socket
@@ -288,12 +356,6 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
          |> assign(:show_members_modal, false)
          |> assign(:project_form, to_form(Project.changeset(%Project{}, %{})))
          |> assign(:invite_form, to_form(%{"email" => "", "role" => "member"}))}
-
-      {:error, :unauthorized} ->
-        {:ok,
-         socket
-         |> put_flash(:error, "You don't have access to this workspace")
-         |> push_navigate(to: ~p"/app/workspaces")}
 
       {:error, :workspace_not_found} ->
         {:ok,

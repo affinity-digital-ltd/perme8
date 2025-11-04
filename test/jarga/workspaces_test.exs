@@ -495,4 +495,93 @@ defmodule Jarga.WorkspacesTest do
                Workspaces.remove_member(owner, workspace.id, "nonexistent@example.com")
     end
   end
+
+  describe "workspace slugs" do
+    test "generates slug from name on create" do
+      user = user_fixture()
+      attrs = %{name: "My Awesome Workspace"}
+
+      assert {:ok, workspace} = Workspaces.create_workspace(user, attrs)
+      assert workspace.slug == "my-awesome-workspace"
+    end
+
+    test "generates slug with special characters removed" do
+      user = user_fixture()
+      attrs = %{name: "My Workspace! @#$%"}
+
+      assert {:ok, workspace} = Workspaces.create_workspace(user, attrs)
+      assert workspace.slug == "my-workspace"
+    end
+
+    test "generates slug with consecutive spaces normalized" do
+      user = user_fixture()
+      attrs = %{name: "My    Multiple   Spaces"}
+
+      assert {:ok, workspace} = Workspaces.create_workspace(user, attrs)
+      assert workspace.slug == "my-multiple-spaces"
+    end
+
+    test "handles slug collisions by appending random suffix" do
+      user = user_fixture()
+      attrs = %{name: "Duplicate Name"}
+
+      assert {:ok, workspace1} = Workspaces.create_workspace(user, attrs)
+      assert workspace1.slug == "duplicate-name"
+
+      assert {:ok, workspace2} = Workspaces.create_workspace(user, attrs)
+      # Should have random suffix appended
+      assert workspace2.slug =~ ~r/^duplicate-name-[a-z0-9]+$/
+      assert workspace2.slug != workspace1.slug
+    end
+
+    test "updates slug when name changes" do
+      user = user_fixture()
+      workspace = workspace_fixture(user, %{name: "Original Name"})
+
+      assert workspace.slug == "original-name"
+
+      assert {:ok, updated_workspace} = Workspaces.update_workspace(user, workspace.id, %{name: "New Name"})
+      assert updated_workspace.slug == "new-name"
+    end
+
+    test "handles slug collision on update" do
+      user = user_fixture()
+      workspace1 = workspace_fixture(user, %{name: "First Workspace"})
+      workspace2 = workspace_fixture(user, %{name: "Second Workspace"})
+
+      assert workspace1.slug == "first-workspace"
+      assert workspace2.slug == "second-workspace"
+
+      # Try to update workspace2 to have same name as workspace1
+      assert {:ok, updated} = Workspaces.update_workspace(user, workspace2.id, %{name: "First Workspace"})
+      # Should have random suffix to avoid collision
+      assert updated.slug =~ ~r/^first-workspace-[a-z0-9]+$/
+      assert updated.slug != workspace1.slug
+    end
+  end
+
+  describe "get_workspace_by_slug/2" do
+    test "returns workspace when user is a member and slug matches" do
+      user = user_fixture()
+      workspace = workspace_fixture(user, %{name: "My Workspace"})
+
+      assert {:ok, fetched} = Workspaces.get_workspace_by_slug(user, "my-workspace")
+      assert fetched.id == workspace.id
+      assert fetched.name == workspace.name
+    end
+
+    test "returns :workspace_not_found when workspace doesn't exist" do
+      user = user_fixture()
+
+      assert {:error, :workspace_not_found} = Workspaces.get_workspace_by_slug(user, "nonexistent")
+    end
+
+    test "returns :workspace_not_found when user is not a member of workspace" do
+      user = user_fixture()
+      other_user = user_fixture()
+      _workspace = workspace_fixture(other_user, %{name: "Other Workspace"})
+
+      assert {:error, :workspace_not_found} = Workspaces.get_workspace_by_slug(user, "other-workspace")
+    end
+  end
 end

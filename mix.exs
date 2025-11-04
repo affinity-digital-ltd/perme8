@@ -104,7 +104,8 @@ defmodule Jarga.MixProject do
       {:bcrypt_elixir, "~> 3.0"},
       {:dotenvy, "~> 0.8.0", only: [:dev, :test]},
       {:boundary, "~> 0.10", runtime: false},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:slugy, "~> 4.1"}
     ]
   end
 
