@@ -509,11 +509,11 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
         |> render_submit()
 
       assert {:error, {:live_redirect, %{to: path, flash: _flash}}} = result
-      # Slug changes when name changes
-      assert path == ~p"/app/workspaces/updated-workspace"
+      # Slug remains the same when name changes
+      assert path == ~p"/app/workspaces/#{workspace.slug}"
 
       # Verify workspace was updated
-      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/updated-workspace")
+      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
       assert html =~ "Updated Workspace"
       assert html =~ "Updated Description"
     end

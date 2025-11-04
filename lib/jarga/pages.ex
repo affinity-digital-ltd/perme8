@@ -46,6 +46,33 @@ defmodule Jarga.Pages do
   @doc """
   Gets a single page by slug for a user in a workspace.
 
+  Returns {:ok, page} or {:error, :page_not_found}
+
+  ## Examples
+
+      iex> get_page_by_slug(user, workspace_id, "my-page")
+      {:ok, %Page{}}
+
+      iex> get_page_by_slug(user, workspace_id, "nonexistent")
+      {:error, :page_not_found}
+
+  """
+  def get_page_by_slug(%User{} = user, workspace_id, slug) do
+    page = Queries.base()
+    |> Queries.by_slug(slug)
+    |> Queries.for_workspace(workspace_id)
+    |> Queries.viewable_by_user(user)
+    |> Repo.one()
+
+    case page do
+      nil -> {:error, :page_not_found}
+      page -> {:ok, Repo.preload(page, :page_components)}
+    end
+  end
+
+  @doc """
+  Gets a single page by slug for a user in a workspace.
+
   Only returns the page if it belongs to the user.
   Raises `Ecto.NoResultsError` if the page does not exist with that slug or belongs to another user.
 

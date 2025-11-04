@@ -458,20 +458,19 @@ defmodule Jarga.ProjectsTest do
       assert project2.slug == "same-name"
     end
 
-    test "updates slug when name changes" do
+    test "keeps slug stable when name changes" do
       user = user_fixture()
       workspace = workspace_fixture(user)
       project = project_fixture(user, workspace, %{name: "Original Name"})
 
       assert project.slug == "original-name"
 
-      assert {:ok, updated_project} =
-               Projects.update_project(user, workspace.id, project.id, %{name: "New Name"})
-
-      assert updated_project.slug == "new-name"
+      assert {:ok, updated_project} = Projects.update_project(user, workspace.id, project.id, %{name: "New Name"})
+      assert updated_project.slug == "original-name"
+      assert updated_project.name == "New Name"
     end
 
-    test "handles slug collision on update within same workspace" do
+    test "keeps original slug when updating name to existing name" do
       user = user_fixture()
       workspace = workspace_fixture(user)
       project1 = project_fixture(user, workspace, %{name: "First Project"})
@@ -480,13 +479,11 @@ defmodule Jarga.ProjectsTest do
       assert project1.slug == "first-project"
       assert project2.slug == "second-project"
 
-      # Try to update project2 to have same name as project1
-      assert {:ok, updated} =
-               Projects.update_project(user, workspace.id, project2.id, %{name: "First Project"})
-
-      # Should have random suffix to avoid collision
-      assert updated.slug =~ ~r/^first-project-[a-z0-9]+$/
-      assert updated.slug != project1.slug
+      # Update project2 to have same name as project1
+      assert {:ok, updated} = Projects.update_project(user, workspace.id, project2.id, %{name: "First Project"})
+      # Slug should remain unchanged
+      assert updated.slug == "second-project"
+      assert updated.name == "First Project"
     end
   end
 

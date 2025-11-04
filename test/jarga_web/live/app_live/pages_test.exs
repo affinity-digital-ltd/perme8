@@ -127,9 +127,8 @@ defmodule JargaWeb.AppLive.PagesTest do
         is_public: false
       })
 
-      assert_raise Ecto.NoResultsError, fn ->
+      {:error, {:redirect, %{to: "/app/workspaces"}}} =
         live(conn, ~p"/app/workspaces/#{other_workspace.slug}/pages/#{other_page.slug}")
-      end
     end
 
     test "allows workspace members to view public pages from other users", %{conn: conn, user: user, workspace: workspace} do
@@ -160,15 +159,13 @@ defmodule JargaWeb.AppLive.PagesTest do
       })
 
       # First user should NOT be able to view it
-      assert_raise Ecto.NoResultsError, fn ->
+      {:error, {:redirect, %{to: "/app/workspaces"}}} =
         live(conn, ~p"/app/workspaces/#{workspace.slug}/pages/#{private_page.slug}")
-      end
     end
 
     test "shows 404 for non-existent page", %{conn: conn, workspace: workspace} do
-      assert_raise Ecto.NoResultsError, fn ->
+      {:error, {:redirect, %{to: "/app/workspaces"}}} =
         live(conn, ~p"/app/workspaces/#{workspace.slug}/pages/nonexistent-slug")
-      end
     end
 
     test "has delete page button", %{conn: conn, user: user, workspace: workspace} do

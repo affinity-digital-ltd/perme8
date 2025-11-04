@@ -8,41 +8,37 @@ defmodule JargaWeb.AppLive.Pages.Show do
     user = socket.assigns.current_scope.user
 
     # Get workspace first
-    workspace = Workspaces.get_workspace_by_slug!(user, workspace_slug)
+    with {:ok, workspace} <- Workspaces.get_workspace_by_slug(user, workspace_slug),
+         {:ok, page} <- get_page_by_slug(user, workspace.id, page_slug),
+         {:ok, project} <- get_project_if_exists(user, page) do
+      # Get the note component (first note in page_components)
+      note = get_note_component(page)
 
-    # Get the page by slug (will raise if not found or unauthorized)
-    # Preload page_components
-    page = Pages.get_page_by_slug!(user, workspace.id, page_slug)
-    |> Jarga.Repo.preload(:page_components)
+      # Subscribe to page updates via PubSub for collaborative editing
+      if connected?(socket) do
+        Phoenix.PubSub.subscribe(Jarga.PubSub, "page:#{page.id}")
+        Phoenix.PubSub.subscribe(Jarga.PubSub, "workspace:#{workspace.id}")
+      end
 
-    # Get project context if applicable
-    project = if page.project_id do
-      Projects.get_project!(user, page.workspace_id, page.project_id)
+      # Generate user ID for collaborative editing
+      collab_user_id = generate_user_id()
+
+      {:ok,
+       socket
+       |> assign(:page, page)
+       |> assign(:note, note)
+       |> assign(:workspace, workspace)
+       |> assign(:project, project)
+       |> assign(:user_id, collab_user_id)
+       |> assign(:editing_title, false)
+       |> assign(:page_form, to_form(%{"title" => page.title}))}
     else
-      nil
+      {:error, _reason} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Page not found")
+         |> redirect(to: ~p"/app/workspaces")}
     end
-
-    # Get the note component (first note in page_components)
-    note = get_note_component(page)
-
-    # Subscribe to page updates via PubSub for collaborative editing
-    if connected?(socket) do
-      Phoenix.PubSub.subscribe(Jarga.PubSub, "page:#{page.id}")
-      Phoenix.PubSub.subscribe(Jarga.PubSub, "workspace:#{workspace.id}")
-    end
-
-    # Generate user ID for collaborative editing
-    collab_user_id = generate_user_id()
-
-    {:ok,
-     socket
-     |> assign(:page, page)
-     |> assign(:note, note)
-     |> assign(:workspace, workspace)
-     |> assign(:project, project)
-     |> assign(:user_id, collab_user_id)
-     |> assign(:editing_title, false)
-     |> assign(:page_form, to_form(%{"title" => page.title}))}
   end
 
   @impl true
@@ -377,5 +373,20 @@ defmodule JargaWeb.AppLive.Pages.Show do
       </div>
     </Layouts.admin>
     """
+  end
+
+  defp get_page_by_slug(user, workspace_id, slug) do
+    Pages.get_page_by_slug(user, workspace_id, slug)
+  end
+
+  defp get_project_if_exists(user, page) do
+    if page.project_id do
+      case Projects.get_project(user, page.workspace_id, page.project_id) do
+        {:ok, project} -> {:ok, project}
+        error -> error
+      end
+    else
+      {:ok, nil}
+    end
   end
 end

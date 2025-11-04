@@ -421,7 +421,7 @@ defmodule Jarga.PagesTest do
       assert page2.slug == "same-title"
     end
 
-    test "updates slug when title changes" do
+    test "keeps slug stable when title changes" do
       user = user_fixture()
       workspace = workspace_fixture(user)
       {:ok, page} = Pages.create_page(user, workspace.id, %{title: "Original Title"})
@@ -429,10 +429,11 @@ defmodule Jarga.PagesTest do
       assert page.slug == "original-title"
 
       assert {:ok, updated_page} = Pages.update_page(user, page.id, %{title: "New Title"})
-      assert updated_page.slug == "new-title"
+      assert updated_page.slug == "original-title"
+      assert updated_page.title == "New Title"
     end
 
-    test "handles slug collision on update within same workspace" do
+    test "keeps original slug when updating title to existing name" do
       user = user_fixture()
       workspace = workspace_fixture(user)
       {:ok, page1} = Pages.create_page(user, workspace.id, %{title: "First Page"})
@@ -441,11 +442,11 @@ defmodule Jarga.PagesTest do
       assert page1.slug == "first-page"
       assert page2.slug == "second-page"
 
-      # Try to update page2 to have same title as page1
+      # Update page2 to have same title as page1
       assert {:ok, updated} = Pages.update_page(user, page2.id, %{title: "First Page"})
-      # Should have random suffix to avoid collision
-      assert updated.slug =~ ~r/^first-page-[a-z0-9]+$/
-      assert updated.slug != page1.slug
+      # Slug should remain unchanged
+      assert updated.slug == "second-page"
+      assert updated.title == "First Page"
     end
   end
 

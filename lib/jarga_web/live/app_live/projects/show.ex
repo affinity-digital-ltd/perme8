@@ -169,23 +169,29 @@ defmodule JargaWeb.AppLive.Projects.Show do
       ) do
     user = socket.assigns.current_scope.user
 
-    # This will raise if user is not a member
-    workspace = Workspaces.get_workspace_by_slug!(user, workspace_slug)
-    project = Projects.get_project_by_slug!(user, workspace.id, project_slug)
-    pages = Pages.list_pages_for_project(user, workspace.id, project.id)
+    with {:ok, workspace} <- Workspaces.get_workspace_by_slug(user, workspace_slug),
+         {:ok, project} <- get_project_by_slug(user, workspace.id, project_slug) do
+      pages = Pages.list_pages_for_project(user, workspace.id, project.id)
 
-    # Subscribe to workspace-specific PubSub topic for real-time updates
-    if connected?(socket) do
-      Phoenix.PubSub.subscribe(Jarga.PubSub, "workspace:#{workspace.id}")
+      # Subscribe to workspace-specific PubSub topic for real-time updates
+      if connected?(socket) do
+        Phoenix.PubSub.subscribe(Jarga.PubSub, "workspace:#{workspace.id}")
+      end
+
+      {:ok,
+       socket
+       |> assign(:workspace, workspace)
+       |> assign(:project, project)
+       |> assign(:pages, pages)
+       |> assign(:show_page_modal, false)
+       |> assign(:page_form, to_form(%{"title" => ""}))}
+    else
+      {:error, _reason} ->
+        {:ok,
+         socket
+         |> put_flash(:error, "Project not found")
+         |> redirect(to: ~p"/app/workspaces")}
     end
-
-    {:ok,
-     socket
-     |> assign(:workspace, workspace)
-     |> assign(:project, project)
-     |> assign(:pages, pages)
-     |> assign(:show_page_modal, false)
-     |> assign(:page_form, to_form(%{"title" => ""}))}
   end
 
   @impl true
@@ -291,5 +297,9 @@ defmodule JargaWeb.AppLive.Projects.Show do
     else
       {:noreply, socket}
     end
+  end
+
+  defp get_project_by_slug(user, workspace_id, slug) do
+    Projects.get_project_by_slug(user, workspace_id, slug)
   end
 end

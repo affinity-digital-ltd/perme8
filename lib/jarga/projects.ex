@@ -73,6 +73,30 @@ defmodule Jarga.Projects do
   @doc """
   Gets a single project for a user in a workspace.
 
+  Returns {:ok, project} or {:error, :project_not_found}
+
+  ## Examples
+
+      iex> get_project(user, workspace_id, project_id)
+      {:ok, %Project{}}
+
+      iex> get_project(user, workspace_id, "non-existent-id")
+      {:error, :project_not_found}
+
+  """
+  def get_project(%User{} = user, workspace_id, project_id) do
+    project = Queries.for_user_by_id(user, workspace_id, project_id)
+    |> Repo.one()
+
+    case project do
+      nil -> {:error, :project_not_found}
+      project -> {:ok, project}
+    end
+  end
+
+  @doc """
+  Gets a single project for a user in a workspace.
+
   Raises `Ecto.NoResultsError` if the Project does not exist,
   if the user is not a member of the workspace, or if the project
   doesn't belong to the specified workspace.
@@ -89,6 +113,30 @@ defmodule Jarga.Projects do
   def get_project!(%User{} = user, workspace_id, project_id) do
     Queries.for_user_by_id(user, workspace_id, project_id)
     |> Repo.one!()
+  end
+
+  @doc """
+  Gets a single project by slug for a user in a workspace.
+
+  Returns {:ok, project} or {:error, :project_not_found}
+
+  ## Examples
+
+      iex> get_project_by_slug(user, workspace_id, "my-project")
+      {:ok, %Project{}}
+
+      iex> get_project_by_slug(user, workspace_id, "non-existent-slug")
+      {:error, :project_not_found}
+
+  """
+  def get_project_by_slug(%User{} = user, workspace_id, slug) do
+    project = Queries.for_user_by_slug(user, workspace_id, slug)
+    |> Repo.one()
+
+    case project do
+      nil -> {:error, :project_not_found}
+      project -> {:ok, project}
+    end
   end
 
   @doc """
