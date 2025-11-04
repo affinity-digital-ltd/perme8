@@ -16,6 +16,24 @@ defmodule JargaWeb.UserLive.SettingsTest do
       assert html =~ "Save Password"
     end
 
+    test "uses admin layout with sidebar navigation", %{conn: conn} do
+      user = user_fixture()
+
+      {:ok, _lv, html} =
+        conn
+        |> log_in_user(user)
+        |> live(~p"/users/settings")
+
+      # Verify admin layout elements are present
+      assert html =~ user.email
+      assert html =~ user.first_name
+      assert html =~ user.last_name
+      assert html =~ "Home"
+      assert html =~ "Settings"
+      assert html =~ "Log out"
+      assert html =~ "Theme"
+    end
+
     test "redirects if user is not logged in", %{conn: conn} do
       assert {:error, redirect} = live(conn, ~p"/users/settings")
 

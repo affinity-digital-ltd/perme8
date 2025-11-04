@@ -91,16 +91,16 @@ cd assets && npm install
 mix phx.server
 ```
 
-3. Visit [`localhost:4000/editor`](http://localhost:4000/editor) in your browser
+3. Visit [`localhost:4000/app/editor`](http://localhost:4000/app/editor) in your browser
 
 ### Testing Collaboration
 
-1. Open the editor in your browser: `http://localhost:4000/editor`
+1. Open the editor in your browser: `http://localhost:4000/app/editor`
 2. Note the Document ID in the header
 3. Open the same URL in another browser window or tab
 4. Start typing in either window - changes will appear in real-time on both!
 
-You can also share specific documents by using the URL format: `http://localhost:4000/editor/{doc_id}`
+You can also share specific documents by using the URL format: `http://localhost:4000/app/editor/{doc_id}`
 
 ## Project Structure
 

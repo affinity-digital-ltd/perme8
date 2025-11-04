@@ -72,7 +72,7 @@ defmodule JargaWeb.UserLive.RegistrationTest do
 
       {:ok, _login_live, login_html} =
         lv
-        |> element("a", "Log in")
+        |> element("a.font-semibold", "Log in")
         |> render_click()
         |> follow_redirect(conn, ~p"/users/log-in")
 

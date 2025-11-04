@@ -20,7 +20,7 @@ defmodule JargaWeb.EditorLive do
   def mount(_params, _session, socket) do
     # Default to a random document ID
     doc_id = "doc_#{:rand.uniform(10000)}"
-    {:ok, push_navigate(socket, to: ~p"/editor/#{doc_id}")}
+    {:ok, push_navigate(socket, to: ~p"/app/editor/#{doc_id}")}
   end
 
   @impl true
@@ -97,7 +97,7 @@ defmodule JargaWeb.EditorLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.admin flash={@flash} current_scope={@current_scope}>
       <div class="h-screen flex flex-col">
         <div class="bg-gray-800 text-white p-4">
           <h1 class="text-2xl font-bold">Collaborative Markdown Editor (WYSIWYG + Yjs)</h1>
@@ -117,7 +117,7 @@ defmodule JargaWeb.EditorLive do
           </div>
         </div>
       </div>
-    </Layouts.app>
+    </Layouts.admin>
     """
   end
 end

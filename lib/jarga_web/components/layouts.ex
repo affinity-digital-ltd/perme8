@@ -12,67 +12,6 @@ defmodule JargaWeb.Layouts do
   embed_templates "layouts/*"
 
   @doc """
-  Renders your app layout.
-
-  This function is typically invoked from every template,
-  and it often contains your application menu, sidebar,
-  or similar.
-
-  ## Examples
-
-      <Layouts.app flash={@flash}>
-        <h1>Content</h1>
-      </Layouts.app>
-
-  """
-  attr :flash, :map, required: true, doc: "the map of flash messages"
-
-  attr :current_scope, :map,
-    default: nil,
-    doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
-
-  slot :inner_block, required: true
-
-  def app(assigns) do
-    ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
-      <div class="flex-1">
-        <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
-        </a>
-      </div>
-      <div class="flex-none">
-        <ul class="flex flex-column px-1 space-x-4 items-center">
-          <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
-          </li>
-          <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
-          </li>
-          <li>
-            <.theme_toggle />
-          </li>
-          <li>
-            <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </header>
-
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
-        {render_slot(@inner_block)}
-      </div>
-    </main>
-
-    <.flash_group flash={@flash} />
-    """
-  end
-
-  @doc """
   Shows the flash group with standard titles and content.
 
   ## Examples
@@ -116,37 +55,168 @@ defmodule JargaWeb.Layouts do
   end
 
   @doc """
+  Renders your admin layout with sidebar.
+
+  This layout is used for authenticated admin/app pages
+  and includes a sidebar navigation with links to main sections.
+
+  ## Examples
+
+      <Layouts.admin flash={@flash} current_scope={@current_scope}>
+        <h1>Content</h1>
+      </Layouts.admin>
+
+  """
+  attr :flash, :map, required: true, doc: "the map of flash messages"
+
+  attr :current_scope, :map,
+    required: true,
+    doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
+
+  slot :inner_block, required: true
+
+  def admin(assigns) do
+    ~H"""
+    <div class="drawer lg:drawer-open">
+      <input id="admin-drawer" type="checkbox" class="drawer-toggle" />
+      <div class="drawer-content flex flex-col">
+        <!-- Navbar for mobile -->
+        <div class="navbar bg-base-300 lg:hidden">
+          <div class="flex-none">
+            <label for="admin-drawer" class="btn btn-square btn-ghost">
+              <.icon name="hero-bars-3" class="size-6" />
+            </label>
+          </div>
+          <div class="flex-1 px-2 mx-2">
+            <span class="text-lg font-bold">Jarga</span>
+          </div>
+          <div class="flex-none">
+            <.theme_toggle />
+          </div>
+        </div>
+
+        <!-- Page content -->
+        <main class="flex-1 p-6 lg:p-8">
+          {render_slot(@inner_block)}
+        </main>
+
+        <.flash_group flash={@flash} />
+      </div>
+
+      <!-- Sidebar -->
+      <div class="drawer-side">
+        <label for="admin-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+        <aside class="bg-base-200 min-h-full w-80 p-4 flex flex-col">
+          <!-- Logo/Brand -->
+          <div class="px-4 py-6">
+            <.link navigate={~p"/app"} class="flex items-center gap-2">
+              <img src={~p"/images/logo.svg"} width="36" />
+              <span class="text-xl font-bold">Jarga</span>
+            </.link>
+          </div>
+
+          <!-- User info -->
+          <div class="px-4 py-4 border-b border-base-300">
+            <div class="flex items-center gap-3">
+              <div class="avatar placeholder">
+                <div class="bg-primary text-primary-content w-10 rounded-full">
+                  <span class="text-sm">
+                    {String.first(@current_scope.user.email) |> String.upcase()}
+                  </span>
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium truncate">
+                  {@current_scope.user.first_name} {@current_scope.user.last_name}
+                </p>
+                <p class="text-xs text-base-content/70 truncate">{@current_scope.user.email}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Navigation -->
+          <nav class="flex-1 py-4">
+            <ul class="menu gap-1">
+              <li>
+                <.link navigate={~p"/app"} class="flex items-center gap-3">
+                  <.icon name="hero-home" class="size-5" />
+                  <span>Home</span>
+                </.link>
+              </li>
+              <li>
+                <.link navigate={~p"/users/settings"} class="flex items-center gap-3">
+                  <.icon name="hero-cog-6-tooth" class="size-5" />
+                  <span>Settings</span>
+                </.link>
+              </li>
+              <li>
+                <.link href={~p"/users/log-out"} method="delete" class="flex items-center gap-3">
+                  <.icon name="hero-arrow-right-on-rectangle" class="size-5" />
+                  <span>Log out</span>
+                </.link>
+              </li>
+            </ul>
+          </nav>
+
+          <!-- Theme switcher at bottom -->
+          <div class="border-t border-base-300 pt-4">
+            <div class="px-4">
+              <p class="text-xs text-base-content/70 mb-2">Theme</p>
+              <.theme_toggle />
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
   Provides dark vs light theme toggle based on themes defined in app.css.
 
   See <head> in root.html.heex which applies the theme before page load.
   """
+  attr :size, :string, default: "md", values: ["xs", "sm", "md"], doc: "Size of the toggle component"
+
   def theme_toggle(assigns) do
+    {padding, icon_size} =
+      case assigns.size do
+        "xs" -> {"p-1", "size-3.5"}
+        "sm" -> {"p-1.5", "size-3"}
+        "md" -> {"p-2", "size-4"}
+      end
+
+    assigns =
+      assigns
+      |> assign(:padding, padding)
+      |> assign(:icon_size, icon_size)
+
     ~H"""
     <div class="card relative flex flex-row items-center border-2 border-base-300 bg-base-300 rounded-full">
       <div class="absolute w-1/3 h-full rounded-full border-1 border-base-200 bg-base-100 brightness-200 left-0 [[data-theme=light]_&]:left-1/3 [[data-theme=dark]_&]:left-2/3 transition-[left]" />
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class={"flex #{@padding} cursor-pointer w-1/3"}
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="system"
       >
-        <.icon name="hero-computer-desktop-micro" class="size-4 opacity-75 hover:opacity-100" />
+        <.icon name="hero-computer-desktop-micro" class={"#{@icon_size} opacity-75 hover:opacity-100"} />
       </button>
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class={"flex #{@padding} cursor-pointer w-1/3"}
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="light"
       >
-        <.icon name="hero-sun-micro" class="size-4 opacity-75 hover:opacity-100" />
+        <.icon name="hero-sun-micro" class={"#{@icon_size} opacity-75 hover:opacity-100"} />
       </button>
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class={"flex #{@padding} cursor-pointer w-1/3"}
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="dark"
       >
-        <.icon name="hero-moon-micro" class="size-4 opacity-75 hover:opacity-100" />
+        <.icon name="hero-moon-micro" class={"#{@icon_size} opacity-75 hover:opacity-100"} />
       </button>
     </div>
     """

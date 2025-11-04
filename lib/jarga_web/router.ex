@@ -21,12 +21,6 @@ defmodule JargaWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
-
-    live_session :editor,
-      on_mount: [{JargaWeb.UserAuth, :mount_current_scope}] do
-      live "/editor", EditorLive
-      live "/editor/:doc_id", EditorLive
-    end
   end
 
   # Other scopes may use custom stacks.
@@ -48,6 +42,19 @@ defmodule JargaWeb.Router do
 
       live_dashboard "/dashboard", metrics: JargaWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
+    end
+  end
+
+  ## App routes (authenticated)
+
+  scope "/app", JargaWeb do
+    pipe_through [:browser, :require_authenticated_user]
+
+    live_session :app,
+      on_mount: [{JargaWeb.UserAuth, :require_authenticated}] do
+      live "/", AppLive.Dashboard, :index
+      live "/editor", EditorLive
+      live "/editor/:doc_id", EditorLive
     end
   end
 

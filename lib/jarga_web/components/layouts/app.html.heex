@@ -1,0 +1,51 @@
+<div class="min-h-screen flex flex-col">
+  <header class="navbar bg-base-200 px-4 sm:px-6 lg:px-8">
+    <div class="flex-1">
+      <a href="/" class="flex items-center gap-2">
+        <img src={~p"/images/logo.svg"} width="36" />
+        <span class="text-xl font-bold">Jarga</span>
+      </a>
+    </div>
+    <div class="flex-none">
+      <ul class="menu menu-horizontal flex items-center gap-2">
+        <%= if @current_scope && @current_scope.user do %>
+          <li>
+            <span class="text-sm"><%= @current_scope.user.email %></span>
+          </li>
+          <li>
+            <.link navigate={~p"/users/settings"} class="btn btn-ghost btn-sm">
+              Settings
+            </.link>
+          </li>
+          <li>
+            <.link href={~p"/users/log-out"} method="delete" class="btn btn-ghost btn-sm">
+              Log out
+            </.link>
+          </li>
+        <% else %>
+          <li>
+            <.link navigate={~p"/users/register"} class="btn btn-ghost btn-sm">
+              Register
+            </.link>
+          </li>
+          <li>
+            <.link navigate={~p"/users/log-in"} class="btn btn-primary btn-sm">
+              Log in
+            </.link>
+          </li>
+        <% end %>
+        <li>
+          <.theme_toggle size="xs" />
+        </li>
+      </ul>
+    </div>
+  </header>
+
+  <main class="flex-1 px-4 py-20 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-2xl space-y-4">
+      <%= if Map.has_key?(assigns, :inner_content), do: @inner_content, else: render_slot(@inner_block) %>
+    </div>
+  </main>
+
+  <.flash_group flash={@flash} />
+</div>
