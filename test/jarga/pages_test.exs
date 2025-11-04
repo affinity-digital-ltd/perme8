@@ -66,8 +66,12 @@ defmodule Jarga.PagesTest do
       assert page.is_public == false
       assert page.is_pinned == false
 
-      # Check that a default note was created
-      assert page.note_id != nil
+      # Check that a default note was created via page_component
+      page = Repo.preload(page, :page_components)
+      assert length(page.page_components) == 1
+      [component] = page.page_components
+      assert component.component_type == "note"
+      assert component.component_id != nil
     end
 
     test "creates page with valid attributes in project" do

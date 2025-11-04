@@ -7,6 +7,7 @@ defmodule Jarga.Pages.Queries do
   import Ecto.Query
   alias Jarga.Pages.Page
   alias Jarga.Accounts.User
+  alias Jarga.Workspaces.WorkspaceMember
 
   @doc """
   Base query for pages.
@@ -17,10 +18,24 @@ defmodule Jarga.Pages.Queries do
 
   @doc """
   Filter pages by user.
+  Only returns pages owned by the user.
   """
   def for_user(query, %User{id: user_id}) do
     from [page: p] in query,
       where: p.user_id == ^user_id
+  end
+
+  @doc """
+  Filter pages that are viewable by user.
+  Returns pages that are either:
+  - Owned by the user, OR
+  - Public pages in workspaces where the user is a member
+  """
+  def viewable_by_user(query, %User{id: user_id}) do
+    from [page: p] in query,
+      left_join: wm in WorkspaceMember,
+      on: wm.workspace_id == p.workspace_id and wm.user_id == ^user_id,
+      where: p.user_id == ^user_id or (p.is_public == true and not is_nil(wm.id))
   end
 
   @doc """

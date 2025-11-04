@@ -11,7 +11,9 @@ defmodule JargaWeb.AppLive.Pages.Show do
     workspace = Workspaces.get_workspace_by_slug!(user, workspace_slug)
 
     # Get the page by slug (will raise if not found or unauthorized)
+    # Preload page_components
     page = Pages.get_page_by_slug!(user, workspace.id, page_slug)
+    |> Jarga.Repo.preload(:page_components)
 
     # Get project context if applicable
     project = if page.project_id do
@@ -20,8 +22,8 @@ defmodule JargaWeb.AppLive.Pages.Show do
       nil
     end
 
-    # Get the embedded note
-    note = Notes.get_note!(user, page.note_id)
+    # Get the note component (first note in page_components)
+    note = get_note_component(page)
 
     # Subscribe to page updates via PubSub for collaborative editing
     if connected?(socket) do
@@ -142,6 +144,23 @@ defmodule JargaWeb.AppLive.Pages.Show do
   end
 
   @impl true
+  def handle_event("toggle_public", _params, socket) do
+    page = socket.assigns.page
+    user = socket.assigns.current_scope.user
+
+    case Pages.update_page(user, page.id, %{is_public: !page.is_public}) do
+      {:ok, updated_page} ->
+        {:noreply,
+         socket
+         |> assign(:page, updated_page)
+         |> put_flash(:info, if(updated_page.is_public, do: "Page is now shared with workspace members", else: "Page is now private"))}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to update sharing status")}
+    end
+  end
+
+  @impl true
   def handle_event("delete_page", _params, socket) do
     page = socket.assigns.page
     workspace = socket.assigns.workspace
@@ -183,6 +202,17 @@ defmodule JargaWeb.AppLive.Pages.Show do
     end
   end
 
+  defp get_note_component(page) do
+    # Get the first note component from page_components
+    case Enum.find(page.page_components, fn pc -> pc.component_type == "note" end) do
+      %{component_id: note_id} ->
+        Jarga.Repo.get!(Jarga.Notes.Note, note_id)
+
+      nil ->
+        raise "Page has no note component"
+    end
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -212,6 +242,15 @@ defmodule JargaWeb.AppLive.Pages.Show do
           </div>
 
           <div class="flex items-center space-x-4">
+            <!-- Share toggle button -->
+            <button
+              type="button"
+              phx-click="toggle_public"
+              class={"px-3 py-1 rounded text-sm " <> if @page.is_public, do: "bg-green-600 text-white", else: "bg-gray-600 text-gray-300 hover:bg-gray-500"}
+            >
+              <%= if @page.is_public, do: "🌐 Shared", else: "🔒 Private" %>
+            </button>
+
             <!-- Pin button -->
             <button
               type="button"

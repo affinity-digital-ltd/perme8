@@ -18,7 +18,9 @@ defmodule Jarga.Pages.Page do
     belongs_to :workspace, Jarga.Workspaces.Workspace, type: Ecto.UUID
     belongs_to :project, Jarga.Projects.Project, type: Ecto.UUID
     belongs_to :created_by_user, Jarga.Accounts.User, foreign_key: :created_by
-    belongs_to :note, Jarga.Notes.Note, type: Ecto.UUID
+
+    # Polymorphic components (notes, task lists, sheets, etc.)
+    has_many :page_components, Jarga.Pages.PageComponent, preload_order: [asc: :position]
 
     timestamps(type: :utc_datetime)
   end
@@ -26,7 +28,7 @@ defmodule Jarga.Pages.Page do
   @doc false
   def changeset(page, attrs) do
     page
-    |> cast(attrs, [:title, :user_id, :workspace_id, :project_id, :created_by, :note_id, :is_public, :is_pinned])
+    |> cast(attrs, [:title, :user_id, :workspace_id, :project_id, :created_by, :is_public, :is_pinned])
     |> validate_required([:title, :user_id, :workspace_id, :created_by])
     |> validate_length(:title, min: 1)
     |> generate_slug()
@@ -36,7 +38,6 @@ defmodule Jarga.Pages.Page do
     |> foreign_key_constraint(:workspace_id)
     |> foreign_key_constraint(:project_id)
     |> foreign_key_constraint(:created_by)
-    |> foreign_key_constraint(:note_id)
   end
 
   defp generate_slug(changeset) do

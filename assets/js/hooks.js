@@ -19,12 +19,6 @@ export const MilkdownEditor = {
     const initialYjsState = this.el.dataset.yjsState || ''
     const initialContent = this.el.dataset.initialContent || ''
 
-    console.log('Mounting editor with initial state:', {
-      hasYjsState: initialYjsState.length > 0,
-      yjsStateLength: initialYjsState.length,
-      hasInitialContent: initialContent.length > 0
-    })
-
     // Initialize collaboration manager with initial state
     this.collaborationManager = new CollaborationManager()
     this.collaborationManager.initialize(initialYjsState)

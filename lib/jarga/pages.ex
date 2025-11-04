@@ -62,7 +62,7 @@ defmodule Jarga.Pages do
     Queries.base()
     |> Queries.by_slug(slug)
     |> Queries.for_workspace(workspace_id)
-    |> Queries.for_user(user)
+    |> Queries.viewable_by_user(user)
     |> Repo.one!()
   end
 
@@ -83,9 +83,11 @@ defmodule Jarga.Pages do
 
   """
   def create_page(%User{} = user, workspace_id, attrs) do
+    alias Jarga.Pages.PageComponent
+
     with {:ok, _workspace} <- Authorization.verify_workspace_access(user, workspace_id),
          :ok <- Authorization.verify_project_in_workspace(workspace_id, Map.get(attrs, :project_id)) do
-      # Create the page and embedded note in a transaction
+      # Create the page, note, and page_component in a transaction
       Ecto.Multi.new()
       |> Ecto.Multi.run(:note, fn _repo, _changes ->
         note_attrs = %{
@@ -95,16 +97,25 @@ defmodule Jarga.Pages do
 
         Notes.create_note(user, workspace_id, note_attrs)
       end)
-      |> Ecto.Multi.run(:page, fn _repo, %{note: note} ->
+      |> Ecto.Multi.run(:page, fn _repo, _changes ->
         attrs_with_user = Map.merge(attrs, %{
           user_id: user.id,
           workspace_id: workspace_id,
-          created_by: user.id,
-          note_id: note.id
+          created_by: user.id
         })
 
         %Page{}
         |> Page.changeset(attrs_with_user)
+        |> Repo.insert()
+      end)
+      |> Ecto.Multi.run(:page_component, fn _repo, %{page: page, note: note} ->
+        %PageComponent{}
+        |> PageComponent.changeset(%{
+          page_id: page.id,
+          component_type: "note",
+          component_id: note.id,
+          position: 0
+        })
         |> Repo.insert()
       end)
       |> Repo.transaction()
@@ -112,6 +123,7 @@ defmodule Jarga.Pages do
         {:ok, %{page: page}} -> {:ok, page}
         {:error, :note, reason, _} -> {:error, reason}
         {:error, :page, reason, _} -> {:error, reason}
+        {:error, :page_component, reason, _} -> {:error, reason}
       end
     end
   end
@@ -171,9 +183,11 @@ defmodule Jarga.Pages do
   end
 
   @doc """
-  Lists all pages for a user in a workspace.
+  Lists all pages viewable by a user in a workspace.
 
-  Only returns pages created by the user.
+  Returns pages that are either:
+  - Created by the user, OR
+  - Public pages created by other workspace members
 
   ## Examples
 
@@ -183,16 +197,18 @@ defmodule Jarga.Pages do
   """
   def list_pages_for_workspace(%User{} = user, workspace_id) do
     Queries.base()
-    |> Queries.for_user(user)
     |> Queries.for_workspace(workspace_id)
+    |> Queries.viewable_by_user(user)
     |> Queries.ordered()
     |> Repo.all()
   end
 
   @doc """
-  Lists all pages for a user in a project.
+  Lists all pages viewable by a user in a project.
 
-  Only returns pages created by the user.
+  Returns pages that are either:
+  - Created by the user, OR
+  - Public pages created by other workspace members
 
   ## Examples
 
@@ -202,9 +218,9 @@ defmodule Jarga.Pages do
   """
   def list_pages_for_project(%User{} = user, workspace_id, project_id) do
     Queries.base()
-    |> Queries.for_user(user)
     |> Queries.for_workspace(workspace_id)
     |> Queries.for_project(project_id)
+    |> Queries.viewable_by_user(user)
     |> Queries.ordered()
     |> Repo.all()
   end

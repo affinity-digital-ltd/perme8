@@ -97,15 +97,71 @@ defmodule JargaWeb.AppLive.PagesTest do
       assert updated_page.is_pinned == true
     end
 
-    test "does not allow access to other users' pages", %{conn: conn} do
+    test "allows toggling public status", %{conn: conn, user: user, workspace: workspace} do
+      {:ok, page} = Pages.create_page(user, workspace.id, %{
+        title: "Test Page",
+        is_public: false
+      })
+
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/pages/#{page.slug}")
+
+      # Toggle public
+      lv |> element("button[phx-click='toggle_public']") |> render_click()
+
+      # Verify public status changed
+      updated_page = Pages.get_page!(user, page.id)
+      assert updated_page.is_public == true
+
+      # Toggle back to private
+      lv |> element("button[phx-click='toggle_public']") |> render_click()
+
+      updated_page = Pages.get_page!(user, page.id)
+      assert updated_page.is_public == false
+    end
+
+    test "does not allow access to private pages from other users", %{conn: conn} do
       other_user = user_fixture()
       other_workspace = workspace_fixture(other_user)
       {:ok, other_page} = Pages.create_page(other_user, other_workspace.id, %{
-        title: "Private Page"
+        title: "Private Page",
+        is_public: false
       })
 
       assert_raise Ecto.NoResultsError, fn ->
         live(conn, ~p"/app/workspaces/#{other_workspace.slug}/pages/#{other_page.slug}")
+      end
+    end
+
+    test "allows workspace members to view public pages from other users", %{conn: conn, user: user, workspace: workspace} do
+      # Create another user and add them to the same workspace
+      other_user = user_fixture()
+      {:ok, _member} = Jarga.Workspaces.invite_member(user, workspace.id, other_user.email, :member)
+
+      # Other user creates a public page
+      {:ok, public_page} = Pages.create_page(other_user, workspace.id, %{
+        title: "Public Page",
+        is_public: true
+      })
+
+      # First user should be able to view it
+      {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/pages/#{public_page.slug}")
+      assert html =~ "Public Page"
+    end
+
+    test "workspace members cannot view private pages from other users", %{conn: conn, user: user, workspace: workspace} do
+      # Create another user and add them to the same workspace
+      other_user = user_fixture()
+      {:ok, _member} = Jarga.Workspaces.invite_member(user, workspace.id, other_user.email, :member)
+
+      # Other user creates a private page
+      {:ok, private_page} = Pages.create_page(other_user, workspace.id, %{
+        title: "Private Page",
+        is_public: false
+      })
+
+      # First user should NOT be able to view it
+      assert_raise Ecto.NoResultsError, fn ->
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/pages/#{private_page.slug}")
       end
     end
 

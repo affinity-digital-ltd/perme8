@@ -48,18 +48,13 @@ export class CollaborationManager {
     if (initialStateBase64 && initialStateBase64.length > 0) {
       try {
         const stateArray = Uint8Array.from(atob(initialStateBase64), c => c.charCodeAt(0))
-        console.log('Applying initial Yjs state, size:', stateArray.length)
         Y.applyUpdate(this.ydoc, stateArray)
-        console.log('Initial Yjs state applied successfully')
       } catch (error) {
         console.error('Error applying initial Yjs state:', error)
       }
-    } else {
-      console.log('No initial Yjs state to apply')
     }
 
     this.yXmlFragment = this.ydoc.get('prosemirror', Y.XmlFragment)
-    console.log('YXmlFragment created, has content:', this.yXmlFragment.toString().length > 0)
 
     // Create awareness instance
     this.awareness = new Awareness(this.ydoc)
