@@ -1,0 +1,165 @@
+defmodule Jarga.Notes do
+  @moduledoc """
+  The Notes context.
+
+  Handles note creation, management, and yjs collaborative state.
+  Notes are private to the user who created them, regardless of workspace membership.
+  """
+
+  # Core context - cannot depend on JargaWeb (interface layer)
+  # Exports: Main context module and shared types (Note)
+  # Internal modules (Queries, Policies) remain private
+  use Boundary,
+    top_level?: true,
+    deps: [Jarga.Accounts, Jarga.Workspaces, Jarga.Projects, Jarga.Repo],
+    exports: [{Note, []}]
+
+  alias Jarga.Repo
+  alias Jarga.Accounts.User
+  alias Jarga.Notes.{Note, Queries}
+  alias Jarga.Notes.Policies.Authorization
+
+  @doc """
+  Gets a single note for a user.
+
+  Only returns the note if it belongs to the user.
+  Raises `Ecto.NoResultsError` if the note does not exist or belongs to another user.
+
+  ## Examples
+
+      iex> get_note!(user, note_id)
+      %Note{}
+
+      iex> get_note!(user, "non-existent-id")
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_note!(%User{} = user, note_id) do
+    Queries.base()
+    |> Queries.by_id(note_id)
+    |> Queries.for_user(user)
+    |> Repo.one!()
+  end
+
+  @doc """
+  Creates a note for a user in a workspace.
+
+  The user must be a member of the workspace.
+  The note is private to the user who created it.
+
+  ## Examples
+
+      iex> create_note(user, workspace_id, %{id: uuid, note_content: %{}})
+      {:ok, %Note{}}
+
+      iex> create_note(user, non_member_workspace_id, %{id: uuid})
+      {:error, :unauthorized}
+
+  """
+  def create_note(%User{} = user, workspace_id, attrs) do
+    with {:ok, _workspace} <- Authorization.verify_workspace_access(user, workspace_id),
+         :ok <- Authorization.verify_project_in_workspace(workspace_id, Map.get(attrs, :project_id)) do
+      attrs_with_user = Map.merge(attrs, %{
+        user_id: user.id,
+        workspace_id: workspace_id
+      })
+
+      %Note{}
+      |> Note.changeset(attrs_with_user)
+      |> Repo.insert()
+    end
+  end
+
+  @doc """
+  Updates a note.
+
+  Only the owner of the note can update it.
+
+  ## Examples
+
+      iex> update_note(user, note_id, %{note_content: new_content})
+      {:ok, %Note{}}
+
+      iex> update_note(user, note_id, %{note_content: ""})
+      {:error, %Ecto.Changeset{}}
+
+      iex> update_note(user, other_user_note_id, %{note_content: content})
+      {:error, :unauthorized}
+
+  """
+  def update_note(%User{} = user, note_id, attrs) do
+    case Authorization.verify_note_access(user, note_id) do
+      {:ok, note} ->
+        note
+        |> Note.changeset(attrs)
+        |> Repo.update()
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Deletes a note.
+
+  Only the owner of the note can delete it.
+
+  ## Examples
+
+      iex> delete_note(user, note_id)
+      {:ok, %Note{}}
+
+      iex> delete_note(user, other_user_note_id)
+      {:error, :unauthorized}
+
+  """
+  def delete_note(%User{} = user, note_id) do
+    case Authorization.verify_note_access(user, note_id) do
+      {:ok, note} ->
+        Repo.delete(note)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Lists all notes for a user in a workspace.
+
+  Only returns notes created by the user, even if other users
+  have notes in the same workspace.
+
+  ## Examples
+
+      iex> list_notes_for_workspace(user, workspace_id)
+      [%Note{}, ...]
+
+  """
+  def list_notes_for_workspace(%User{} = user, workspace_id) do
+    Queries.base()
+    |> Queries.for_user(user)
+    |> Queries.for_workspace(workspace_id)
+    |> Queries.ordered()
+    |> Repo.all()
+  end
+
+  @doc """
+  Lists all notes for a user in a project.
+
+  Only returns notes created by the user.
+
+  ## Examples
+
+      iex> list_notes_for_project(user, workspace_id, project_id)
+      [%Note{}, ...]
+
+  """
+  def list_notes_for_project(%User{} = user, workspace_id, project_id) do
+    Queries.base()
+    |> Queries.for_user(user)
+    |> Queries.for_workspace(workspace_id)
+    |> Queries.for_project(project_id)
+    |> Queries.ordered()
+    |> Repo.all()
+  end
+end

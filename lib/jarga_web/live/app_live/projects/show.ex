@@ -1,7 +1,7 @@
 defmodule JargaWeb.AppLive.Projects.Show do
   use JargaWeb, :live_view
 
-  alias Jarga.{Workspaces, Projects}
+  alias Jarga.{Workspaces, Projects, Pages}
   alias JargaWeb.Layouts
 
   @impl true
@@ -42,6 +42,62 @@ defmodule JargaWeb.AppLive.Projects.Show do
           </div>
         <% end %>
 
+        <%!-- Pages Section --%>
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold">Pages</h2>
+            <.button variant="primary" size="sm" phx-click="show_page_modal">
+              <.icon name="hero-document-plus" class="size-4" />
+              New Page
+            </.button>
+          </div>
+
+          <%= if @pages == [] do %>
+            <div class="card bg-base-200">
+              <div class="card-body text-center">
+                <div class="flex flex-col items-center gap-4 py-8">
+                  <.icon name="hero-document" class="size-16 opacity-50" />
+                  <div>
+                    <h3 class="text-lg font-semibold">No pages yet</h3>
+                    <p class="text-base-content/70">
+                      Create your first page for this project
+                    </p>
+                  </div>
+                  <.button variant="primary" phx-click="show_page_modal">
+                    Create Page
+                  </.button>
+                </div>
+              </div>
+            </div>
+          <% else %>
+            <div class="grid gap-2">
+              <%= for page <- @pages do %>
+                <.link
+                  navigate={~p"/app/workspaces/#{@workspace.slug}/pages/#{page.slug}"}
+                  class="card bg-base-200 hover:bg-base-300 transition-colors"
+                  data-page-id={page.id}
+                >
+                  <div class="card-body p-4 flex-row items-center gap-3">
+                    <.icon name="hero-document-text" class="size-5 text-primary" />
+                    <div class="flex-1 min-w-0">
+                      <h3 class="font-semibold truncate">{page.title}</h3>
+                      <p class="text-xs text-base-content/70">
+                        Updated {Calendar.strftime(page.updated_at, "%b %d, %Y at %I:%M %p")}
+                      </p>
+                    </div>
+                    <%= if page.is_pinned do %>
+                      <div class="badge badge-warning badge-sm gap-1">
+                        <span class="text-xs">📌</span>
+                        Pinned
+                      </div>
+                    <% end %>
+                  </div>
+                </.link>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+
         <div>
           <h2 class="text-lg font-semibold mb-4">Project Details</h2>
           <div class="card bg-base-200">
@@ -67,6 +123,40 @@ defmodule JargaWeb.AppLive.Projects.Show do
           </div>
         </div>
       </div>
+
+      <%!-- New Page Modal --%>
+      <%= if @show_page_modal do %>
+        <div class="modal modal-open">
+          <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">Create New Page</h3>
+
+            <.form
+              for={@page_form}
+              id="page-form"
+              phx-submit="create_page"
+              class="space-y-4"
+            >
+              <.input
+                field={@page_form[:title]}
+                type="text"
+                label="Title"
+                placeholder="Page Title"
+                required
+              />
+
+              <div class="modal-action">
+                <.button type="button" variant="ghost" phx-click="hide_page_modal">
+                  Cancel
+                </.button>
+                <.button type="submit" variant="primary">
+                  Create Page
+                </.button>
+              </div>
+            </.form>
+          </div>
+          <div class="modal-backdrop" phx-click="hide_page_modal"></div>
+        </div>
+      <% end %>
     </Layouts.admin>
     """
   end
@@ -82,11 +172,55 @@ defmodule JargaWeb.AppLive.Projects.Show do
     # This will raise if user is not a member
     workspace = Workspaces.get_workspace_by_slug!(user, workspace_slug)
     project = Projects.get_project_by_slug!(user, workspace.id, project_slug)
+    pages = Pages.list_pages_for_project(user, workspace.id, project.id)
 
     {:ok,
      socket
      |> assign(:workspace, workspace)
-     |> assign(:project, project)}
+     |> assign(:project, project)
+     |> assign(:pages, pages)
+     |> assign(:show_page_modal, false)
+     |> assign(:page_form, to_form(%{"title" => ""}))}
+  end
+
+  @impl true
+  def handle_event("show_page_modal", _params, socket) do
+    {:noreply, assign(socket, show_page_modal: true)}
+  end
+
+  @impl true
+  def handle_event("hide_page_modal", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:show_page_modal, false)
+     |> assign(:page_form, to_form(%{"title" => ""}))}
+  end
+
+  @impl true
+  def handle_event("create_page", %{"title" => title}, socket) do
+    user = socket.assigns.current_scope.user
+    workspace_id = socket.assigns.workspace.id
+    project_id = socket.assigns.project.id
+
+    case Pages.create_page(user, workspace_id, %{title: title, project_id: project_id}) do
+      {:ok, page} ->
+        # Reload pages
+        pages = Pages.list_pages_for_project(user, workspace_id, project_id)
+
+        {:noreply,
+         socket
+         |> assign(:pages, pages)
+         |> assign(:show_page_modal, false)
+         |> assign(:page_form, to_form(%{"title" => ""}))
+         |> put_flash(:info, "Page created successfully")
+         |> push_navigate(to: ~p"/app/workspaces/#{socket.assigns.workspace.slug}/pages/#{page.slug}")}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, page_form: to_form(changeset))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, "Failed to create page")}
+    end
   end
 
   @impl true

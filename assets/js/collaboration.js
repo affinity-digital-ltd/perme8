@@ -38,11 +38,28 @@ export class CollaborationManager {
 
   /**
    * Initialize the collaboration manager with a Yjs document.
+   * @param {string} initialStateBase64 - Optional Base64 encoded initial Yjs state
    * @returns {void}
    */
-  initialize() {
+  initialize(initialStateBase64 = null) {
     this.ydoc = new Y.Doc()
+
+    // Apply initial state if provided
+    if (initialStateBase64 && initialStateBase64.length > 0) {
+      try {
+        const stateArray = Uint8Array.from(atob(initialStateBase64), c => c.charCodeAt(0))
+        console.log('Applying initial Yjs state, size:', stateArray.length)
+        Y.applyUpdate(this.ydoc, stateArray)
+        console.log('Initial Yjs state applied successfully')
+      } catch (error) {
+        console.error('Error applying initial Yjs state:', error)
+      }
+    } else {
+      console.log('No initial Yjs state to apply')
+    }
+
     this.yXmlFragment = this.ydoc.get('prosemirror', Y.XmlFragment)
+    console.log('YXmlFragment created, has content:', this.yXmlFragment.toString().length > 0)
 
     // Create awareness instance
     this.awareness = new Awareness(this.ydoc)
@@ -199,6 +216,19 @@ export class CollaborationManager {
    */
   getYDoc() {
     return this.ydoc
+  }
+
+  /**
+   * Get the complete document state as base64.
+   *
+   * @returns {string} Base64 encoded complete document state
+   */
+  getCompleteState() {
+    if (!this.ydoc) {
+      return ''
+    }
+    const state = Y.encodeStateAsUpdate(this.ydoc)
+    return btoa(String.fromCharCode(...state))
   }
 
   /**
