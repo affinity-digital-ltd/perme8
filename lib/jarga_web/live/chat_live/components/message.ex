@@ -41,7 +41,7 @@ defmodule JargaWeb.ChatLive.Components.Message do
     cond do
       diff_seconds < 60 -> "just now"
       diff_seconds < 3600 -> "#{div(diff_seconds, 60)}m ago"
-      diff_seconds < 86400 -> "#{div(diff_seconds, 3600)}h ago"
+      diff_seconds < 86_400 -> "#{div(diff_seconds, 3600)}h ago"
       true -> Calendar.strftime(timestamp, "%b %d, %I:%M %p")
     end
   end

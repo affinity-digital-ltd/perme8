@@ -55,7 +55,7 @@ defmodule Jarga.Documents.Infrastructure.Services.LlmClientTest do
       assert is_binary(chunk)
 
       # Should receive done
-      assert_receive {:done, _full_response}, 10000
+      assert_receive {:done, _full_response}, 10_000
 
       # Cleanup
       if Process.alive?(pid), do: Process.exit(pid, :normal)
