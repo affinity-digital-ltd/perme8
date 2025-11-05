@@ -42,11 +42,12 @@ defmodule JargaWeb.ChatLive.Panel do
           |> push_event("scroll_to_bottom", %{})
 
         Map.has_key?(assigns, :done) ->
-          # Add assistant message
+          # Add assistant message with source attribution
           assistant_message = %{
             role: "assistant",
             content: assigns.done,
-            timestamp: DateTime.utc_now()
+            timestamp: DateTime.utc_now(),
+            source: socket.assigns[:page_context][:page_info]
           }
 
           # Send for test assertions
@@ -151,12 +152,16 @@ defmodule JargaWeb.ChatLive.Panel do
     # Extract page content if viewing a page
     page_content = extract_page_content(assigns)
 
+    # Extract page information for source citation
+    page_info = extract_page_info(assigns)
+
     %{
       current_user: get_nested(assigns, [:current_user, :email]),
       current_workspace: get_nested(assigns, [:current_workspace, :name]),
       current_project: get_nested(assigns, [:current_project, :name]),
       page_title: assigns[:page_title],
       page_content: page_content,
+      page_info: page_info,
       # Additional context can be extracted from assigns
       # This is a simple implementation for PR #1
       assigns: Map.drop(assigns, [:socket, :flash, :myself])
@@ -172,6 +177,30 @@ defmodule JargaWeb.ChatLive.Panel do
 
       _ ->
         nil
+    end
+  end
+
+  defp extract_page_info(assigns) do
+    # Extract page metadata for source citations
+    workspace_slug = get_nested(assigns, [:current_workspace, :slug])
+    page_slug = get_nested(assigns, [:page, :slug])
+    page_title = assigns[:page_title]
+
+    # Build the page URL if we have the necessary information
+    page_url =
+      if workspace_slug && page_slug do
+        ~p"/app/workspaces/#{workspace_slug}/pages/#{page_slug}"
+      else
+        nil
+      end
+
+    if page_url && page_title do
+      %{
+        page_title: page_title,
+        page_url: page_url
+      }
+    else
+      nil
     end
   end
 

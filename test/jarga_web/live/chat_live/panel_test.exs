@@ -4,6 +4,8 @@ defmodule JargaWeb.ChatLive.PanelTest do
   import Phoenix.LiveViewTest
   import Jarga.AccountsFixtures
   import Jarga.WorkspacesFixtures
+  import Jarga.ProjectsFixtures
+  import Jarga.PagesFixtures
 
   describe "Panel component" do
     setup do
@@ -207,6 +209,33 @@ defmodule JargaWeb.ChatLive.PanelTest do
       # The panel component should have extracted context
       # We can't directly inspect the assigns, but we can verify the message was sent
       assert has_element?(view, ".chat.chat-end .chat-bubble", "What page am I on?")
+    end
+
+    test "extracts page content from note when viewing a page", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+
+      # Create a page with specific content
+      workspace = workspace_fixture(user, %{name: "Test Workspace"})
+      project = project_fixture(user, workspace)
+
+      page =
+        page_fixture(user, workspace, project, %{
+          title: "Test Page",
+          content: "The Porsche 911 is a legendary sports car."
+        })
+
+      {:ok, view, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/pages/#{page.slug}")
+
+      # Send a message to trigger context extraction
+      view
+      |> element("#chat-message-form")
+      |> render_submit(%{message: "What car is mentioned?"})
+
+      # Message should be sent successfully
+      assert has_element?(view, ".chat.chat-end .chat-bubble", "What car is mentioned?")
+
+      # The page content should have been extracted and will be sent to LLM
+      # (we can't easily test the LLM response without mocking, but the integration test covers that)
     end
 
     test "message timestamps are formatted correctly", %{conn: conn, user: user} do
@@ -570,6 +599,39 @@ defmodule JargaWeb.ChatLive.PanelTest do
       # All messages should be cleared
       refute has_element?(view, ".chat-bubble", "Message 1")
       refute has_element?(view, ".chat-bubble", "Message 2")
+    end
+
+    @tag :integration
+    test "assistant messages include source citation when on a page", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+
+      # Create a workspace and page with content
+      workspace = workspace_fixture(user, %{name: "Test Workspace"})
+      project = project_fixture(user, workspace)
+
+      page =
+        page_fixture(user, workspace, project, %{
+          title: "Test Page",
+          content: "This is test content about authentication."
+        })
+
+      {:ok, view, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/pages/#{page.slug}")
+
+      # Send a message
+      view
+      |> element("#chat-message-form")
+      |> render_submit(%{message: "What is this page about?"})
+
+      # Wait for response
+      Process.sleep(5_000)
+
+      html = render(view)
+
+      # Should show source citation
+      assert html =~ "Source:"
+      assert html =~ page.title
+      # Should have a link to the page
+      assert html =~ ~r/href=".*#{page.slug}"/
     end
   end
 end

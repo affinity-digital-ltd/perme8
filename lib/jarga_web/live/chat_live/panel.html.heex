@@ -61,6 +61,15 @@
 
         <%= for message <- @messages do %>
           <.message message={message} />
+          <%= if message.role == "assistant" && Map.get(message, :source) do %>
+            <div class="text-xs opacity-70 ml-12 -mt-2 mb-2">
+              <.icon name="hero-document-text-mini" class="w-3 h-3 inline" />
+              Source:
+              <.link navigate={message.source.page_url} class="link link-primary">
+                {message.source.page_title}
+              </.link>
+            </div>
+          <% end %>
         <% end %>
 
         <%= if @streaming and @stream_buffer != "" do %>

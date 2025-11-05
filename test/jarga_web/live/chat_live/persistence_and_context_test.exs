@@ -21,7 +21,6 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       %{user: user, workspace: workspace, project: project}
     end
 
-    @tag :skip
     test "messages persist when navigating between different pages", %{
       conn: conn,
       user: user,
@@ -60,7 +59,6 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       assert has_element?(view, ".chat-bubble", "Test message on workspaces")
     end
 
-    @tag :skip
     test "clear button removes all messages and persists empty state", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
@@ -95,7 +93,6 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       refute has_element?(view, ".chat-bubble", "Message 2")
     end
 
-    @tag :skip
     test "conversation persists after browser refresh (via database)", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
@@ -126,7 +123,6 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       %{user: user, workspace: workspace, project: project, page: page}
     end
 
-    @tag :skip
     test "extracts and sends workspace name to LLM", %{
       conn: conn,
       user: user,
@@ -146,7 +142,6 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       assert has_element?(view, ".chat-bubble", "What workspace am I in?")
     end
 
-    @tag :skip
     @tag :integration
     test "LLM can answer questions about current workspace", %{
       conn: conn,
@@ -170,7 +165,6 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       assert html =~ ~r/Engineering Team/i
     end
 
-    @tag :skip
     @tag :integration
     test "LLM can answer questions about current project", %{
       conn: conn,
@@ -196,7 +190,6 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       assert html =~ ~r/Mobile App/i
     end
 
-    @tag :skip
     @tag :integration
     test "LLM can answer questions about current page", %{
       conn: conn,
@@ -221,7 +214,6 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       assert html =~ ~r/API Documentation/i
     end
 
-    @tag :skip
     test "context includes page title for all pages", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
@@ -234,7 +226,6 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       assert html =~ "Account Settings"
     end
 
-    @tag :skip
     test "context includes user information", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
@@ -250,7 +241,6 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       assert has_element?(view, ".chat-bubble", "Who am I?")
     end
 
-    @tag :skip
     @tag :integration
     test "LLM receives complete context and can answer detailed questions", %{
       conn: conn,
@@ -297,7 +287,6 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       %{user: user, workspace: workspace, project: project, page: page}
     end
 
-    @tag :skip
     @tag :integration
     test "LLM can answer questions about page content", %{
       conn: conn,
@@ -309,6 +298,9 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
 
       {:ok, view, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/pages/#{page.slug}")
 
+      # Verify we're on the correct page
+      assert render(view) =~ page.title
+
       view
       |> element("#chat-message-form")
       |> render_submit(%{message: "What authentication method is described on this page?"})
@@ -319,7 +311,12 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       html = render(view)
 
       # Response should mention JWT tokens from the page content
-      assert html =~ ~r/JWT/i
+      assert html =~ ~r/JWT/i,
+             "LLM should respond with content from the page (JWT). This test failing means page content is not being sent to LLM."
+
+      # Should also show a source citation
+      assert html =~ "Source:", "Source citation should be displayed below the response"
+      assert html =~ page.title, "Source should reference the page title"
     end
   end
 end

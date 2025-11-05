@@ -311,7 +311,15 @@ defmodule JargaWeb.AppLive.Pages.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.admin flash={@flash} current_scope={@current_scope}>
+    <Layouts.admin
+      flash={@flash}
+      current_scope={@current_scope}
+      page={@page}
+      note={@note}
+      workspace={@workspace}
+      project={@project}
+      page_title={@page.title}
+    >
       <div class="h-screen flex flex-col space-y-4">
         <!-- Breadcrumbs -->
         <%= if @project do %>

@@ -73,6 +73,13 @@ defmodule JargaWeb.Layouts do
     required: true,
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
+  # Optional assigns for chat panel context
+  attr :page, :map, default: nil, doc: "current page (optional)"
+  attr :note, :map, default: nil, doc: "current note (optional)"
+  attr :workspace, :map, default: nil, doc: "current workspace (optional)"
+  attr :project, :map, default: nil, doc: "current project (optional)"
+  attr :page_title, :string, default: nil, doc: "page title (optional)"
+
   slot :inner_block, required: true
 
   def admin(assigns) do
@@ -190,9 +197,11 @@ defmodule JargaWeb.Layouts do
         module={JargaWeb.ChatLive.Panel}
         id="global-chat-panel"
         current_user={@current_scope.user}
-        current_workspace={Map.get(assigns, :current_workspace)}
-        current_project={Map.get(assigns, :current_project)}
-        page_title={Map.get(assigns, :page_title)}
+        current_workspace={@workspace}
+        current_project={@project}
+        page_title={@page_title}
+        note={@note}
+        page={@page}
       />
     </div>
     """
