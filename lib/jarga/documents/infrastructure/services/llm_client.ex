@@ -8,7 +8,7 @@ defmodule Jarga.Documents.Infrastructure.Services.LlmClient do
 
   require Logger
 
-  @default_model "google/gemini-2.0-flash-exp:free"
+  @default_model "google/gemini-2.5-flash-lite:free"
   @default_base_url "https://openrouter.ai/api/v1"
   @default_timeout 30_000
 
@@ -92,7 +92,7 @@ defmodule Jarga.Documents.Infrastructure.Services.LlmClient do
     headers = [
       {"Authorization", "Bearer #{api_key}"},
       {"Content-Type", "application/json"},
-      {"HTTP-Referer", config(:site_url, "https://jarga.app")},
+      {"HTTP-Referer", config(:site_url, "https://jarga.ai")},
       {"X-Title", config(:app_name, "Jarga")}
     ]
 
@@ -122,7 +122,7 @@ defmodule Jarga.Documents.Infrastructure.Services.LlmClient do
     headers = [
       {"Authorization", "Bearer #{api_key}"},
       {"Content-Type", "application/json"},
-      {"HTTP-Referer", config(:site_url, "https://jarga.app")},
+      {"HTTP-Referer", config(:site_url, "https://jarga.ai")},
       {"X-Title", config(:app_name, "Jarga")}
     ]
 
