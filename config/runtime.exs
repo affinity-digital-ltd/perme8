@@ -66,6 +66,22 @@ if config_env() == :prod do
 
   config :jarga, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  # Build list of allowed origins for WebSocket connections
+  check_origins = [
+    "https://www.jarga.ai",
+    "//www.jarga.ai",
+    "https://jarga.ai",
+    "//jarga.ai"
+  ]
+
+  # Add the configured host if it's different from the explicit ones
+  check_origins =
+    if host in ["www.jarga.ai", "jarga.ai"] do
+      check_origins
+    else
+      check_origins ++ ["https://#{host}", "//#{host}"]
+    end
+
   config :jarga, JargaWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [
@@ -77,10 +93,7 @@ if config_env() == :prod do
       port: port
     ],
     secret_key_base: secret_key_base,
-    check_origin: [
-      "https://#{host}",
-      "//#{host}"
-    ]
+    check_origin: check_origins
 
   # ## SSL Support
   #
