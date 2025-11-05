@@ -21,10 +21,11 @@ defmodule Jarga.Documents.UseCases.PrepareContextTest do
       assert context.current_project == "My Project"
       assert context.page_title == "Project Plan"
       assert context.page_content == "# Project Plan\n\nThis is the content"
+
       assert context.page_info == %{
-        page_title: "Project Plan",
-        page_url: "/app/workspaces/my-workspace/pages/project-plan"
-      }
+               page_title: "Project Plan",
+               page_url: "/app/workspaces/my-workspace/pages/project-plan"
+             }
     end
 
     test "handles missing user information" do
@@ -107,9 +108,9 @@ defmodule Jarga.Documents.UseCases.PrepareContextTest do
       assert {:ok, context} = PrepareContext.execute(assigns)
 
       assert context.page_info == %{
-        page_title: "Roadmap 2024",
-        page_url: "/app/workspaces/acme-corp/pages/roadmap-2024"
-      }
+               page_title: "Roadmap 2024",
+               page_url: "/app/workspaces/acme-corp/pages/roadmap-2024"
+             }
     end
   end
 

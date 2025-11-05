@@ -144,5 +144,4 @@ defmodule JargaWeb.ChatLive.Panel do
      |> assign(:stream_buffer, "")
      |> assign(:error, nil)}
   end
-
 end
