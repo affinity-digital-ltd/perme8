@@ -459,14 +459,12 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
   def mount(%{"slug" => workspace_slug}, _session, socket) do
     user = socket.assigns.current_scope.user
 
-    case Workspaces.get_workspace_by_slug(user, workspace_slug) do
-      {:ok, workspace} ->
+    # Optimized: fetch workspace and member in single query
+    case Workspaces.get_workspace_and_member_by_slug(user, workspace_slug) do
+      {:ok, workspace, current_member} ->
         pages = Pages.list_pages_for_workspace(user, workspace.id)
         projects = Projects.list_projects_for_workspace(user, workspace.id)
         members = Workspaces.list_members(workspace.id)
-
-        # Get the current user's workspace member record for permission checking
-        {:ok, current_member} = Workspaces.get_member(user, workspace.id)
 
         # Subscribe to workspace-specific PubSub topic for real-time updates
         if connected?(socket) do
@@ -791,5 +789,11 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
       end)
 
     {:noreply, assign(socket, projects: projects)}
+  end
+
+  # Catch-all for unhandled messages (e.g., email notifications from Swoosh)
+  @impl true
+  def handle_info(_msg, socket) do
+    {:noreply, socket}
   end
 end

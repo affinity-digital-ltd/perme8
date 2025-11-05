@@ -57,6 +57,35 @@ defmodule Jarga.Workspaces.Infrastructure.MembershipRepository do
   end
 
   @doc """
+  Finds a workspace by slug with the current user's member record preloaded.
+
+  Returns a tuple of {workspace, member} if the user is a member, nil otherwise.
+  This is more efficient than calling get_workspace_for_user_by_slug/2 followed
+  by get_member/2 as it uses a single query instead of two.
+
+  ## Examples
+
+      iex> get_workspace_and_member_by_slug(user, "my-workspace")
+      {%Workspace{}, %WorkspaceMember{}}
+
+      iex> get_workspace_and_member_by_slug(non_member, "my-workspace")
+      nil
+
+  """
+  def get_workspace_and_member_by_slug(%User{} = user, slug, repo \\ Repo) do
+    case Queries.for_user_by_slug_with_member(user, slug) |> repo.one() do
+      nil ->
+        nil
+
+      workspace ->
+        # workspace_members will contain only the current user's member record
+        # because the join filtered by user_id
+        member = List.first(workspace.workspace_members)
+        {workspace, member}
+    end
+  end
+
+  @doc """
   Checks if a workspace exists.
 
   ## Examples

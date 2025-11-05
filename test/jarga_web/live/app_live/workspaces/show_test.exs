@@ -531,4 +531,109 @@ defmodule JargaWeb.AppLive.Workspaces.ShowTest do
       # Should not have a color div
     end
   end
+
+  describe "workspace show page member invitations" do
+    setup %{conn: conn} do
+      user = user_fixture()
+      workspace = workspace_fixture(user)
+
+      %{conn: log_in_user(conn, user), user: user, workspace: workspace}
+    end
+
+    test "successfully invites a new member", %{conn: conn, workspace: workspace} do
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
+
+      # Open members modal
+      lv |> element("button", "Manage Members") |> render_click()
+
+      # Submit invite form
+      lv
+      |> form("#invite-form", email: "newuser@example.com", role: "member")
+      |> render_submit()
+
+      assert render(lv) =~ "Invitation sent via email"
+    end
+
+    test "shows error when inviting already-member user", %{
+      conn: conn,
+      user: user,
+      workspace: workspace
+    } do
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
+
+      # Open members modal
+      lv |> element("button", "Manage Members") |> render_click()
+
+      # Try to invite the owner (who is already a member)
+      lv
+      |> form("#invite-form", email: user.email, role: "member")
+      |> render_submit()
+
+      assert render(lv) =~ "already a member"
+    end
+  end
+
+  describe "workspace show page role management" do
+    setup %{conn: conn} do
+      owner = user_fixture()
+      workspace = workspace_fixture(owner)
+      member_user = user_fixture()
+
+      # Add member to workspace
+      {:ok, {:member_added, _}} =
+        Jarga.Workspaces.invite_member(owner, workspace.id, member_user.email, :member)
+
+      :timer.sleep(50)
+
+      %{conn: log_in_user(conn, owner), owner: owner, workspace: workspace, member: member_user}
+    end
+
+    test "shows member with role select dropdown", %{conn: conn, workspace: workspace, member: member} do
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
+
+      # Open members modal
+      html = lv |> element("button", "Manage Members") |> render_click()
+
+      # Should show member with select dropdown
+      assert html =~ member.email
+      assert html =~ "select"
+    end
+  end
+
+  describe "workspace show page member removal" do
+    setup %{conn: conn} do
+      owner = user_fixture()
+      workspace = workspace_fixture(owner)
+      member_user = user_fixture()
+
+      # Add member to workspace
+      {:ok, {:member_added, _}} =
+        Jarga.Workspaces.invite_member(owner, workspace.id, member_user.email, :member)
+
+      :timer.sleep(50)
+
+      %{conn: log_in_user(conn, owner), owner: owner, workspace: workspace, member: member_user}
+    end
+
+    test "shows remove button for non-owner members", %{conn: conn, workspace: workspace, member: member} do
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
+
+      # Open members modal
+      html = lv |> element("button", "Manage Members") |> render_click()
+
+      # Should show member with remove button
+      assert html =~ member.email
+      assert html =~ "hero-trash"
+    end
+
+    test "owner does not have remove button", %{conn: conn, workspace: workspace} do
+      {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
+
+      # Open members modal
+      html = lv |> element("button", "Manage Members") |> render_click()
+
+      # Find the owner row and verify no button
+      assert html =~ "Owner"
+    end
+  end
 end

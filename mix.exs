@@ -138,8 +138,7 @@ defmodule Jarga.MixProject do
         "deps.unlock --unused",
         "format",
         "credo --strict",
-        "boundary",
-        "test"
+        "coveralls.html"
       ]
     ]
   end

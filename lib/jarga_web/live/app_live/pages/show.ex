@@ -6,16 +6,17 @@ defmodule JargaWeb.AppLive.Pages.Show do
   use JargaWeb, :live_view
 
   alias Jarga.{Pages, Notes, Workspaces, Projects}
+  alias Ecto.Adapters.SQL.Sandbox
 
   @impl true
   def mount(%{"workspace_slug" => workspace_slug, "page_slug" => page_slug}, _session, socket) do
     user = socket.assigns.current_scope.user
 
-    # Get workspace first
-    with {:ok, workspace} <- Workspaces.get_workspace_by_slug(user, workspace_slug),
+    # Optimized: get workspace and member in single query
+    with {:ok, workspace, member} <-
+           Workspaces.get_workspace_and_member_by_slug(user, workspace_slug),
          {:ok, page} <- get_page_by_slug(user, workspace.id, page_slug),
-         {:ok, project} <- get_project_if_exists(user, page),
-         {:ok, member} <- Workspaces.get_member(user, workspace.id) do
+         {:ok, project} <- get_project_if_exists(user, page) do
       # Get the note component (first note in page_components)
       note = Pages.get_page_note(page)
 
@@ -88,7 +89,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
 
     # In test mode, allow the debouncer to access the database
     if Application.get_env(:jarga, :sql_sandbox) && debouncer_pid do
-      Ecto.Adapters.SQL.Sandbox.allow(Jarga.Repo, self(), debouncer_pid)
+      Sandbox.allow(Jarga.Repo, self(), debouncer_pid)
     end
 
     {:noreply, socket}

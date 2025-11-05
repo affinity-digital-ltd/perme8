@@ -32,8 +32,27 @@ defmodule Jarga.Workspaces.Queries do
   def for_user(query \\ base(), %User{} = user) do
     from(w in query,
       join: wm in WorkspaceMember,
+      as: :member,
       on: wm.workspace_id == w.id,
       where: wm.user_id == ^user.id
+    )
+  end
+
+  @doc """
+  Preloads the current user's workspace member record.
+
+  Uses the existing :member join from for_user/2 to efficiently preload
+  the workspace_member record without an additional query.
+
+  ## Examples
+
+      iex> base() |> for_user(user) |> with_current_member() |> Repo.one()
+      %Workspace{workspace_members: [%WorkspaceMember{}]}
+
+  """
+  def with_current_member(query) do
+    from([w, member: wm] in query,
+      preload: [workspace_members: wm]
     )
   end
 
@@ -98,6 +117,25 @@ defmodule Jarga.Workspaces.Queries do
   def for_user_by_slug(%User{} = user, slug) do
     base()
     |> for_user(user)
+    |> where([w], w.slug == ^slug)
+  end
+
+  @doc """
+  Finds a workspace by slug for a specific user, with member preloaded.
+
+  Returns a query that finds a workspace with the current user's
+  workspace_member record preloaded (avoiding a second query).
+
+  ## Examples
+
+      iex> for_user_by_slug_with_member(user, "my-workspace") |> Repo.one()
+      %Workspace{workspace_members: [%WorkspaceMember{}]}
+
+  """
+  def for_user_by_slug_with_member(%User{} = user, slug) do
+    base()
+    |> for_user(user)
+    |> with_current_member()
     |> where([w], w.slug == ^slug)
   end
 

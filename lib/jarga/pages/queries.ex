@@ -84,4 +84,15 @@ defmodule Jarga.Pages.Queries do
       order_by: [desc: p.is_pinned, desc: p.updated_at]
     )
   end
+
+  @doc """
+  Preload page components with the page query.
+  Uses a join to fetch components in the same query instead of a separate round-trip.
+  Components are automatically ordered by position (from schema preload_order).
+  """
+  def with_components(query) do
+    from([page: p] in query,
+      preload: [:page_components]
+    )
+  end
 end

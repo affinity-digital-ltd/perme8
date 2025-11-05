@@ -182,6 +182,34 @@ defmodule Jarga.Workspaces do
   end
 
   @doc """
+  Gets a workspace by slug with the current user's member record.
+
+  More efficient than calling get_workspace_by_slug/2 followed by get_member/2
+  as it fetches both in a single query.
+
+  Returns `{:ok, workspace, member}` if the user is a member, or
+  `{:error, :workspace_not_found}` otherwise.
+
+  ## Examples
+
+      iex> get_workspace_and_member_by_slug(user, "my-workspace")
+      {:ok, %Workspace{}, %WorkspaceMember{}}
+
+      iex> get_workspace_and_member_by_slug(user, "nonexistent")
+      {:error, :workspace_not_found}
+
+  """
+  def get_workspace_and_member_by_slug(%User{} = user, slug) do
+    case MembershipRepository.get_workspace_and_member_by_slug(user, slug) do
+      nil ->
+        {:error, :workspace_not_found}
+
+      {workspace, member} ->
+        {:ok, workspace, member}
+    end
+  end
+
+  @doc """
   Gets a single workspace by slug for a user.
 
   Raises `Ecto.NoResultsError` if the Workspace does not exist or

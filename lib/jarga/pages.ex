@@ -80,11 +80,12 @@ defmodule Jarga.Pages do
       |> Queries.by_slug(slug)
       |> Queries.for_workspace(workspace_id)
       |> Queries.viewable_by_user(user)
+      |> Queries.with_components()
       |> Repo.one()
 
     case page do
       nil -> {:error, :page_not_found}
-      page -> {:ok, Repo.preload(page, :page_components)}
+      page -> {:ok, page}
     end
   end
 
