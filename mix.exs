@@ -148,6 +148,7 @@ defmodule Jarga.MixProject do
 
   # Run Credo after compilation in dev and test, skip in prod
   defp compile_with_credo(:prod), do: ["compile"]
+
   defp compile_with_credo(_env) do
     if System.get_env("SKIP_CREDO_CHECK") == "1" do
       ["compile"]

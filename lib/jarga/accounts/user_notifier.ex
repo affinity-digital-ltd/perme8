@@ -10,10 +10,13 @@ defmodule Jarga.Accounts.UserNotifier do
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
+    from_email = System.get_env("SENDGRID_FROM_EMAIL", "noreply@jarga.app")
+    from_name = System.get_env("SENDGRID_FROM_NAME", "Jarga")
+
     email =
       new()
       |> to(recipient)
-      |> from({"Jarga", "contact@example.com"})
+      |> from({from_name, from_email})
       |> subject(subject)
       |> text_body(body)
 

@@ -102,22 +102,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
-    - name: Trigger Render deployment
+    - name: Deploy
+      # Only run this step if the branch is main
       env:
-        RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
       run: |
-        if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
-          echo "⚠️  RENDER_DEPLOY_HOOK_URL secret not set. Skipping deployment."
-          echo "See docs/DEPLOYMENT.md for setup instructions."
-          exit 0
-        fi
-
-        echo "🚀 Triggering Render deployment..."
-        response=$(curl -s -o /dev/null -w "%{http_code}" "$RENDER_DEPLOY_HOOK_URL")
-
-        if [ "$response" = "200" ] || [ "$response" = "201" ]; then
-          echo "✅ Deployment triggered successfully!"
-        else
-          echo "❌ Deployment trigger failed with status code: $response"
-          exit 1
-        fi
+        curl "$deploy_url"
