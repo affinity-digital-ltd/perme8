@@ -148,15 +148,31 @@ defmodule JargaWeb.ChatLive.Panel do
   # Private functions
 
   defp extract_page_context(assigns) do
+    # Extract page content if viewing a page
+    page_content = extract_page_content(assigns)
+
     %{
       current_user: get_nested(assigns, [:current_user, :email]),
       current_workspace: get_nested(assigns, [:current_workspace, :name]),
       current_project: get_nested(assigns, [:current_project, :name]),
       page_title: assigns[:page_title],
+      page_content: page_content,
       # Additional context can be extracted from assigns
       # This is a simple implementation for PR #1
       assigns: Map.drop(assigns, [:socket, :flash, :myself])
     }
+  end
+
+  defp extract_page_content(assigns) do
+    # Check if we have a note (page content)
+    case get_nested(assigns, [:note, :note_content]) do
+      %{"markdown" => markdown} when is_binary(markdown) and markdown != "" ->
+        # Limit content to avoid token limits (first 3000 characters)
+        String.slice(markdown, 0, 3000)
+
+      _ ->
+        nil
+    end
   end
 
   defp get_nested(data, [key]) when is_map(data) do
@@ -200,6 +216,13 @@ defmodule JargaWeb.ChatLive.Panel do
     context_parts =
       if page_context.page_title do
         context_parts ++ ["Page title: #{page_context.page_title}"]
+      else
+        context_parts
+      end
+
+    context_parts =
+      if page_context.page_content do
+        context_parts ++ ["Page content:\n#{page_context.page_content}"]
       else
         context_parts
       end
