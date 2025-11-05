@@ -54,8 +54,13 @@ defmodule JargaWeb.ChatLive.Panel do
   end
 
   @impl true
-  def handle_event("send_message", %{"message" => message_text}, socket) do
-    message_text = String.trim(message_text)
+  def handle_event("send_message", params, socket) do
+    message_text =
+      case params do
+        %{"message" => %{"content" => content}} -> String.trim(content)
+        %{"message" => content} when is_binary(content) -> String.trim(content)
+        _ -> ""
+      end
 
     if message_text == "" do
       {:noreply, socket}
@@ -110,7 +115,6 @@ defmodule JargaWeb.ChatLive.Panel do
      |> assign(:error, nil)}
   end
 
-  @impl true
   def handle_info({:chunk, chunk}, socket) do
     buffer = socket.assigns.stream_buffer <> chunk
 
@@ -120,7 +124,6 @@ defmodule JargaWeb.ChatLive.Panel do
      |> push_event("scroll_to_bottom", %{})}
   end
 
-  @impl true
   def handle_info({:done, full_response}, socket) do
     # Add assistant message
     assistant_message = %{
@@ -140,7 +143,6 @@ defmodule JargaWeb.ChatLive.Panel do
      |> push_event("scroll_to_bottom", %{})}
   end
 
-  @impl true
   def handle_info({:error, reason}, socket) do
     {:noreply,
      socket
@@ -153,15 +155,34 @@ defmodule JargaWeb.ChatLive.Panel do
 
   defp extract_page_context(assigns) do
     %{
-      current_user: get_in(assigns, [:current_user, :email]),
-      current_workspace: get_in(assigns, [:current_workspace, :name]),
-      current_project: get_in(assigns, [:current_project, :name]),
+      current_user: get_nested(assigns, [:current_user, :email]),
+      current_workspace: get_nested(assigns, [:current_workspace, :name]),
+      current_project: get_nested(assigns, [:current_project, :name]),
       page_title: assigns[:page_title],
       # Additional context can be extracted from assigns
       # This is a simple implementation for PR #1
       assigns: Map.drop(assigns, [:socket, :flash, :myself])
     }
   end
+
+  defp get_nested(data, [key]) when is_map(data) do
+    case Map.get(data, key) do
+      nil -> nil
+      %{} = struct -> Map.get(struct, key)
+      value -> value
+    end
+  end
+
+  defp get_nested(data, [key | rest]) when is_map(data) do
+    case Map.get(data, key) do
+      nil -> nil
+      %{__struct__: _} = struct -> get_nested(struct, rest)
+      map when is_map(map) -> get_nested(map, rest)
+      _ -> nil
+    end
+  end
+
+  defp get_nested(_, _), do: nil
 
   defp build_context_message(page_context) do
     context_parts = []

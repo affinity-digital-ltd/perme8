@@ -79,7 +79,7 @@ defmodule JargaWeb.Layouts do
     ~H"""
     <div class="drawer lg:drawer-open">
       <input id="admin-drawer" type="checkbox" class="drawer-toggle" />
-      <div class="drawer-content flex flex-col">
+      <div class="drawer-content flex flex-col min-w-0">
         <!-- Navbar for mobile -->
         <div class="navbar bg-base-300 lg:hidden">
           <div class="flex-none">
@@ -94,7 +94,7 @@ defmodule JargaWeb.Layouts do
             <.theme_toggle />
           </div>
         </div>
-        
+
     <!-- Page content -->
         <main class="flex-1 p-6 lg:p-8">
           {render_slot(@inner_block)}
@@ -102,7 +102,7 @@ defmodule JargaWeb.Layouts do
 
         <.flash_group flash={@flash} />
       </div>
-      
+
     <!-- Sidebar -->
       <div class="drawer-side">
         <label for="admin-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
@@ -184,6 +184,16 @@ defmodule JargaWeb.Layouts do
           </div>
         </aside>
       </div>
+
+      <%!-- Global Chat Panel --%>
+      <.live_component
+        module={JargaWeb.ChatLive.Panel}
+        id="global-chat-panel"
+        current_user={@current_scope.user}
+        current_workspace={Map.get(assigns, :current_workspace)}
+        current_project={Map.get(assigns, :current_project)}
+        page_title={Map.get(assigns, :page_title)}
+      />
     </div>
     """
   end
