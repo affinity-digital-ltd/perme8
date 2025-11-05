@@ -127,9 +127,10 @@ defmodule Jarga.MixProject do
     [
       setup: ["deps.get", "assets.setup", "assets.build"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["compile", "tailwind jarga", "esbuild jarga"],
+      "assets.build": ["compile", "tailwind jarga", "assets.copy_fonts", "esbuild jarga"],
       "assets.deploy": [
         "tailwind jarga --minify",
+        "assets.copy_fonts",
         "esbuild jarga --minify",
         "phx.digest"
       ],
