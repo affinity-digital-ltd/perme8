@@ -5,6 +5,9 @@ set -o errexit
 # Install dependencies
 mix deps.get --only prod
 
+# Install npm dependencies for assets
+cd assets && npm install && cd ..
+
 # Compile the application
 MIX_ENV=prod mix compile
 
