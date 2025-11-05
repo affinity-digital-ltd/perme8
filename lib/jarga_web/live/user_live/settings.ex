@@ -1,6 +1,8 @@
 defmodule JargaWeb.UserLive.Settings do
   use JargaWeb, :live_view
 
+  import JargaWeb.ChatLive.MessageHandlers
+
   on_mount {JargaWeb.UserAuth, :require_sudo_mode}
 
   alias Jarga.Accounts
@@ -160,4 +162,7 @@ defmodule JargaWeb.UserLive.Settings do
   end
 
   defp current_user(socket), do: socket.assigns.current_scope.user
+
+  # Chat panel streaming messages
+  handle_chat_messages()
 end

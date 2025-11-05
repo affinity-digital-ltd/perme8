@@ -6,6 +6,7 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
   use JargaWeb, :live_view
 
   import JargaWeb.Live.PermissionsHelper
+  import JargaWeb.ChatLive.MessageHandlers
 
   alias Jarga.{Workspaces, Projects, Pages}
   alias Jarga.Projects.Project
@@ -802,4 +803,7 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
   def handle_info(_msg, socket) do
     {:noreply, socket}
   end
+
+  # Chat panel streaming messages
+  handle_chat_messages()
 end

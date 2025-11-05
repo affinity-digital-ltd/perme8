@@ -5,6 +5,8 @@ defmodule JargaWeb.AppLive.Projects.Edit do
 
   use JargaWeb, :live_view
 
+  import JargaWeb.ChatLive.MessageHandlers
+
   alias Jarga.{Workspaces, Projects}
   alias JargaWeb.Layouts
 
@@ -118,4 +120,7 @@ defmodule JargaWeb.AppLive.Projects.Edit do
         {:noreply, put_flash(socket, :error, "Failed to update project")}
     end
   end
+
+  # Chat panel streaming messages
+  handle_chat_messages()
 end

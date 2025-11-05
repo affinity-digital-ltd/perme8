@@ -5,6 +5,8 @@ defmodule JargaWeb.AppLive.Pages.Show do
 
   use JargaWeb, :live_view
 
+  import JargaWeb.ChatLive.MessageHandlers
+
   alias Jarga.{Pages, Notes, Workspaces, Projects}
   alias Ecto.Adapters.SQL.Sandbox
 
@@ -447,4 +449,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
       {:ok, nil}
     end
   end
+
+  # Chat panel streaming messages
+  handle_chat_messages()
 end

@@ -26,25 +26,55 @@ defmodule JargaWeb.ChatLive.Panel do
 
   @impl true
   def update(assigns, socket) do
-    {:ok,
-     socket
-     |> assign(assigns)
-     |> assign_new(:page_context, fn -> extract_page_context(assigns) end)}
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign_new(:page_context, fn -> extract_page_context(assigns) end)
+
+    # Handle streaming messages sent via send_update from parent
+    socket =
+      cond do
+        Map.has_key?(assigns, :chunk) ->
+          buffer = socket.assigns.stream_buffer <> assigns.chunk
+
+          socket
+          |> assign(:stream_buffer, buffer)
+          |> push_event("scroll_to_bottom", %{})
+
+        Map.has_key?(assigns, :done) ->
+          # Add assistant message
+          assistant_message = %{
+            role: "assistant",
+            content: assigns.done,
+            timestamp: DateTime.utc_now()
+          }
+
+          # Send for test assertions
+          send(self(), {:assistant_response, assigns.done})
+
+          socket
+          |> assign(:messages, socket.assigns.messages ++ [assistant_message])
+          |> assign(:streaming, false)
+          |> assign(:stream_buffer, "")
+          |> push_event("scroll_to_bottom", %{})
+
+        Map.has_key?(assigns, :error) ->
+          socket
+          |> assign(:streaming, false)
+          |> assign(:stream_buffer, "")
+          |> assign(:error, "Error: #{assigns.error}")
+
+        true ->
+          socket
+      end
+
+    {:ok, socket}
   end
 
   @impl true
   def handle_event("toggle_panel", _params, socket) do
     collapsed = !socket.assigns.collapsed
 
-    # Notify JS hook to save state
-    {:noreply,
-     socket
-     |> assign(:collapsed, collapsed)
-     |> push_event("save_state", %{collapsed: collapsed})}
-  end
-
-  @impl true
-  def handle_event("restore_state", %{"collapsed" => collapsed}, socket) do
     {:noreply, assign(socket, :collapsed, collapsed)}
   end
 
@@ -113,42 +143,6 @@ defmodule JargaWeb.ChatLive.Panel do
      |> assign(:current_message, "")
      |> assign(:stream_buffer, "")
      |> assign(:error, nil)}
-  end
-
-  def handle_info({:chunk, chunk}, socket) do
-    buffer = socket.assigns.stream_buffer <> chunk
-
-    {:noreply,
-     socket
-     |> assign(:stream_buffer, buffer)
-     |> push_event("scroll_to_bottom", %{})}
-  end
-
-  def handle_info({:done, full_response}, socket) do
-    # Add assistant message
-    assistant_message = %{
-      role: "assistant",
-      content: full_response,
-      timestamp: DateTime.utc_now()
-    }
-
-    # Send for test assertions
-    send(self(), {:assistant_response, full_response})
-
-    {:noreply,
-     socket
-     |> assign(:messages, socket.assigns.messages ++ [assistant_message])
-     |> assign(:streaming, false)
-     |> assign(:stream_buffer, "")
-     |> push_event("scroll_to_bottom", %{})}
-  end
-
-  def handle_info({:error, reason}, socket) do
-    {:noreply,
-     socket
-     |> assign(:streaming, false)
-     |> assign(:stream_buffer, "")
-     |> assign(:error, "Error: #{reason}")}
   end
 
   # Private functions

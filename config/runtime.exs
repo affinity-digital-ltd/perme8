@@ -20,6 +20,14 @@ if config_env() in [:dev, :test] do
   Dotenvy.source!(env_files)
 end
 
+# Configure OpenRouter for LLM chat (must be after Dotenvy.source!)
+config :jarga, :openrouter,
+  api_key: System.get_env("OPENROUTER_API_KEY"),
+  base_url: System.get_env("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+  chat_model: System.get_env("CHAT_MODEL", "google/gemini-2.0-flash-exp:free"),
+  site_url: System.get_env("OPENROUTER_SITE_URL", "https://jarga.app"),
+  app_name: System.get_env("OPENROUTER_APP_NAME", "Jarga")
+
 # ## Using releases
 #
 # If you use `mix release`, you need to explicitly enable the server

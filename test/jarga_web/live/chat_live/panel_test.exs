@@ -15,8 +15,8 @@ defmodule JargaWeb.ChatLive.PanelTest do
 
       {:ok, view, _html} = live(conn, ~p"/app")
 
-      assert has_element?(view, "#global-chat-panel")
-      assert has_element?(view, "[data-collapsed='true']")
+      assert has_element?(view, "#chat-panel-global-chat-panel")
+      assert has_element?(view, "#chat-panel-global-chat-panel[data-collapsed='true']")
     end
 
     test "expands when toggle clicked", %{conn: conn, user: user} do
@@ -29,7 +29,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       |> element("#chat-toggle-button")
       |> render_click()
 
-      assert has_element?(view, "[data-collapsed='false']")
+      assert has_element?(view, "#chat-panel-global-chat-panel[data-collapsed='false']")
     end
 
     test "allows sending a message", %{conn: conn, user: user} do
@@ -51,6 +51,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert has_element?(view, "[data-role='user']", "Hello!")
     end
 
+    @tag :integration
     test "displays assistant response", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
@@ -70,6 +71,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert_receive {:assistant_response, _response}, 10_000
     end
 
+    @tag :integration
     test "shows loading state while waiting for response", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
@@ -83,8 +85,8 @@ defmodule JargaWeb.ChatLive.PanelTest do
       |> element("#chat-message-form")
       |> render_submit(%{message: %{content: "Hello"}})
 
-      # Should show loading indicator
-      assert has_element?(view, "[data-loading='true']")
+      # Should show loading indicator (data-loading is on #chat-messages element)
+      assert has_element?(view, "#chat-messages[data-loading='true']")
     end
 
     test "extracts page context for queries", %{conn: conn, user: user} do

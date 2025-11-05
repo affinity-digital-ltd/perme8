@@ -57,15 +57,4 @@
 
     <.flash_group flash={@flash} />
   </div>
-  <%!-- Global Chat Panel (only show when user is logged in) --%>
-  <%= if @current_scope && @current_scope.user do %>
-    <.live_component
-      module={JargaWeb.ChatLive.Panel}
-      id="global-chat-panel"
-      current_user={@current_scope.user}
-      current_workspace={Map.get(assigns, :current_workspace)}
-      current_project={Map.get(assigns, :current_project)}
-      page_title={Map.get(assigns, :page_title)}
-    />
-  <% end %>
 </div>

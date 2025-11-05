@@ -6,7 +6,8 @@ defmodule Jarga.Documents do
   """
 
   use Boundary,
-    deps: [Jarga.Accounts],
+    top_level?: true,
+    deps: [Jarga.Accounts, Jarga.Repo],
     exports: [Infrastructure.Services.LlmClient]
 
   alias Jarga.Documents.Infrastructure.Services.LlmClient

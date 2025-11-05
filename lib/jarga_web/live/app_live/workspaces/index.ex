@@ -5,6 +5,8 @@ defmodule JargaWeb.AppLive.Workspaces.Index do
 
   use JargaWeb, :live_view
 
+  import JargaWeb.ChatLive.MessageHandlers
+
   alias Jarga.Workspaces
   alias JargaWeb.Layouts
 
@@ -145,4 +147,7 @@ defmodule JargaWeb.AppLive.Workspaces.Index do
     # Page title changed - not relevant to workspace index view
     {:noreply, socket}
   end
+
+  # Chat panel streaming messages
+  handle_chat_messages()
 end

@@ -5,6 +5,8 @@ defmodule JargaWeb.AppLive.Projects.Show do
 
   use JargaWeb, :live_view
 
+  import JargaWeb.ChatLive.MessageHandlers
+
   alias Jarga.{Workspaces, Projects, Pages}
   alias JargaWeb.Layouts
 
@@ -307,4 +309,7 @@ defmodule JargaWeb.AppLive.Projects.Show do
   defp get_project_by_slug(user, workspace_id, slug) do
     Projects.get_project_by_slug(user, workspace_id, slug)
   end
+
+  # Chat panel streaming messages
+  handle_chat_messages()
 end

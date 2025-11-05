@@ -5,6 +5,8 @@ defmodule JargaWeb.AppLive.Workspaces.New do
 
   use JargaWeb, :live_view
 
+  import JargaWeb.ChatLive.MessageHandlers
+
   alias Jarga.Workspaces
   alias Jarga.Workspaces.Workspace
   alias JargaWeb.Layouts
@@ -97,4 +99,7 @@ defmodule JargaWeb.AppLive.Workspaces.New do
         {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
+
+  # Chat panel streaming messages
+  handle_chat_messages()
 end

@@ -1,123 +1,134 @@
-<%!-- Global Chat Panel Component --%>
-<div
-  id="global-chat-panel"
-  class={"chat-panel #{if @collapsed, do: "collapsed", else: "expanded"}"}
-  data-collapsed={@collapsed}
-  phx-hook="ChatPanel"
->
-  <%!-- Collapsed toggle button --%>
-  <%= if @collapsed do %>
-    <button
-      id="chat-toggle-button"
-      phx-click="toggle_panel"
-      phx-target={@myself}
-      class="chat-toggle-button"
-      aria-label="Open chat"
-    >
-      <.icon name="hero-chat-bubble-left-right" class="w-5 h-5" />
-      <span class="ml-2 hidden sm:inline">Chat</span>
-    </button>
-  <% end %>
-  <%!-- Expanded panel --%>
-  <%= if !@collapsed do %>
-    <div class="chat-panel-content">
+<%!-- Global Chat Panel Component using DaisyUI Drawer --%>
+<div class="drawer drawer-end z-50">
+  <input
+    id={"chat-drawer-#{@id}"}
+    type="checkbox"
+    class="drawer-toggle"
+    phx-hook="ChatPanel"
+    phx-update="ignore"
+  />
+
+  <%!-- Toggle button (floating) - always rendered, visibility controlled by CSS --%>
+  <label
+    for={"chat-drawer-#{@id}"}
+    id="chat-toggle-btn"
+    class="btn btn-circle btn-primary fixed right-4 top-4 shadow-lg z-40"
+    aria-label="Open chat"
+  >
+    <.icon name="hero-chat-bubble-left-right" class="w-6 h-6" />
+  </label>
+
+  <%!-- Drawer side (chat panel) --%>
+  <div class="drawer-side" id="chat-drawer-side">
+    <label
+      for={"chat-drawer-#{@id}"}
+      aria-label="close chat"
+      class="drawer-overlay"
+    ></label>
+
+    <%!-- Chat panel content --%>
+    <div class="bg-base-100 min-h-full w-full sm:w-96 flex flex-col">
       <%!-- Header --%>
-      <div class="chat-header">
-        <div class="flex items-center gap-2">
-          <.icon name="hero-chat-bubble-left-right" class="w-5 h-5" />
-          <h2 class="text-lg font-semibold">Chat</h2>
+      <div class="navbar bg-base-200 border-b border-base-300">
+        <div class="flex-1">
+          <.icon name="hero-chat-bubble-left-right" class="w-5 h-5 mr-2" />
+          <span class="text-lg font-semibold">Chat</span>
         </div>
-        <button
-          phx-click="toggle_panel"
-          phx-target={@myself}
-          class="chat-close-button"
-          aria-label="Close chat"
-        >
-          <.icon name="hero-x-mark" class="w-5 h-5" />
-        </button>
+        <div class="flex-none">
+          <label
+            for={"chat-drawer-#{@id}"}
+            class="btn btn-ghost btn-circle btn-sm cursor-pointer"
+            aria-label="Close chat"
+          >
+            <.icon name="hero-x-mark" class="w-5 h-5" />
+          </label>
+        </div>
       </div>
+
       <%!-- Messages area --%>
       <div
         id="chat-messages"
-        class="chat-messages"
+        class="flex-1 overflow-y-auto p-4 space-y-4 bg-base-200"
         phx-hook="ChatMessages"
-        data-loading={@streaming}
+        data-loading={to_string(@streaming)}
       >
         <%= if Enum.empty?(@messages) and @stream_buffer == "" do %>
-          <div class="chat-empty-state">
-            <.icon name="hero-chat-bubble-left-ellipsis" class="w-12 h-12 text-gray-400" />
-            <p class="text-gray-500 text-sm mt-2">Ask me anything about this page</p>
+          <div class="flex flex-col items-center justify-center h-full text-center">
+            <.icon name="hero-chat-bubble-left-ellipsis" class="w-12 h-12 opacity-30" />
+            <p class="text-sm mt-2 opacity-60">Ask me anything about this page</p>
           </div>
         <% end %>
+
         <%= for message <- @messages do %>
           <.message message={message} />
         <% end %>
+
         <%= if @streaming and @stream_buffer != "" do %>
           <.message message={%{role: "assistant", content: @stream_buffer, timestamp: DateTime.utc_now(), streaming: true}} />
         <% end %>
+
         <%= if @streaming and @stream_buffer == "" do %>
-          <div class="flex items-center gap-2 text-gray-500 text-sm p-4">
-            <div class="typing-indicator">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <span>Thinking...</span>
+          <div class="flex items-center gap-2 p-4">
+            <span class="loading loading-dots loading-sm"></span>
+            <span class="text-sm opacity-60">Thinking...</span>
           </div>
         <% end %>
+
         <%= if @error do %>
-          <div class="chat-error">
+          <div role="alert" class="alert alert-error">
             <.icon name="hero-exclamation-triangle" class="w-5 h-5" />
             <span><%= @error %></span>
           </div>
         <% end %>
       </div>
+
       <%!-- Input area --%>
-      <div class="chat-input-area">
+      <div class="p-4 bg-base-100 border-t border-base-300">
         <form
           id="chat-message-form"
           phx-submit="send_message"
           phx-target={@myself}
-          class="flex flex-col gap-2"
+          class="space-y-2"
         >
-          <div class="relative">
-            <textarea
-              id="chat-input"
-              name="message"
-              value={@current_message}
-              phx-change="update_message"
-              phx-target={@myself}
-              placeholder="Ask about this page..."
-              rows="2"
-              class="chat-input"
-              disabled={@streaming}
-              phx-hook="ChatInput"
-            />
-          </div>
-          <div class="flex items-center justify-between">
+          <textarea
+            id="chat-input"
+            name="message"
+            value={@current_message}
+            phx-change="update_message"
+            phx-target={@myself}
+            placeholder="Ask about this page..."
+            rows="3"
+            class="textarea textarea-bordered w-full resize-none"
+            disabled={@streaming}
+            phx-hook="ChatInput"
+          />
+
+          <div class="flex items-center justify-between gap-2">
             <button
               type="button"
               phx-click="clear_chat"
               phx-target={@myself}
-              class="text-sm text-gray-500 hover:text-gray-700"
+              class="btn btn-ghost btn-sm"
               disabled={Enum.empty?(@messages)}
             >
-              Clear chat
+              Clear
             </button>
             <button
               type="submit"
-              class="chat-send-button"
+              class="btn btn-primary btn-sm"
               disabled={@streaming or @current_message == ""}
             >
               <%= if @streaming do %>
-                <.icon name="hero-arrow-path" class="w-5 h-5 animate-spin" />
+                <span class="loading loading-spinner loading-xs"></span>
+                Sending...
               <% else %>
-                <.icon name="hero-paper-airplane" class="w-5 h-5" />
+                <.icon name="hero-paper-airplane" class="w-4 h-4" />
+                Send
               <% end %>
             </button>
           </div>
         </form>
       </div>
     </div>
-  <% end %>
+  </div>
 </div>

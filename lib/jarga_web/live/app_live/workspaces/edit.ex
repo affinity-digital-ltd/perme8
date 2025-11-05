@@ -5,6 +5,8 @@ defmodule JargaWeb.AppLive.Workspaces.Edit do
 
   use JargaWeb, :live_view
 
+  import JargaWeb.ChatLive.MessageHandlers
+
   alias Jarga.Workspaces
   alias JargaWeb.Layouts
 
@@ -110,4 +112,7 @@ defmodule JargaWeb.AppLive.Workspaces.Edit do
         {:noreply, put_flash(socket, :error, "Failed to update workspace")}
     end
   end
+
+  # Chat panel streaming messages
+  handle_chat_messages()
 end
