@@ -136,7 +136,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       # The :assistant_response message is now handled internally by the parent LiveView
       # We verify the response by checking the rendered HTML
       # Give LLM time to respond
-      Process.sleep(5_000)
+      Process.sleep(3_000)
 
       html = render(view)
 
@@ -413,7 +413,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       |> render_submit(%{message: "What page am I on?"})
 
       # Wait for LLM response
-      Process.sleep(5_000)
+      Process.sleep(3_000)
 
       html = render(view)
 
@@ -598,7 +598,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       |> render_submit(%{message: "What is this page about?"})
 
       # Wait for response
-      Process.sleep(5_000)
+      Process.sleep(3_000)
 
       html = render(view)
 

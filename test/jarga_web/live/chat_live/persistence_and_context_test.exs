@@ -161,7 +161,7 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       |> render_submit(%{message: "What is the name of the workspace I'm viewing?"})
 
       # Wait for LLM response
-      Process.sleep(5_000)
+      Process.sleep(3_000)
 
       html = render(view)
 
@@ -186,7 +186,7 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       |> render_submit(%{message: "What project am I looking at?"})
 
       # Wait for LLM response
-      Process.sleep(5_000)
+      Process.sleep(3_000)
 
       html = render(view)
 
@@ -210,7 +210,7 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       |> render_submit(%{message: "What page am I on?"})
 
       # Wait for LLM response
-      Process.sleep(5_000)
+      Process.sleep(3_000)
 
       html = render(view)
 
@@ -264,7 +264,7 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       })
 
       # Wait for LLM response
-      Process.sleep(5_000)
+      Process.sleep(3_000)
 
       html = render(view)
 
@@ -319,7 +319,7 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       |> render_submit(%{message: "What authentication method is described on this page?"})
 
       # Wait for LLM response
-      Process.sleep(5_000)
+      Process.sleep(3_000)
 
       html = render(view)
 
