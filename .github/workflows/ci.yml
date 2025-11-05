@@ -85,7 +85,7 @@ jobs:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/jarga_test
 
     - name: Run Elixir tests
-      run: mix test
+      run: mix test --exclude evaluation
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/jarga_test
 

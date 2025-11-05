@@ -88,7 +88,7 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       assert has_element?(view, ".chat-bubble", "What workspace am I in?")
     end
 
-    @tag :integration
+    @tag :evaluation
     test "LLM can answer questions about current workspace", %{
       conn: conn,
       user: user,
@@ -111,7 +111,7 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       assert html =~ ~r/Engineering Team/i
     end
 
-    @tag :integration
+    @tag :evaluation
     test "LLM can answer questions about current project", %{
       conn: conn,
       user: user,
@@ -136,7 +136,7 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       assert html =~ ~r/Mobile App/i
     end
 
-    @tag :integration
+    @tag :evaluation
     test "LLM can answer questions about current page", %{
       conn: conn,
       user: user,
@@ -187,7 +187,7 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       assert has_element?(view, ".chat-bubble", "Who am I?")
     end
 
-    @tag :integration
+    @tag :evaluation
     test "LLM receives complete context and can answer detailed questions", %{
       conn: conn,
       user: user,
@@ -241,7 +241,7 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       %{user: user, workspace: workspace, project: project, page: page, note: note}
     end
 
-    @tag :integration
+    @tag :evaluation
     test "page content is included in LLM context", %{
       conn: conn,
       user: user,

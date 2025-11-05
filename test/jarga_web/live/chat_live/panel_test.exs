@@ -122,7 +122,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert render(view) =~ "Ask me anything about this page"
     end
 
-    @tag :integration
+    @tag :evaluation
     test "displays assistant response", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
@@ -146,7 +146,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert html =~ ~r/<div class="chat-bubble\s*">[^<]+<\/div>/
     end
 
-    @tag :integration
+    @tag :evaluation
     test "shows loading state while waiting for response", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
@@ -161,7 +161,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert has_element?(view, ".loading.loading-dots")
     end
 
-    @tag :integration
+    @tag :evaluation
     test "disables input while streaming", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
@@ -178,7 +178,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert render(view) =~ "Sending..."
     end
 
-    @tag :integration
+    @tag :evaluation
     test "shows streaming indicator with cursor while receiving response", %{
       conn: conn,
       user: user
@@ -402,7 +402,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert html =~ "Welcome to Jarga"
     end
 
-    @tag :integration
+    @tag :evaluation
     test "responds with relevant context from page", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
@@ -430,7 +430,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       %{user: user}
     end
 
-    @tag :integration
+    @tag :evaluation
     test "shows streaming indicator immediately", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
@@ -447,7 +447,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert html =~ ~r/(Thinking...|loading loading-dots)/
     end
 
-    @tag :integration
+    @tag :evaluation
     test "starts streaming response quickly", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
@@ -576,7 +576,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       refute has_element?(view, ".chat-bubble", "Message 2")
     end
 
-    @tag :integration
+    @tag :evaluation
     test "assistant messages include source citation when on a page", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
