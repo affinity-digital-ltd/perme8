@@ -3,13 +3,11 @@
 
 /* Milkdown internal styling - targets library internals */
 #editor-container .milkdown {
-  height: 100%;
   padding: 0;
 }
 
 #editor-container .milkdown .editor {
-  height: 100%;
-  overflow: auto;
+  overflow: visible;
 }
 
 /* Remote Cursor and Selection Styles */

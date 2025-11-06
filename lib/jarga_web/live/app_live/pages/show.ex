@@ -320,30 +320,32 @@ defmodule JargaWeb.AppLive.Pages.Show do
       project={@project}
       page_title={@page.title}
     >
-      <div class="h-screen flex flex-col space-y-4">
+      <div class="flex flex-col space-y-4">
         <!-- Breadcrumbs -->
-        <%= if @project do %>
-          <.breadcrumbs>
-            <:crumb navigate={~p"/app"}>Home</:crumb>
-            <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
-            <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:crumb>
-            <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}/projects/#{@project.slug}"}>
-              {@project.name}
-            </:crumb>
-            <:crumb>{@page.title}</:crumb>
-          </.breadcrumbs>
-        <% else %>
-          <.breadcrumbs>
-            <:crumb navigate={~p"/app"}>Home</:crumb>
-            <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
-            <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:crumb>
-            <:crumb>{@page.title}</:crumb>
-          </.breadcrumbs>
-        <% end %>
-        
+        <div class="flex-shrink-0">
+          <%= if @project do %>
+            <.breadcrumbs>
+              <:crumb navigate={~p"/app"}>Home</:crumb>
+              <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
+              <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:crumb>
+              <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}/projects/#{@project.slug}"}>
+                {@project.name}
+              </:crumb>
+              <:crumb>{@page.title}</:crumb>
+            </.breadcrumbs>
+          <% else %>
+            <.breadcrumbs>
+              <:crumb navigate={~p"/app"}>Home</:crumb>
+              <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
+              <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:crumb>
+              <:crumb>{@page.title}</:crumb>
+            </.breadcrumbs>
+          <% end %>
+        </div>
+
     <!-- Action Buttons (hidden for guests) -->
         <%= if not @readonly do %>
-          <div class="flex items-center justify-end gap-2">
+          <div class="flex items-center justify-end gap-2 flex-shrink-0">
             <!-- Share toggle button -->
             <.button
               variant={if @page.is_public, do: "primary", else: "ghost"}
@@ -378,16 +380,16 @@ defmodule JargaWeb.AppLive.Pages.Show do
             </.button>
           </div>
         <% end %>
-        
+
     <!-- Title Section -->
-        <div class="border-b border-base-300 pb-4">
+        <div class="border-b border-base-300 pb-4 flex-shrink-0">
           <%= if @editing_title do %>
             <form phx-submit="update_title" class="flex items-center gap-2">
               <input
                 type="text"
                 name="page[title]"
                 value={@page_form[:title].value}
-                class="flex-1 text-2xl font-bold input input-bordered focus:input-primary"
+                class="flex-1 text-[2em] font-bold leading-tight m-0 input input-bordered focus:input-primary"
                 autofocus
               />
               <.button type="submit" variant="primary" size="sm">
@@ -405,7 +407,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
           <% else %>
             <h1
               class={[
-                "text-2xl font-bold",
+                "text-[2em] font-bold leading-tight m-0",
                 if(@readonly, do: "", else: "cursor-pointer hover:text-primary transition-colors")
               ]}
               phx-click={if @readonly, do: nil, else: "start_edit_title"}
@@ -417,7 +419,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
         </div>
 
     <!-- Editor -->
-        <div class="flex-1">
+        <div class="min-h-[calc(100vh-16rem)]">
           <%= if @readonly do %>
             <div class="alert alert-info mb-4">
               <.icon name="hero-eye" class="size-5" />
@@ -432,7 +434,6 @@ defmodule JargaWeb.AppLive.Pages.Show do
             data-initial-content={get_initial_markdown(@note)}
             data-readonly={if @readonly, do: "true", else: "false"}
             class={[
-              "h-full min-h-[calc(100vh-16rem)] overflow-hidden",
               if(@readonly, do: "bg-base-100 opacity-90", else: "")
             ]}
           >
