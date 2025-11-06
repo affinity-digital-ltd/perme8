@@ -7,4 +7,5 @@ defmodule JargaWeb.PageHTML do
   use JargaWeb, :html
 
   embed_templates "page_html/*"
+  embed_templates "page_html/home/*"
 end
