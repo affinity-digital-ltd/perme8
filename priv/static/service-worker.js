@@ -1,5 +1,5 @@
 // Service Worker for Jarga PWA
-const CACHE_VERSION = 'jarga-v1';
+const CACHE_VERSION = 'jarga-v2'; // Increment this to force cache update
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const OFFLINE_PAGE = '/offline.html';
@@ -71,7 +71,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Strategy for static assets: Cache First
+  // Strategy for static assets: Stale-While-Revalidate
+  // Returns cached version immediately, but updates cache in background
   if (
     request.destination === 'style' ||
     request.destination === 'script' ||
@@ -79,7 +80,7 @@ self.addEventListener('fetch', (event) => {
     request.destination === 'font' ||
     url.pathname.startsWith('/assets/')
   ) {
-    event.respondWith(cacheFirstStrategy(request));
+    event.respondWith(staleWhileRevalidateStrategy(request));
     return;
   }
 
@@ -99,24 +100,24 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(networkFirstStrategy(request));
 });
 
-// Cache First Strategy - Try cache, fallback to network
-async function cacheFirstStrategy(request) {
-  try {
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
+// Stale-While-Revalidate Strategy - Return cached, update in background
+async function staleWhileRevalidateStrategy(request) {
+  const cache = await caches.open(STATIC_CACHE);
+  const cachedResponse = await caches.match(request);
 
-    const networkResponse = await fetch(request);
+  // Fetch fresh version in background
+  const fetchPromise = fetch(request).then((networkResponse) => {
     if (networkResponse && networkResponse.status === 200) {
-      const cache = await caches.open(STATIC_CACHE);
       cache.put(request, networkResponse.clone());
     }
     return networkResponse;
-  } catch (error) {
-    console.error('[Service Worker] Cache first strategy failed:', error);
-    return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
-  }
+  }).catch((error) => {
+    console.log('[Service Worker] Network fetch failed:', error);
+    return cachedResponse; // Fallback to cached if network fails
+  });
+
+  // Return cached immediately if available, otherwise wait for network
+  return cachedResponse || fetchPromise;
 }
 
 // Network First Strategy - Try network, fallback to cache
