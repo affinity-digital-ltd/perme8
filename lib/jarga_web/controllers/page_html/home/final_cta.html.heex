@@ -1,25 +1,22 @@
-<!-- Final CTA Section -->
-<div class="py-20 px-4 text-white h-[500px] flex items-center mb-[10px]" style="background-color: #302E30;">
-  <div class="max-w-7xl mx-auto">
-    <div class="text-center">
-      <h2 class="text-4xl md:text-5xl font-bold mb-6">
+<%!-- Final CTA Section --%>
+<section class="py-20 px-12 text-white min-h-[500px] flex items-center" style="background-color: #302E30;">
+  <div class="container mx-auto max-w-7xl">
+    <div class="text-center max-w-4xl mx-auto">
+      <h2 class="text-4xl lg:text-5xl font-bold mb-6">
         The Future of Development is Hybrid
       </h2>
 
-      <div class="flex items-center justify-center gap-6 mb-6 flex-wrap">
+      <div class="flex flex-wrap items-center justify-center gap-4 lg:gap-6 mb-6">
         <span class="text-lg">No credit card required</span>
-        <span class="text-white/60">•</span>
+        <span class="opacity-60 hidden sm:inline">•</span>
         <span class="text-lg">Free for teams of 3 or less</span>
-        <span class="text-white/60">•</span>
+        <span class="opacity-60 hidden sm:inline">•</span>
         <span class="text-lg">Export your data anytime</span>
       </div>
 
-      <div class="card-actions justify-center">
-        <a href={~p"/users/register"} class="btn btn-outline btn-lg text-lg px-8 text-white border-white hover:bg-white hover:text-neutral">
-          Start For Free
-        </a>
-      </div>
-
+      <a href={~p"/users/register"} class="btn btn-outline btn-lg">
+        Start For Free
+      </a>
     </div>
   </div>
-</div>
+</section>

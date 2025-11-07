@@ -1,41 +1,30 @@
-<!-- Hero Section -->
-<div class="hero min-h-screen relative overflow-hidden" style="background-color: #EFEFF3;">
-  <div
-    class="hero-content text-center max-w-5xl px-4 self-start pt-24 md:pt-30 relative"
-    style="z-index: 1;"
-  >
-    <div>
-      <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+<%!-- Hero Section --%>
+<section class="hero min-h-screen" style="background-color: #EFEFF3;">
+  <div class="hero-content text-center max-w-5xl">
+    <div class="max-w-4xl">
+      <h1 class="text-5xl font-bold lg:text-7xl mb-6">
         Ship Features or Kill Tech Debt? <em>Do Both!</em>
       </h1>
-      <p class="text-lg md:text-xl mb-8 text-base-content/70">
+      <p class="text-lg lg:text-xl mb-8 opacity-70 max-w-3xl mx-auto">
         The first development platform where AI agents handle the maintenance while your team builds the future. No more choosing between progress and stability.
       </p>
-      <div class="card-actions justify-center">
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
         <a href={~p"/users/register"} class="btn btn-primary btn-lg">
           Start For Free
         </a>
-        <div class="relative inline-block">
-          <a href="#features" class="btn btn-outline btn-lg relative" style="z-index: 2;">
+        <div class="relative">
+          <a href="#features" class="btn btn-outline btn-lg">
             How It Works
           </a>
-
-          <!-- Jarga Robot Head - appearing upside down from behind the button -->
+          <%!-- Jarga Robot Head - appearing upside down from behind the button --%>
           <img
             src={~p"/images/jarga-robot-head.svg"}
             alt=""
-            class="absolute pointer-events-none"
-            style="
-              top: 100%;
-              left: 50%;
-              transform: translateX(-50%);
-              width: 72px;
-              height: auto;
-              z-index: 1;
-            "
+            class="absolute top-full left-1/2 -translate-x-1/2 w-18 pointer-events-none -z-10"
+            aria-hidden="true"
           />
         </div>
       </div>
     </div>
   </div>
-</div>
+</section>

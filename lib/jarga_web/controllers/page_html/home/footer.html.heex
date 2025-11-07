@@ -1,53 +1,47 @@
-<!-- Footer -->
-<footer class="footer footer-center bg-base-300 text-base-content p-10">
-  <div class="max-w-6xl w-full">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-left mb-8">
-      <!-- Product -->
-      <div>
-        <h3 class="font-bold text-lg mb-3">Product</h3>
-        <ul class="space-y-2">
-          <li><a href="#features" class="link link-hover">Features</a></li>
-          <li><span class="text-base-content/50">Pricing</span></li>
-        </ul>
+<%!-- Footer --%>
+<footer class="footer bg-base-300 text-base-content p-10">
+  <div class="container mx-auto max-w-7xl">
+    <div class="footer-center w-full">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 w-full mb-8">
+        <%!-- Product --%>
+        <nav class="flex flex-col gap-2">
+          <h3 class="footer-title">Product</h3>
+          <a href="#features" class="link link-hover">Features</a>
+          <span class="opacity-50">Pricing</span>
+        </nav>
+
+        <%!-- Company --%>
+        <nav class="flex flex-col gap-2">
+          <h3 class="footer-title">Company</h3>
+          <span class="opacity-50">About Us</span>
+          <span class="opacity-50">Contact</span>
+        </nav>
+
+        <%!-- Resources --%>
+        <nav class="flex flex-col gap-2">
+          <h3 class="footer-title">Resources</h3>
+          <span class="opacity-50">Documentation</span>
+          <span class="opacity-50">Help Center</span>
+        </nav>
+
+        <%!-- Legal --%>
+        <nav class="flex flex-col gap-2">
+          <h3 class="footer-title">Legal</h3>
+          <span class="opacity-50">Privacy Policy</span>
+          <span class="opacity-50">Terms of Service</span>
+        </nav>
       </div>
 
-      <!-- Company -->
-      <div>
-        <h3 class="font-bold text-lg mb-3">Company</h3>
-        <ul class="space-y-2">
-          <li><span class="text-base-content/50">About Us</span></li>
-          <li><span class="text-base-content/50">Contact</span></li>
-        </ul>
+      <div class="divider"></div>
+
+      <div class="w-full text-center">
+        <p class="text-lg font-semibold mb-2">
+          Ship features. Kill tech debt. Do both.
+        </p>
+        <p class="text-sm opacity-70">
+          © 2025 Jarga. The hybrid development platform.
+        </p>
       </div>
-
-      <!-- Resources -->
-      <div>
-        <h3 class="font-bold text-lg mb-3">Resources</h3>
-        <ul class="space-y-2">
-          <li><span class="text-base-content/50">Documentation</span></li>
-          <li><span class="text-base-content/50">Help Center</span></li>
-        </ul>
-      </div>
-
-      <!-- Legal -->
-      <div>
-        <h3 class="font-bold text-lg mb-3">Legal</h3>
-        <ul class="space-y-2">
-          <li><span class="text-base-content/50">Privacy Policy</span></li>
-          <li><span class="text-base-content/50">Terms of Service</span></li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="text-center">
-      <p class="text-lg font-semibold mb-2">
-        Ship features. Kill tech debt. Do both.
-      </p>
-      <p class="text-sm text-base-content/70">
-        © 2025 Jarga. The hybrid development platform.
-      </p>
     </div>
   </div>
 </footer>
