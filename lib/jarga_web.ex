@@ -27,6 +27,7 @@ defmodule JargaWeb do
       Jarga.Pages,
       Jarga.Notes,
       Jarga.Documents,
+      Jarga.Notifications,
       Jarga.Repo,
       Jarga.Mailer
     ],

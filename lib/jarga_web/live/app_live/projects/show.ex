@@ -13,15 +13,13 @@ defmodule JargaWeb.AppLive.Projects.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.admin flash={@flash} current_scope={@current_scope}>
+    <Layouts.admin
+      flash={@flash}
+      current_scope={@current_scope}
+      workspace={@workspace}
+      project={@project}
+    >
       <div class="space-y-8">
-        <.breadcrumbs>
-          <:crumb navigate={~p"/app"}>Home</:crumb>
-          <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
-          <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:crumb>
-          <:crumb>{@project.name}</:crumb>
-        </.breadcrumbs>
-
         <div class="flex items-center justify-end">
           <.kebab_menu>
             <:item

@@ -1,5 +1,8 @@
 import Config
 
+# Set environment to test
+config :jarga, :env, :test
+
 # Only in tests, remove the complexity from the password hashing algorithm
 config :bcrypt_elixir, :log_rounds, 1
 
@@ -37,9 +40,3 @@ config :phoenix, :plug_init_mode, :runtime
 # Enable helpful, but potentially expensive runtime checks
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
-
-# Enable SQL sandbox for GenServer processes in tests
-config :jarga, :sql_sandbox, true
-
-# Speed up tests by reducing debounce time to 1ms
-config :jarga, :page_save_debounce_ms, 1

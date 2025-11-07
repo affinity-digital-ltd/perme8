@@ -72,7 +72,7 @@ defmodule Jarga.Notes.Infrastructure.AuthorizationRepositoryTest do
       workspace = workspace_fixture(owner)
 
       # Add member to workspace
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, member.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       # Create note owned by owner
       note = note_fixture(owner, workspace.id)
@@ -112,7 +112,7 @@ defmodule Jarga.Notes.Infrastructure.AuthorizationRepositoryTest do
       workspace = workspace_fixture(owner)
 
       # Add member to workspace
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, member.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       # Create note owned by owner
       note = note_fixture(owner, workspace.id)
@@ -144,7 +144,7 @@ defmodule Jarga.Notes.Infrastructure.AuthorizationRepositoryTest do
       workspace = workspace_fixture(user1)
 
       # Add user2 to workspace
-      {:ok, _} = Jarga.Workspaces.invite_member(user1, workspace.id, user2.email, :member)
+      {:ok, _} = invite_and_accept_member(user1, workspace.id, user2.email, :member)
 
       # Create note owned by user1
       note = note_fixture(user1, workspace.id)

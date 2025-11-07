@@ -25,7 +25,7 @@ defmodule Jarga.Projects.Infrastructure.AuthorizationRepositoryTest do
       workspace = workspace_fixture(owner)
 
       # Add member to workspace
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, member.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       # Create project by owner
       project = project_fixture(owner, workspace)
@@ -86,8 +86,8 @@ defmodule Jarga.Projects.Infrastructure.AuthorizationRepositoryTest do
       workspace = workspace_fixture(owner)
 
       # Add admin and member
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, admin.email, :admin)
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, member.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, admin.email, :admin)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       # Create project by member
       project = project_fixture(member, workspace)

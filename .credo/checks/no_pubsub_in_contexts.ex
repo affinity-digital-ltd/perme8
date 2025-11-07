@@ -82,10 +82,12 @@ defmodule Jarga.Credo.Check.Architecture.NoPubSubInContexts do
     not_in_web = not String.contains?(filename, "lib/jarga_web/")
     # Must NOT be in services/ subdirectories (notifiers are allowed to use PubSub)
     not_in_services = not String.contains?(filename, "/services/")
+    # Must NOT be in infrastructure/ subdirectories (infrastructure layer can use PubSub)
+    not_in_infrastructure = not String.contains?(filename, "/infrastructure/")
     # Must NOT be credo check files themselves
     not_check_file = not String.contains?(filename, "lib/credo/")
 
-    in_jarga and not_in_web and not_in_services and not_check_file
+    in_jarga and not_in_web and not_in_services and not_in_infrastructure and not_check_file
   end
 
   # Match any function call with module.function pattern

@@ -14,14 +14,12 @@ defmodule JargaWeb.AppLive.Workspaces.Edit do
   def render(assigns) do
     ~H"""
     <Layouts.admin flash={@flash} current_scope={@current_scope}>
-      <div class="max-w-2xl mx-auto space-y-8">
-        <.breadcrumbs>
-          <:crumb navigate={~p"/app"}>Home</:crumb>
-          <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
-          <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:crumb>
-          <:crumb>Edit</:crumb>
-        </.breadcrumbs>
+      <:breadcrumbs navigate={~p"/app"}>Home</:breadcrumbs>
+      <:breadcrumbs navigate={~p"/app/workspaces"}>Workspaces</:breadcrumbs>
+      <:breadcrumbs navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:breadcrumbs>
+      <:breadcrumbs>Edit</:breadcrumbs>
 
+      <div class="max-w-2xl mx-auto space-y-8">
         <div>
           <.header>
             Edit Workspace

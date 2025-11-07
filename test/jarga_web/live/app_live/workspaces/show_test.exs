@@ -398,8 +398,7 @@ defmodule JargaWeb.AppLive.Workspaces.ShowTest do
       guest = user_fixture()
 
       # Add guest to workspace
-      {:ok, {:member_added, _}} =
-        Jarga.Workspaces.invite_member(owner, workspace.id, guest.email, :guest)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, guest.email, :guest)
 
       # Wait for invite to process
       :timer.sleep(50)
@@ -580,8 +579,7 @@ defmodule JargaWeb.AppLive.Workspaces.ShowTest do
       member_user = user_fixture()
 
       # Add member to workspace
-      {:ok, {:member_added, _}} =
-        Jarga.Workspaces.invite_member(owner, workspace.id, member_user.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member_user.email, :member)
 
       :timer.sleep(50)
 
@@ -611,8 +609,7 @@ defmodule JargaWeb.AppLive.Workspaces.ShowTest do
       member_user = user_fixture()
 
       # Add member to workspace
-      {:ok, {:member_added, _}} =
-        Jarga.Workspaces.invite_member(owner, workspace.id, member_user.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member_user.email, :member)
 
       :timer.sleep(50)
 

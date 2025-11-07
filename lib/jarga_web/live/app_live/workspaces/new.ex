@@ -15,13 +15,11 @@ defmodule JargaWeb.AppLive.Workspaces.New do
   def render(assigns) do
     ~H"""
     <Layouts.admin flash={@flash} current_scope={@current_scope}>
-      <div class="max-w-2xl mx-auto space-y-8">
-        <.breadcrumbs>
-          <:crumb navigate={~p"/app"}>Home</:crumb>
-          <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
-          <:crumb>New</:crumb>
-        </.breadcrumbs>
+      <:breadcrumbs navigate={~p"/app"}>Home</:breadcrumbs>
+      <:breadcrumbs navigate={~p"/app/workspaces"}>Workspaces</:breadcrumbs>
+      <:breadcrumbs>New</:breadcrumbs>
 
+      <div class="max-w-2xl mx-auto space-y-8">
         <div>
           <.header>
             New Workspace

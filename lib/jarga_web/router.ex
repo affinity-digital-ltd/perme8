@@ -51,7 +51,10 @@ defmodule JargaWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :app,
-      on_mount: [{JargaWeb.UserAuth, :require_authenticated}] do
+      on_mount: [
+        {JargaWeb.UserAuth, :require_authenticated},
+        {JargaWeb.NotificationsLive.OnMount, :default}
+      ] do
       live "/", AppLive.Dashboard, :index
       live "/workspaces", AppLive.Workspaces.Index, :index
       live "/workspaces/new", AppLive.Workspaces.New, :new
@@ -69,7 +72,10 @@ defmodule JargaWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{JargaWeb.UserAuth, :require_authenticated}] do
+      on_mount: [
+        {JargaWeb.UserAuth, :require_authenticated},
+        {JargaWeb.NotificationsLive.OnMount, :default}
+      ] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
     end

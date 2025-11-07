@@ -110,7 +110,7 @@ defmodule JargaWeb.PageSaveDebouncer do
   def terminate(_reason, state) do
     # Ensure we save any pending changes before terminating (production only)
     # In test mode, the database connection may be unavailable during termination
-    if state.pending_save && !Application.get_env(:jarga, :sql_sandbox) do
+    if state.pending_save && Application.get_env(:jarga, :env) != :test do
       execute_save(state.pending_save)
     end
 
@@ -132,7 +132,7 @@ defmodule JargaWeb.PageSaveDebouncer do
       {:error, :note_not_found} ->
         # In test mode, notes may be deleted before debouncer fires - this is expected
         # In production, log as warning since it might indicate a race condition
-        if Application.get_env(:jarga, :sql_sandbox) do
+        if Application.get_env(:jarga, :env) == :test do
           :ok
         else
           Logger.warning("Note #{note_id} not found during debounced save")

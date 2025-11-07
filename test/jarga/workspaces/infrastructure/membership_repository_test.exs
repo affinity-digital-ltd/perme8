@@ -52,7 +52,7 @@ defmodule Jarga.Workspaces.Infrastructure.MembershipRepositoryTest do
       member = user_fixture()
 
       # Add member to workspace
-      Jarga.Workspaces.invite_member(owner, workspace.id, member.email, :admin)
+      invite_and_accept_member(owner, workspace.id, member.email, :admin)
 
       assert found_member = MembershipRepository.find_member_by_email(workspace.id, member.email)
       assert found_member.email == member.email
@@ -72,7 +72,7 @@ defmodule Jarga.Workspaces.Infrastructure.MembershipRepositoryTest do
       member = user_fixture(%{email: "User@Example.Com"})
 
       # Add member to workspace
-      Jarga.Workspaces.invite_member(owner, workspace.id, member.email, :admin)
+      invite_and_accept_member(owner, workspace.id, member.email, :admin)
 
       # Search with different case
       assert found_member =
@@ -107,8 +107,8 @@ defmodule Jarga.Workspaces.Infrastructure.MembershipRepositoryTest do
       member2 = user_fixture()
 
       # Add members
-      Jarga.Workspaces.invite_member(owner, workspace.id, member1.email, :admin)
-      Jarga.Workspaces.invite_member(owner, workspace.id, member2.email, :member)
+      invite_and_accept_member(owner, workspace.id, member1.email, :admin)
+      invite_and_accept_member(owner, workspace.id, member2.email, :member)
 
       members = MembershipRepository.list_members(workspace.id)
 
@@ -129,8 +129,9 @@ defmodule Jarga.Workspaces.Infrastructure.MembershipRepositoryTest do
       owner = user_fixture()
       workspace = workspace_fixture(owner)
 
-      # Add pending invitation
-      Jarga.Workspaces.invite_member(owner, workspace.id, "pending@example.com", :admin)
+      # Add pending invitation (for non-existing user)
+      {:ok, {:invitation_sent, _}} =
+        Jarga.Workspaces.invite_member(owner, workspace.id, "pending@example.com", :admin)
 
       members = MembershipRepository.list_members(workspace.id)
 

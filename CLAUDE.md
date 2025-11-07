@@ -363,6 +363,34 @@ test/
 - Use socket assigns for connection state
 - Broadcast events after successful business operations
 
+### PubSub Broadcasts and Database Transactions
+
+**CRITICAL: Always broadcast AFTER transactions commit to avoid race conditions.**
+
+When broadcasting events that notify other processes about database changes:
+
+1. **Complete the transaction first** - Ensure all database writes are committed
+2. **Then broadcast** - Send PubSub messages after transaction success
+3. **Handle the result** - Use pattern matching on transaction result before broadcasting
+
+**Why:** If you broadcast inside a transaction, listeners may query the database before the transaction commits, seeing stale data.
+
+**Pattern:**
+```elixir
+result = Repo.transact(fn ->
+  # ... database operations
+  {:ok, data}
+end)
+
+# Broadcast AFTER transaction commits
+case result do
+  {:ok, data} ->
+    Phoenix.PubSub.broadcast(...)
+    {:ok, data}
+  error -> error
+end
+```
+
 ## Summary
 
 This project follows a strict **Test-Driven Development** approach:

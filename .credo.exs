@@ -45,6 +45,7 @@
         ".credo/checks/no_direct_repo_in_web.ex",
         ".credo/checks/no_business_logic_in_live_view.ex",
         ".credo/checks/no_pubsub_in_contexts.ex",
+        ".credo/checks/no_broadcast_in_transaction.ex",
         ".credo/checks/no_database_queries_in_live_views.ex",
         ".credo/checks/no_infrastructure_in_policies.ex",
         ".credo/checks/no_business_logic_in_schemas.ex",
@@ -184,6 +185,7 @@
           {Jarga.Credo.Check.Architecture.NoDirectRepoInWeb, []},
           {Jarga.Credo.Check.Architecture.NoBusinessLogicInLiveView, []},
           {Jarga.Credo.Check.Architecture.NoPubSubInContexts, []},
+          {Jarga.Credo.Check.Architecture.NoBroadcastInTransaction, []},
           {Jarga.Credo.Check.Architecture.NoDatabaseQueriesInLiveViews, []},
           # Detect infrastructure (DB queries) in domain Policy modules
           {Jarga.Credo.Check.Architecture.NoInfrastructureInPolicies, []},

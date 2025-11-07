@@ -40,7 +40,7 @@ defmodule Jarga.Projects.UseCases.DeleteProjectTest do
       workspace = workspace_fixture(owner)
 
       # Add member to workspace
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, member.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       project = project_fixture(member, workspace)
 
@@ -63,8 +63,8 @@ defmodule Jarga.Projects.UseCases.DeleteProjectTest do
       workspace = workspace_fixture(owner)
 
       # Add admin and member to workspace
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, admin.email, :admin)
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, member.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, admin.email, :admin)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       # Create project owned by member
       project = project_fixture(member, workspace)
@@ -87,7 +87,7 @@ defmodule Jarga.Projects.UseCases.DeleteProjectTest do
       workspace = workspace_fixture(owner)
 
       # Add member to workspace
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, member.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       # Create project owned by member
       project = project_fixture(member, workspace)
@@ -113,8 +113,8 @@ defmodule Jarga.Projects.UseCases.DeleteProjectTest do
       workspace = workspace_fixture(owner)
 
       # Add both members to workspace
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, member1.email, :member)
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, member2.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member1.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member2.email, :member)
 
       # Create project owned by member1
       project = project_fixture(member1, workspace)

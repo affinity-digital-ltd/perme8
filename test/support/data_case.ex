@@ -15,7 +15,8 @@ defmodule Jarga.DataCase do
   """
 
   # Test support module - top-level boundary for test infrastructure
-  use Boundary, top_level?: true, deps: [Jarga.Repo], exports: []
+  # Needs access to Jarga.Notifications for integration test setup
+  use Boundary, top_level?: true, deps: [Jarga.Repo, Jarga.Notifications], exports: []
 
   use ExUnit.CaseTemplate
 
@@ -39,10 +40,45 @@ defmodule Jarga.DataCase do
 
   @doc """
   Sets up the sandbox based on the test tags.
+
+  If the test is tagged with @integration, it will enable PubSub subscribers
+  and start the WorkspaceInvitationSubscriber for real-time notifications.
   """
   def setup_sandbox(tags) do
     pid = Sandbox.start_owner!(Jarga.Repo, shared: not tags[:async])
     on_exit(fn -> Sandbox.stop_owner(pid) end)
+
+    # Enable PubSub subscribers for integration tests
+    if tags[:integration] do
+      enable_pubsub_subscribers()
+    end
+  end
+
+  defp enable_pubsub_subscribers do
+    alias Jarga.Notifications.Infrastructure.WorkspaceInvitationSubscriber
+
+    # Enable PubSub in test environment
+    original_value = Application.get_env(:jarga, :enable_pubsub_in_test, false)
+    Application.put_env(:jarga, :enable_pubsub_in_test, true)
+
+    # Start the subscriber if it's not already running
+    subscriber_pid =
+      case Process.whereis(WorkspaceInvitationSubscriber) do
+        nil ->
+          {:ok, pid} = WorkspaceInvitationSubscriber.start_link([])
+          pid
+
+        pid ->
+          pid
+      end
+
+    # Allow the subscriber to access the database
+    Sandbox.allow(Jarga.Repo, self(), subscriber_pid)
+
+    # Restore original config on test exit
+    on_exit(fn ->
+      Application.put_env(:jarga, :enable_pubsub_in_test, original_value)
+    end)
   end
 
   @doc """

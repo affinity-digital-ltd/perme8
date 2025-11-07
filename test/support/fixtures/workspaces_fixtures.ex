@@ -5,9 +5,13 @@ defmodule Jarga.WorkspacesFixtures do
   """
 
   # Test fixture module - top-level boundary for test data creation
-  use Boundary, top_level?: true, deps: [Jarga.Workspaces], exports: []
+  use Boundary,
+    top_level?: true,
+    deps: [Jarga.Workspaces, Jarga.Accounts, Jarga.Notifications],
+    exports: []
 
   alias Jarga.Workspaces
+  alias Jarga.Notifications
 
   def valid_workspace_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
@@ -21,5 +25,43 @@ defmodule Jarga.WorkspacesFixtures do
     attrs = valid_workspace_attributes(attrs)
     {:ok, workspace} = Workspaces.create_workspace(user, attrs)
     workspace
+  end
+
+  @doc """
+  Invites a member to a workspace and automatically accepts the invitation.
+
+  This is a convenience function for tests that need members to be immediately
+  added to workspaces, similar to the old behavior before notifications were added.
+
+  Returns `{:ok, workspace_member}` on success.
+  """
+  def invite_and_accept_member(inviter, workspace_id, user_email, role) do
+    # Invite the member (creates pending invitation)
+    {:ok, {:invitation_sent, _invitation}} =
+      Workspaces.invite_member(inviter, workspace_id, user_email, role)
+
+    # Find the user by email
+    user = Jarga.Accounts.get_user_by_email_case_insensitive(user_email)
+
+    if user do
+      # Get the workspace using the context API with the inviter (who has access)
+      workspace = Workspaces.get_workspace!(inviter, workspace_id)
+
+      # Create a notification manually for the test (bypassing the async PubSub subscriber)
+      {:ok, notification} =
+        Notifications.create_workspace_invitation_notification(%{
+          user_id: user.id,
+          workspace_id: workspace_id,
+          workspace_name: workspace.name,
+          invited_by_name: inviter.email,
+          role: to_string(role)
+        })
+
+      # Accept the invitation through the notification use case (this will broadcast)
+      Notifications.accept_workspace_invitation(notification.id, user.id)
+    else
+      # For non-existent users, return error
+      {:error, :user_not_found}
+    end
   end
 end

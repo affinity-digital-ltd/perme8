@@ -268,16 +268,16 @@ defmodule Jarga.WorkspacesTest do
       workspace = workspace_fixture(owner)
       invitee = user_fixture()
 
-      assert {:ok, {:member_added, member}} =
+      assert {:ok, {:invitation_sent, invitation}} =
                Workspaces.invite_member(owner, workspace.id, invitee.email, :admin)
 
-      assert member.workspace_id == workspace.id
-      assert member.user_id == invitee.id
-      assert member.email == invitee.email
-      assert member.role == :admin
-      assert member.invited_by == owner.id
-      assert member.invited_at != nil
-      assert member.joined_at != nil
+      assert invitation.workspace_id == workspace.id
+      assert invitation.user_id == nil
+      assert invitation.email == invitee.email
+      assert invitation.role == :admin
+      assert invitation.invited_by == owner.id
+      assert invitation.invited_at != nil
+      assert invitation.joined_at == nil
     end
 
     test "successfully invites an existing user as member" do
@@ -285,10 +285,10 @@ defmodule Jarga.WorkspacesTest do
       workspace = workspace_fixture(owner)
       invitee = user_fixture()
 
-      assert {:ok, {:member_added, member}} =
+      assert {:ok, {:invitation_sent, invitation}} =
                Workspaces.invite_member(owner, workspace.id, invitee.email, :member)
 
-      assert member.role == :member
+      assert invitation.role == :member
     end
 
     test "successfully invites an existing user as guest" do
@@ -296,10 +296,10 @@ defmodule Jarga.WorkspacesTest do
       workspace = workspace_fixture(owner)
       invitee = user_fixture()
 
-      assert {:ok, {:member_added, member}} =
+      assert {:ok, {:invitation_sent, invitation}} =
                Workspaces.invite_member(owner, workspace.id, invitee.email, :guest)
 
-      assert member.role == :guest
+      assert invitation.role == :guest
     end
 
     test "returns error when inviting with owner role" do
@@ -316,9 +316,8 @@ defmodule Jarga.WorkspacesTest do
       workspace = workspace_fixture(owner)
       invitee = user_fixture()
 
-      # First invitation succeeds
-      assert {:ok, {:member_added, _member}} =
-               Workspaces.invite_member(owner, workspace.id, invitee.email, :admin)
+      # First invitation succeeds and is accepted
+      {:ok, _member} = invite_and_accept_member(owner, workspace.id, invitee.email, :admin)
 
       # Second invitation fails
       assert {:error, :already_member} =
@@ -367,11 +366,12 @@ defmodule Jarga.WorkspacesTest do
       workspace = workspace_fixture(owner)
       invitee = user_fixture(%{email: "User@Example.Com"})
 
-      # Should find existing user despite case difference
-      assert {:ok, {:member_added, member}} =
+      # Should find existing user despite case difference and create invitation
+      assert {:ok, {:invitation_sent, invitation}} =
                Workspaces.invite_member(owner, workspace.id, "user@example.com", :admin)
 
-      assert member.user_id == invitee.id
+      # Invitation is for the correct email
+      assert invitation.email == invitee.email
     end
   end
 
@@ -382,11 +382,8 @@ defmodule Jarga.WorkspacesTest do
       member1 = user_fixture()
       member2 = user_fixture()
 
-      {:ok, {:member_added, _}} =
-        Workspaces.invite_member(owner, workspace.id, member1.email, :admin)
-
-      {:ok, {:member_added, _}} =
-        Workspaces.invite_member(owner, workspace.id, member2.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member1.email, :admin)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member2.email, :member)
 
       members = Workspaces.list_members(workspace.id)
 
@@ -424,8 +421,7 @@ defmodule Jarga.WorkspacesTest do
       workspace = workspace_fixture(owner)
       member = user_fixture()
 
-      {:ok, {:member_added, _}} =
-        Workspaces.invite_member(owner, workspace.id, member.email, :admin)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :admin)
 
       assert {:ok, updated_member} =
                Workspaces.change_member_role(owner, workspace.id, member.email, :member)
@@ -447,8 +443,7 @@ defmodule Jarga.WorkspacesTest do
       non_member = user_fixture()
       member = user_fixture()
 
-      {:ok, {:member_added, _}} =
-        Workspaces.invite_member(owner, workspace.id, member.email, :admin)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :admin)
 
       assert {:error, :unauthorized} =
                Workspaces.change_member_role(non_member, workspace.id, member.email, :member)
@@ -474,8 +469,7 @@ defmodule Jarga.WorkspacesTest do
       workspace = workspace_fixture(owner)
       member = user_fixture()
 
-      {:ok, {:member_added, _}} =
-        Workspaces.invite_member(owner, workspace.id, member.email, :admin)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :admin)
 
       # Verify member exists
       members_before = Workspaces.list_members(workspace.id)
@@ -514,8 +508,7 @@ defmodule Jarga.WorkspacesTest do
       non_member = user_fixture()
       member = user_fixture()
 
-      {:ok, {:member_added, _}} =
-        Workspaces.invite_member(owner, workspace.id, member.email, :admin)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :admin)
 
       assert {:error, :unauthorized} =
                Workspaces.remove_member(non_member, workspace.id, member.email)
@@ -623,6 +616,119 @@ defmodule Jarga.WorkspacesTest do
 
       assert {:error, :workspace_not_found} =
                Workspaces.get_workspace_by_slug(user, "other-workspace")
+    end
+  end
+
+  describe "accept_pending_invitations/1" do
+    test "accepts pending invitations for a user's email" do
+      owner = user_fixture()
+      workspace1 = workspace_fixture(owner, %{name: "Workspace 1"})
+      workspace2 = workspace_fixture(owner, %{name: "Workspace 2"})
+
+      email = "newuser@example.com"
+
+      # Create pending invitations
+      {:ok, {:invitation_sent, invitation1}} =
+        Workspaces.invite_member(owner, workspace1.id, email, :admin)
+
+      {:ok, {:invitation_sent, invitation2}} =
+        Workspaces.invite_member(owner, workspace2.id, email, :member)
+
+      assert invitation1.user_id == nil
+      assert invitation1.joined_at == nil
+      assert invitation2.user_id == nil
+      assert invitation2.joined_at == nil
+
+      # User signs up with the invited email
+      new_user = user_fixture(%{email: email})
+
+      # Accept pending invitations
+      assert {:ok, accepted_invitations} = Workspaces.accept_pending_invitations(new_user)
+
+      assert length(accepted_invitations) == 2
+
+      # Verify invitations are now accepted
+      members1 = Workspaces.list_members(workspace1.id)
+      member1 = Enum.find(members1, &(&1.email == email))
+      assert member1.user_id == new_user.id
+      assert member1.joined_at != nil
+
+      members2 = Workspaces.list_members(workspace2.id)
+      member2 = Enum.find(members2, &(&1.email == email))
+      assert member2.user_id == new_user.id
+      assert member2.joined_at != nil
+    end
+
+    test "handles case-insensitive email matching" do
+      owner = user_fixture()
+      workspace = workspace_fixture(owner)
+
+      # Invite with lowercase
+      email = "newuser@example.com"
+      {:ok, {:invitation_sent, _}} = Workspaces.invite_member(owner, workspace.id, email, :admin)
+
+      # User signs up with mixed case
+      new_user = user_fixture(%{email: "NewUser@Example.Com"})
+
+      # Should still accept the invitation
+      assert {:ok, accepted_invitations} = Workspaces.accept_pending_invitations(new_user)
+      assert length(accepted_invitations) == 1
+
+      members = Workspaces.list_members(workspace.id)
+      member = Enum.find(members, &(&1.user_id == new_user.id))
+      assert member != nil
+      assert member.joined_at != nil
+    end
+
+    test "returns empty list when no pending invitations exist" do
+      user = user_fixture()
+
+      assert {:ok, []} = Workspaces.accept_pending_invitations(user)
+    end
+
+    test "does not affect already accepted invitations" do
+      owner = user_fixture()
+      workspace = workspace_fixture(owner)
+      existing_user = user_fixture()
+
+      # Add existing user (already accepted)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, existing_user.email, :admin)
+
+      # Accept pending invitations (should not affect already accepted)
+      assert {:ok, []} = Workspaces.accept_pending_invitations(existing_user)
+
+      # Verify member still exists and unchanged
+      members = Workspaces.list_members(workspace.id)
+      member = Enum.find(members, &(&1.user_id == existing_user.id))
+      assert member != nil
+    end
+
+    test "only accepts invitations for the specific user's email" do
+      owner = user_fixture()
+      workspace = workspace_fixture(owner)
+
+      # Create invitations for different emails
+      email1 = "user1@example.com"
+      email2 = "user2@example.com"
+
+      {:ok, {:invitation_sent, _}} = Workspaces.invite_member(owner, workspace.id, email1, :admin)
+
+      {:ok, {:invitation_sent, _}} =
+        Workspaces.invite_member(owner, workspace.id, email2, :member)
+
+      # User1 signs up
+      user1 = user_fixture(%{email: email1})
+
+      # Should only accept user1's invitation
+      assert {:ok, accepted_invitations} = Workspaces.accept_pending_invitations(user1)
+      assert length(accepted_invitations) == 1
+      assert hd(accepted_invitations).email == email1
+
+      # User2's invitation should still be pending
+      members = Workspaces.list_members(workspace.id)
+      user2_invitation = Enum.find(members, &(&1.email == email2))
+      assert user2_invitation.user_id == nil
+      assert user2_invitation.joined_at == nil
     end
   end
 end

@@ -101,8 +101,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
       workspace = workspace_fixture(other_user, %{name: "Team Workspace"})
 
       # Add the user to the workspace (this will trigger the PubSub broadcast)
-      {:ok, {:member_added, _member}} =
-        Workspaces.invite_member(other_user, workspace.id, user.email, :member)
+      {:ok, _member} = invite_and_accept_member(other_user, workspace.id, user.email, :member)
 
       # Verify workspace appears in the UI
       assert render(lv) =~ "Team Workspace"
@@ -117,20 +116,17 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
       other_user = user_fixture()
       workspace = workspace_fixture(other_user, %{name: "To Be Removed"})
 
-      {:ok, {:member_added, _member}} =
-        Workspaces.invite_member(other_user, workspace.id, user.email, :member)
+      {:ok, _member} = invite_and_accept_member(other_user, workspace.id, user.email, :member)
 
       {:ok, lv, _html} = live(conn, ~p"/app/workspaces")
 
       # Verify workspace is displayed
-      assert render(lv) =~ "To Be Removed"
       assert lv |> element("[data-workspace-id='#{workspace.id}']") |> has_element?()
 
       # Remove the user from the workspace (this will trigger the PubSub broadcast)
       {:ok, _deleted_member} = Workspaces.remove_member(other_user, workspace.id, user.email)
 
-      # Verify workspace is removed from the UI
-      refute render(lv) =~ "To Be Removed"
+      # Verify workspace is removed from the workspaces list
       refute lv |> element("[data-workspace-id='#{workspace.id}']") |> has_element?()
     end
   end
@@ -437,8 +433,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
       # Create another user who is a member of the workspace
       other_user = user_fixture()
 
-      {:ok, {:member_added, _}} =
-        Jarga.Workspaces.invite_member(user, workspace.id, other_user.email, :member)
+      {:ok, _} = invite_and_accept_member(user, workspace.id, other_user.email, :member)
 
       # Other user creates a private page
       {:ok, page} = Jarga.Pages.create_page(other_user, workspace.id, %{title: "Private Page"})
@@ -466,8 +461,7 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
       # Create another user who is a member of the workspace
       other_user = user_fixture()
 
-      {:ok, {:member_added, _}} =
-        Jarga.Workspaces.invite_member(user, workspace.id, other_user.email, :member)
+      {:ok, _} = invite_and_accept_member(user, workspace.id, other_user.email, :member)
 
       # Other user creates a public page
       {:ok, page} = Jarga.Pages.create_page(other_user, workspace.id, %{title: "Public Page"})

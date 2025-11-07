@@ -10,8 +10,8 @@
     phx-update="ignore"
   />
 
-  <%!-- Toggle button (floating) - always rendered, visibility controlled by CSS --%>
-  <div phx-update="ignore" id="chat-toggle-container">
+  <%!-- Toggle button (floating) - hidden since we use topbar button --%>
+  <div phx-update="ignore" id="chat-toggle-container" class="hidden">
     <label
       for={"chat-drawer-#{@id}"}
       id="chat-toggle-btn"

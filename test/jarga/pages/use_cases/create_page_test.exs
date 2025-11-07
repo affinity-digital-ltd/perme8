@@ -34,7 +34,7 @@ defmodule Jarga.Pages.UseCases.CreatePageTest do
       workspace = workspace_fixture(owner)
 
       # Add admin as member
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, admin.email, :admin)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, admin.email, :admin)
 
       params = %{
         actor: admin,
@@ -53,7 +53,7 @@ defmodule Jarga.Pages.UseCases.CreatePageTest do
       workspace = workspace_fixture(owner)
 
       # Add member
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, member.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       params = %{
         actor: member,
@@ -190,7 +190,7 @@ defmodule Jarga.Pages.UseCases.CreatePageTest do
       workspace = workspace_fixture(owner)
 
       # Add guest as member
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, guest.email, :guest)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, guest.email, :guest)
 
       params = %{
         actor: guest,

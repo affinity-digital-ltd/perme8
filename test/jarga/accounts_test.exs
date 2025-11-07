@@ -374,6 +374,117 @@ defmodule Jarga.AccountsTest do
       assert {:ok, {confirmed_user, []}} = Accounts.login_user_by_magic_link(encoded_token)
       assert confirmed_user.confirmed_at
     end
+
+    test "accepts pending workspace invitations after confirmation" do
+      # Import fixtures needed for workspaces
+      import Jarga.WorkspacesFixtures
+
+      # Create a workspace and invite a new user
+      owner = user_fixture()
+      workspace = workspace_fixture(owner, %{name: "Test Workspace"})
+      email = "newuser@example.com"
+
+      # Invite the new user (creates pending invitation)
+      assert {:ok, {:invitation_sent, _invitation}} =
+               Jarga.Workspaces.invite_member(owner, workspace.id, email, :admin)
+
+      # Verify invitation is pending
+      members = Jarga.Workspaces.list_members(workspace.id)
+      pending = Enum.find(members, &(&1.email == email))
+      assert pending.user_id == nil
+      assert pending.joined_at == nil
+
+      # New user signs up with the invited email
+      user = unconfirmed_user_fixture(%{email: email})
+      {encoded_token, _hashed_token} = generate_user_magic_link_token(user)
+
+      # User clicks magic link to confirm
+      assert {:ok, {confirmed_user, _expired_tokens}} =
+               Accounts.login_user_by_magic_link(encoded_token)
+
+      assert confirmed_user.confirmed_at
+
+      # Accept pending invitations
+      assert {:ok, _accepted} = Jarga.Workspaces.accept_pending_invitations(confirmed_user)
+
+      # Verify invitation was accepted
+      members = Jarga.Workspaces.list_members(workspace.id)
+      accepted = Enum.find(members, &(&1.email == email))
+      assert accepted.user_id == confirmed_user.id
+      assert accepted.joined_at != nil
+    end
+
+    test "accepts multiple pending workspace invitations after confirmation" do
+      # Import fixtures needed for workspaces
+      import Jarga.WorkspacesFixtures
+
+      # Create multiple workspaces and invite a new user to all of them
+      owner = user_fixture()
+      workspace1 = workspace_fixture(owner, %{name: "Workspace 1"})
+      workspace2 = workspace_fixture(owner, %{name: "Workspace 2"})
+      email = "newuser@example.com"
+
+      # Invite the new user to both workspaces
+      assert {:ok, {:invitation_sent, _}} =
+               Jarga.Workspaces.invite_member(owner, workspace1.id, email, :admin)
+
+      assert {:ok, {:invitation_sent, _}} =
+               Jarga.Workspaces.invite_member(owner, workspace2.id, email, :member)
+
+      # New user signs up with the invited email
+      user = unconfirmed_user_fixture(%{email: email})
+      {encoded_token, _hashed_token} = generate_user_magic_link_token(user)
+
+      # User clicks magic link to confirm
+      assert {:ok, {confirmed_user, _expired_tokens}} =
+               Accounts.login_user_by_magic_link(encoded_token)
+
+      assert confirmed_user.confirmed_at
+
+      # Accept pending invitations
+      assert {:ok, _accepted} = Jarga.Workspaces.accept_pending_invitations(confirmed_user)
+
+      # Verify both invitations were accepted
+      members1 = Jarga.Workspaces.list_members(workspace1.id)
+      accepted1 = Enum.find(members1, &(&1.email == email))
+      assert accepted1.user_id == confirmed_user.id
+      assert accepted1.joined_at != nil
+
+      members2 = Jarga.Workspaces.list_members(workspace2.id)
+      accepted2 = Enum.find(members2, &(&1.email == email))
+      assert accepted2.user_id == confirmed_user.id
+      assert accepted2.joined_at != nil
+    end
+
+    test "handles case-insensitive email matching for invitations" do
+      # Import fixtures needed for workspaces
+      import Jarga.WorkspacesFixtures
+
+      # Create workspace and invite with lowercase email
+      owner = user_fixture()
+      workspace = workspace_fixture(owner, %{name: "Test Workspace"})
+      email = "newuser@example.com"
+
+      assert {:ok, {:invitation_sent, _}} =
+               Jarga.Workspaces.invite_member(owner, workspace.id, email, :admin)
+
+      # New user signs up with mixed case email
+      user = unconfirmed_user_fixture(%{email: "NewUser@Example.Com"})
+      {encoded_token, _hashed_token} = generate_user_magic_link_token(user)
+
+      # User clicks magic link to confirm
+      assert {:ok, {confirmed_user, _expired_tokens}} =
+               Accounts.login_user_by_magic_link(encoded_token)
+
+      # Accept pending invitations
+      assert {:ok, _accepted} = Jarga.Workspaces.accept_pending_invitations(confirmed_user)
+
+      # Verify invitation was accepted despite case difference
+      members = Jarga.Workspaces.list_members(workspace.id)
+      accepted = Enum.find(members, &(&1.user_id == confirmed_user.id))
+      assert accepted != nil
+      assert accepted.joined_at != nil
+    end
   end
 
   describe "delete_user_session_token/1" do

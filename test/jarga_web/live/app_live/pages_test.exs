@@ -150,8 +150,7 @@ defmodule JargaWeb.AppLive.PagesTest do
       # Create another user and add them to the same workspace
       other_user = user_fixture()
 
-      {:ok, _member} =
-        Jarga.Workspaces.invite_member(user, workspace.id, other_user.email, :member)
+      {:ok, _member} = invite_and_accept_member(user, workspace.id, other_user.email, :member)
 
       # Other user creates a public page
       {:ok, public_page} =
@@ -175,8 +174,7 @@ defmodule JargaWeb.AppLive.PagesTest do
       # Create another user and add them to the same workspace
       other_user = user_fixture()
 
-      {:ok, _member} =
-        Jarga.Workspaces.invite_member(user, workspace.id, other_user.email, :member)
+      {:ok, _member} = invite_and_accept_member(user, workspace.id, other_user.email, :member)
 
       # Other user creates a private page
       {:ok, private_page} =

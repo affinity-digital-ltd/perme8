@@ -12,7 +12,7 @@ defmodule Jarga.Workspaces.UseCases.InviteMemberTest do
   end
 
   describe "execute/2 - existing user" do
-    test "invites existing user and sends notifications" do
+    test "creates pending invitation for existing user (requires acceptance)" do
       owner = user_fixture()
       workspace = workspace_fixture(owner)
       invitee = user_fixture()
@@ -26,10 +26,11 @@ defmodule Jarga.Workspaces.UseCases.InviteMemberTest do
 
       opts = [notifier: MockNotifier]
 
-      assert {:ok, {:member_added, member}} = InviteMember.execute(params, opts)
-      assert member.user_id == invitee.id
-      assert member.role == :admin
-      assert member.joined_at != nil
+      assert {:ok, {:invitation_sent, invitation}} = InviteMember.execute(params, opts)
+      assert invitation.email == invitee.email
+      assert invitation.role == :admin
+      assert invitation.user_id == nil
+      assert invitation.joined_at == nil
     end
 
     test "returns error for invalid role" do
@@ -62,7 +63,7 @@ defmodule Jarga.Workspaces.UseCases.InviteMemberTest do
       opts = [notifier: MockNotifier]
 
       # First invitation succeeds
-      assert {:ok, {:member_added, _}} = InviteMember.execute(params, opts)
+      assert {:ok, {:invitation_sent, _}} = InviteMember.execute(params, opts)
 
       # Second invitation fails
       assert {:error, :already_member} = InviteMember.execute(params, opts)
@@ -109,7 +110,7 @@ defmodule Jarga.Workspaces.UseCases.InviteMemberTest do
     test "is case-insensitive for email matching" do
       owner = user_fixture()
       workspace = workspace_fixture(owner)
-      invitee = user_fixture(%{email: "User@Example.Com"})
+      _invitee = user_fixture(%{email: "User@Example.Com"})
 
       params = %{
         inviter: owner,
@@ -120,8 +121,8 @@ defmodule Jarga.Workspaces.UseCases.InviteMemberTest do
 
       opts = [notifier: MockNotifier]
 
-      assert {:ok, {:member_added, member}} = InviteMember.execute(params, opts)
-      assert member.user_id == invitee.id
+      assert {:ok, {:invitation_sent, invitation}} = InviteMember.execute(params, opts)
+      assert invitation.email == "user@example.com"
     end
   end
 end

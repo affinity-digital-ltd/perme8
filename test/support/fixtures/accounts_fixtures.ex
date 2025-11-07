@@ -92,4 +92,14 @@ defmodule Jarga.AccountsFixtures do
       set: [inserted_at: dt, authenticated_at: dt]
     )
   end
+
+  def expire_user_login_token(user_id) do
+    Jarga.Repo.update_all(
+      from(t in Accounts.UserToken,
+        where: t.user_id == ^user_id and t.context == "login",
+        update: [set: [inserted_at: fragment("inserted_at - INTERVAL '20 minutes'")]]
+      ),
+      []
+    )
+  end
 end

@@ -327,30 +327,8 @@ defmodule JargaWeb.AppLive.Pages.Show do
       project={@project}
       page_title={@page.title}
     >
-      <div class="flex flex-col h-full">
-        <!-- Breadcrumbs -->
-        <div class="flex-shrink-0 mb-4">
-          <%= if @project do %>
-            <.breadcrumbs>
-              <:crumb navigate={~p"/app"}>Home</:crumb>
-              <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
-              <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:crumb>
-              <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}/projects/#{@project.slug}"}>
-                {@project.name}
-              </:crumb>
-              <:crumb>{@page.title}</:crumb>
-            </.breadcrumbs>
-          <% else %>
-            <.breadcrumbs>
-              <:crumb navigate={~p"/app"}>Home</:crumb>
-              <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
-              <:crumb navigate={~p"/app/workspaces/#{@workspace.slug}"}>{@workspace.name}</:crumb>
-              <:crumb>{@page.title}</:crumb>
-            </.breadcrumbs>
-          <% end %>
-        </div>
-
-    <!-- Action Menu (hidden for guests) -->
+      <div class="flex flex-col">
+        <!-- Action Menu (hidden for guests) -->
         <%= if not @readonly do %>
           <div class="flex items-center justify-end flex-shrink-0 mb-4">
             <.kebab_menu button_class="btn-sm">
@@ -379,7 +357,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
             </.kebab_menu>
           </div>
         <% end %>
-
+        
     <!-- Title Section -->
         <div class="border-b border-base-300 pb-4 mb-4 flex-shrink-0">
           <%= if @editing_title do %>
@@ -416,7 +394,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
             </h1>
           <% end %>
         </div>
-
+        
     <!-- Editor -->
         <div class="flex-1 flex flex-col overflow-hidden">
           <%= if @readonly do %>
@@ -434,7 +412,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
             data-readonly={if @readonly, do: "true", else: "false"}
             data-user-name={format_user_name(@current_scope.user)}
             class={[
-              "flex-1 min-h-0 cursor-text",
+              "flex-1 min-h-screen cursor-text",
               if(@readonly, do: "bg-base-100 opacity-90", else: "")
             ]}
           >

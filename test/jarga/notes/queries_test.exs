@@ -22,7 +22,7 @@ defmodule Jarga.Notes.QueriesTest do
       user1 = user_fixture()
       user2 = user_fixture()
       workspace = workspace_fixture(user1)
-      {:ok, _} = Jarga.Workspaces.invite_member(user1, workspace.id, user2.email, :member)
+      {:ok, _} = invite_and_accept_member(user1, workspace.id, user2.email, :member)
 
       note1 = note_fixture(user1, workspace.id)
       note2 = note_fixture(user2, workspace.id)
@@ -139,7 +139,7 @@ defmodule Jarga.Notes.QueriesTest do
       user1 = user_fixture()
       user2 = user_fixture()
       workspace = workspace_fixture(user1)
-      {:ok, _} = Jarga.Workspaces.invite_member(user1, workspace.id, user2.email, :member)
+      {:ok, _} = invite_and_accept_member(user1, workspace.id, user2.email, :member)
       project = project_fixture(user1, workspace)
 
       # Create notes in different combinations

@@ -1,5 +1,7 @@
 defmodule JargaWeb.Integration.UserSignupAndConfirmationTest do
-  use JargaWeb.ConnCase, async: true
+  # async: false because these tests use PubSub notifications which require
+  # database access from a GenServer process (WorkspaceInvitationSubscriber)
+  use JargaWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   import Jarga.AccountsFixtures
@@ -7,8 +9,27 @@ defmodule JargaWeb.Integration.UserSignupAndConfirmationTest do
 
   alias Jarga.Accounts
 
+  # Tag this module as integration tests to enable PubSub subscribers
+  @moduletag :integration
+
+  # Helper function to wait for async notifications to be created
+  defp wait_for_notification(user_id, max_attempts \\ 10) do
+    Enum.reduce_while(1..max_attempts, nil, fn _attempt, _acc ->
+      case Jarga.Notifications.list_notifications(user_id) do
+        [] ->
+          Process.sleep(10)
+          {:cont, nil}
+
+        notifications ->
+          {:halt, List.first(notifications)}
+      end
+    end)
+  end
+
   describe "user signup and email confirmation flow" do
-    test "user signs up, receives email, clicks confirmation link, and is confirmed", %{conn: conn} do
+    test "user signs up, receives email, clicks confirmation link, and is confirmed", %{
+      conn: conn
+    } do
       # Step 1: User visits registration page
       {:ok, lv, _html} = live(conn, ~p"/users/register")
 
@@ -106,9 +127,7 @@ defmodule JargaWeb.Integration.UserSignupAndConfirmationTest do
       assert user.confirmed_at != nil
     end
 
-    # NOTE: This test requires manipulating database timestamps which is complex with UUID types
-    # In a real application, you would use a time mocking library like Mimic or Mox
-    @tag :skip
+    # NOTE: This test manipulates database timestamps to test token expiration
     test "confirmation link expires after 15 minutes", %{conn: conn} do
       user = unconfirmed_user_fixture()
 
@@ -120,19 +139,15 @@ defmodule JargaWeb.Integration.UserSignupAndConfirmationTest do
 
       # Manually expire the token in the database by updating it directly
       # Note: In a real application, you would wait 15 minutes or use time mocking
-      # For testing purposes, we'll update the token using Ecto
-      import Ecto.Query
+      # For testing purposes, we'll expire the token using a test helper
+      expire_user_login_token(user.id)
 
-      from(t in "users_tokens",
-        where: t.user_id == ^user.id and t.context == "login",
-        update: [set: [inserted_at: fragment("inserted_at - INTERVAL '20 minutes'")]]
-      )
-      |> Jarga.Repo.update_all([])
+      # Try to use expired token - should be redirected to login page
+      {:ok, _lv, html} =
+        live(conn, ~p"/users/log-in/#{token}")
+        |> follow_redirect(conn, ~p"/users/log-in")
 
-      # Try to use expired token
-      {:ok, _lv, html} = live(conn, ~p"/users/log-in/#{token}")
-
-      assert html =~ "Login link is invalid or it has expired"
+      assert html =~ "Magic link is invalid or it has expired"
 
       # Verify user is still unconfirmed
       user = Accounts.get_user_by_email(user.email)
@@ -331,13 +346,15 @@ defmodule JargaWeb.Integration.UserSignupAndConfirmationTest do
       new_user = Accounts.get_user_by_email(invited_email)
       assert new_user.confirmed_at != nil
 
-      # Step 5: Verify invitation still exists
-      # In a real flow, the user would need to accept the invitation through the UI
-      # before they can access the workspace. Testing the full invitation acceptance flow
-      # would require additional implementation
+      # Step 5: Verify notification was created for the pending invitation
+      notifications = Jarga.Notifications.list_notifications(new_user.id)
+      assert length(notifications) == 1
+      notification = List.first(notifications)
+      assert notification.type == "workspace_invitation"
+      assert notification.data["workspace_name"] == workspace.name
     end
 
-    test "existing user invited to workspace is immediately added as member", %{conn: _conn} do
+    test "existing user invited to workspace receives invitation and can accept", %{conn: _conn} do
       # Setup: Create workspace owner and workspace
       owner = user_fixture()
       workspace = workspace_fixture(owner)
@@ -346,18 +363,30 @@ defmodule JargaWeb.Integration.UserSignupAndConfirmationTest do
       existing_user = user_fixture()
       assert existing_user.confirmed_at != nil
 
-      # Owner invites existing user
-      {:ok, {:member_added, member}} =
+      # Owner invites existing user - creates an invitation that needs acceptance
+      {:ok, {:invitation_sent, invitation}} =
         Jarga.Workspaces.invite_member(owner, workspace.id, existing_user.email, :member)
 
-      # Verify membership was created with user_id and joined_at set
-      assert member.email == existing_user.email
+      # Verify invitation was created without user_id or joined_at
+      assert invitation.email == existing_user.email
+      assert invitation.user_id == nil
+      assert invitation.joined_at == nil
+      assert invitation.role == :member
+
+      # Wait for notification to be created asynchronously
+      notification = wait_for_notification(existing_user.id)
+      assert notification != nil, "Notification was not created"
+
+      # Accept the invitation
+      {:ok, member} =
+        Jarga.Notifications.accept_workspace_invitation(
+          notification.id,
+          existing_user.id
+        )
+
+      # Verify membership was updated with user_id and joined_at set
       assert member.user_id == existing_user.id
       assert member.joined_at != nil
-      assert member.role == :member
-
-      # Existing user has been added to workspace and can access it immediately
-      # (This happens because they already have a confirmed account)
     end
 
     test "invited user cannot access workspace before confirming email", %{conn: _conn} do
@@ -395,7 +424,7 @@ defmodule JargaWeb.Integration.UserSignupAndConfirmationTest do
       # They would need to accept the invitation through the UI to access the workspace
     end
 
-    test "multiple invitations: user confirms email before accepting workspace", %{conn: _conn} do
+    test "multiple invitations: user confirms email before accepting workspace", %{conn: conn} do
       # Setup: Create two workspaces with different owners
       owner1 = user_fixture()
       workspace1 = workspace_fixture(owner1)
@@ -415,12 +444,63 @@ defmodule JargaWeb.Integration.UserSignupAndConfirmationTest do
       assert invitation1.joined_at == nil
       assert invitation2.joined_at == nil
 
-      # User signs up and confirms
-      user = user_fixture(email: invited_email)
-      assert user.confirmed_at != nil
+      # User signs up with the invited email
+      {:ok, lv, _html} = live(conn, ~p"/users/register")
 
-      # User has been invited to both workspaces and is confirmed
-      # They would need to accept each invitation through the UI to access the workspaces
+      password = valid_user_password()
+
+      form =
+        form(lv, "#registration_form",
+          user: %{
+            email: invited_email,
+            first_name: "Invited",
+            last_name: "User",
+            password: password
+          }
+        )
+
+      {:ok, _lv, _html} =
+        render_submit(form)
+        |> follow_redirect(conn, ~p"/users/log-in")
+
+      # User confirms email via magic link
+      new_user = Accounts.get_user_by_email(invited_email)
+
+      token =
+        extract_user_token(fn url ->
+          Accounts.deliver_login_instructions(new_user, url)
+        end)
+
+      {:ok, lv, _html} = live(conn, ~p"/users/log-in/#{token}")
+
+      form = form(lv, "#confirmation_form", %{"user" => %{"token" => token}})
+      render_submit(form)
+      conn = follow_trigger_action(form, conn)
+      assert redirected_to(conn) == ~p"/"
+
+      # Verify user is confirmed
+      new_user = Accounts.get_user_by_email(invited_email)
+      assert new_user.confirmed_at != nil
+
+      # Wait for notifications to be created asynchronously
+      # We need to wait for both notifications (max 20 attempts)
+      notifications =
+        Enum.reduce_while(1..20, [], fn _attempt, _acc ->
+          notifs = Jarga.Notifications.list_notifications(new_user.id)
+
+          if length(notifs) == 2 do
+            {:halt, notifs}
+          else
+            Process.sleep(10)
+            {:cont, notifs}
+          end
+        end)
+
+      # Verify notifications were created for both pending invitations
+      assert length(notifications) == 2
+
+      workspace_names = Enum.map(notifications, & &1.data["workspace_name"]) |> Enum.sort()
+      assert workspace_names == [workspace1.name, workspace2.name] |> Enum.sort()
     end
   end
 end

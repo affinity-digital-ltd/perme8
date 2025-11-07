@@ -32,4 +32,15 @@ defmodule Jarga.Workspaces.WorkspaceMember do
     |> foreign_key_constraint(:invited_by)
     |> unique_constraint([:workspace_id, :email])
   end
+
+  @doc """
+  Changeset for accepting a workspace invitation.
+  Updates the user_id and joined_at fields to mark the invitation as accepted.
+  """
+  def accept_invitation_changeset(workspace_member, attrs) do
+    workspace_member
+    |> cast(attrs, [:user_id, :joined_at])
+    |> validate_required([:user_id, :joined_at])
+    |> foreign_key_constraint(:user_id)
+  end
 end

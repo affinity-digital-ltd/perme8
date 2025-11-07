@@ -43,7 +43,7 @@ defmodule Jarga.Projects.UseCases.CreateProjectTest do
       workspace = workspace_fixture(owner)
 
       # Add admin as member
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, admin.email, :admin)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, admin.email, :admin)
 
       params = %{
         actor: admin,
@@ -64,7 +64,7 @@ defmodule Jarga.Projects.UseCases.CreateProjectTest do
       workspace = workspace_fixture(owner)
 
       # Add member
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, member.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       params = %{
         actor: member,

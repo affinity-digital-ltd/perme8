@@ -203,4 +203,59 @@ defmodule Jarga.Workspaces.Queries do
       where: wm.user_id == ^user.id
     )
   end
+
+  @doc """
+  Finds a pending invitation by workspace and user.
+
+  Returns a query for a workspace member record that hasn't been accepted yet
+  (joined_at is nil) and matches either the user_id or has no user_id set.
+
+  ## Examples
+
+      iex> find_pending_invitation(workspace_id, user_id) |> Repo.one()
+      %WorkspaceMember{}
+
+  """
+  def find_pending_invitation(workspace_id, user_id) do
+    from(wm in WorkspaceMember,
+      where: wm.workspace_id == ^workspace_id,
+      where: is_nil(wm.joined_at),
+      where: wm.user_id == ^user_id or is_nil(wm.user_id)
+    )
+  end
+
+  @doc """
+  Finds all pending invitations for a user's email (case-insensitive).
+
+  Returns a query for workspace member records that have no user_id set,
+  haven't been joined yet, and match the given email address.
+
+  ## Examples
+
+      iex> find_pending_invitations_by_email(user_email) |> Repo.all()
+      [%WorkspaceMember{}, ...]
+
+  """
+  def find_pending_invitations_by_email(email) do
+    from(wm in WorkspaceMember,
+      where: is_nil(wm.user_id),
+      where: is_nil(wm.joined_at),
+      where: fragment("LOWER(?)", wm.email) == ^String.downcase(email)
+    )
+  end
+
+  @doc """
+  Preloads workspace and inviter associations on a query.
+
+  ## Examples
+
+      iex> find_pending_invitations_by_email(user_email) |> with_workspace_and_inviter() |> Repo.all()
+      [%WorkspaceMember{workspace: %Workspace{}, inviter: %User{}}, ...]
+
+  """
+  def with_workspace_and_inviter(query) do
+    from(wm in query,
+      preload: [:workspace, :inviter]
+    )
+  end
 end

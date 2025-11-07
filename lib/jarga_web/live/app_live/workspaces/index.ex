@@ -14,12 +14,10 @@ defmodule JargaWeb.AppLive.Workspaces.Index do
   def render(assigns) do
     ~H"""
     <Layouts.admin flash={@flash} current_scope={@current_scope}>
-      <div class="space-y-8">
-        <.breadcrumbs>
-          <:crumb navigate={~p"/app"}>Home</:crumb>
-          <:crumb>Workspaces</:crumb>
-        </.breadcrumbs>
+      <:breadcrumbs navigate={~p"/app"}>Home</:breadcrumbs>
+      <:breadcrumbs>Workspaces</:breadcrumbs>
 
+      <div class="space-y-8">
         <.header>
           Workspaces
           <:subtitle>Manage your workspaces and collaborate with your team</:subtitle>
@@ -110,6 +108,18 @@ defmodule JargaWeb.AppLive.Workspaces.Index do
   end
 
   @impl true
+  def handle_info({:workspace_joined, workspace_id}, socket) do
+    # Reload workspaces when user joins a workspace (via notification acceptance)
+    user = socket.assigns.current_scope.user
+    workspaces = Workspaces.list_workspaces_for_user(user)
+
+    # Subscribe to the new workspace
+    Phoenix.PubSub.subscribe(Jarga.PubSub, "workspace:#{workspace_id}")
+
+    {:noreply, assign(socket, workspaces: workspaces)}
+  end
+
+  @impl true
   def handle_info({:workspace_removed, _workspace_id}, socket) do
     # Reload workspaces when user is removed from a workspace
     user = socket.assigns.current_scope.user
@@ -134,6 +144,18 @@ defmodule JargaWeb.AppLive.Workspaces.Index do
   end
 
   @impl true
+  def handle_info({:member_joined, _user_id}, socket) do
+    # Member joined workspace - not relevant to workspaces index view
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:invitation_declined, _user_id}, socket) do
+    # Invitation declined - not relevant to workspaces index view
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_info({:page_visibility_changed, _page_id, _is_public}, socket) do
     # Page visibility changed - not relevant to workspace index view
     {:noreply, socket}
@@ -151,6 +173,6 @@ defmodule JargaWeb.AppLive.Workspaces.Index do
     {:noreply, socket}
   end
 
-  # Chat panel streaming messages
+  # Chat panel streaming messages and notification handlers
   handle_chat_messages()
 end

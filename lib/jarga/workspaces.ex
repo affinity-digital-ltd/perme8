@@ -23,7 +23,14 @@ defmodule Jarga.Workspaces do
   alias Jarga.Workspaces.{Workspace, WorkspaceMember, Queries}
   alias Jarga.Workspaces.Domain.SlugGenerator
   alias Jarga.Workspaces.Infrastructure.MembershipRepository
-  alias Jarga.Workspaces.UseCases.{InviteMember, ChangeMemberRole, RemoveMember}
+
+  alias Jarga.Workspaces.UseCases.{
+    InviteMember,
+    ChangeMemberRole,
+    RemoveMember,
+    CreateNotificationsForPendingInvitations
+  }
+
   alias Jarga.Workspaces.Services.EmailAndPubSubNotifier
   alias Jarga.Workspaces.Policies.PermissionsPolicy
 
@@ -458,6 +465,153 @@ defmodule Jarga.Workspaces do
   """
   def list_members(workspace_id) do
     MembershipRepository.list_members(workspace_id)
+  end
+
+  @doc """
+  Accepts all pending workspace invitations for a user.
+
+  When a user signs up with an email that has pending workspace invitations,
+  this function converts those pending invitations into active memberships.
+
+  ## Returns
+
+  - `{:ok, [workspace_member]}` - List of accepted workspace memberships
+
+  ## Examples
+
+      iex> accept_pending_invitations(user)
+      {:ok, [%WorkspaceMember{}, ...]}
+
+      iex> accept_pending_invitations(user_with_no_invitations)
+      {:ok, []}
+
+  """
+  def accept_pending_invitations(%User{} = user) do
+    Repo.transact(fn ->
+      # Find all pending invitations for this user's email (case-insensitive)
+      pending_invitations =
+        Queries.find_pending_invitations_by_email(user.email)
+        |> Repo.all()
+
+      # Update each invitation to accept it
+      now = DateTime.utc_now()
+
+      accepted =
+        Enum.map(pending_invitations, fn invitation ->
+          invitation
+          |> WorkspaceMember.changeset(%{
+            user_id: user.id,
+            joined_at: now
+          })
+          |> Repo.update!()
+        end)
+
+      {:ok, accepted}
+    end)
+  end
+
+  @doc """
+  Accepts a specific workspace invitation for a user.
+
+  Finds a pending invitation (not yet joined) for the given workspace and user,
+  and marks it as accepted by setting the user_id and joined_at timestamp.
+
+  ## Returns
+
+  - `{:ok, workspace_member}` - Successfully accepted invitation
+  - `{:error, :invitation_not_found}` - No pending invitation found
+
+  ## Examples
+
+      iex> accept_invitation_by_workspace(workspace_id, user_id)
+      {:ok, %WorkspaceMember{}}
+
+  """
+  def accept_invitation_by_workspace(workspace_id, user_id) do
+    Repo.transact(fn ->
+      # Find the pending workspace_member record by workspace_id and user_id
+      case Queries.find_pending_invitation(workspace_id, user_id) |> Repo.one() do
+        nil ->
+          {:error, :invitation_not_found}
+
+        workspace_member ->
+          now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+          workspace_member
+          |> WorkspaceMember.accept_invitation_changeset(%{
+            user_id: user_id,
+            joined_at: now
+          })
+          |> Repo.update()
+      end
+    end)
+  end
+
+  @doc """
+  Declines a specific workspace invitation for a user.
+
+  Finds and deletes a pending invitation for the given workspace and user.
+
+  ## Returns
+
+  - `:ok` - Successfully declined invitation (or invitation not found)
+  - `{:error, changeset}` - Failed to delete invitation
+
+  ## Examples
+
+      iex> decline_invitation_by_workspace(workspace_id, user_id)
+      :ok
+
+  """
+  def decline_invitation_by_workspace(workspace_id, user_id) do
+    # Find and delete the pending workspace_member record
+    case Queries.find_pending_invitation(workspace_id, user_id) |> Repo.one() do
+      nil ->
+        # Invitation not found is OK - might have been deleted already
+        :ok
+
+      workspace_member ->
+        case Repo.delete(workspace_member) do
+          {:ok, _} -> :ok
+          {:error, changeset} -> {:error, changeset}
+        end
+    end
+  end
+
+  @doc """
+  Lists all pending workspace invitations for a user's email.
+
+  Returns invitations with workspace and inviter associations preloaded.
+
+  ## Examples
+
+      iex> list_pending_invitations_with_details("user@example.com")
+      [%WorkspaceMember{workspace: %Workspace{}, inviter: %User{}}, ...]
+
+  """
+  def list_pending_invitations_with_details(email) do
+    Queries.find_pending_invitations_by_email(email)
+    |> Queries.with_workspace_and_inviter()
+    |> Repo.all()
+  end
+
+  @doc """
+  Creates notifications for all pending workspace invitations for a user.
+
+  This should be called after a new user confirms their email, to ensure they
+  receive notifications for any workspace invitations sent before they signed up.
+
+  ## Examples
+
+      iex> create_notifications_for_pending_invitations(user)
+      {:ok, [%Notification{}, ...]}
+
+      iex> create_notifications_for_pending_invitations(user_with_no_invitations)
+      {:ok, []}
+
+  """
+  def create_notifications_for_pending_invitations(%User{} = user) do
+    CreateNotificationsForPendingInvitations.execute(%{user: user})
   end
 
   @doc """

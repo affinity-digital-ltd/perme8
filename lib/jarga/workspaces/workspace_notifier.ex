@@ -32,7 +32,7 @@ defmodule Jarga.Workspaces.WorkspaceNotifier do
         %User{} = inviter,
         signup_url
       ) do
-    deliver(email, "You've been invited to #{workspace.name}", """
+    deliver(email, "You've been invited to #{workspace.name} on Jarga", """
 
     ==============================
 
@@ -40,11 +40,11 @@ defmodule Jarga.Workspaces.WorkspaceNotifier do
 
     #{inviter.first_name} #{inviter.last_name} has invited you to join the workspace "#{workspace.name}" on Jarga.
 
-    To accept this invitation, please sign up at:
+    To accept this invitation, you'll need to create a Jarga account first. Sign up here:
 
     #{signup_url}
 
-    Once you sign up with this email address, you'll automatically be added to the workspace.
+    After you create your account and confirm your email, you'll automatically be added to the workspace "#{workspace.name}".
 
     ==============================
     """)

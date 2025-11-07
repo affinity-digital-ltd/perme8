@@ -82,22 +82,97 @@ defmodule JargaWeb.Layouts do
 
   slot :inner_block, required: true
 
+  slot :breadcrumbs, doc: "breadcrumb items to display in topbar" do
+    attr :navigate, :string
+    attr :patch, :string
+    attr :href, :string
+  end
+
   def admin(assigns) do
     ~H"""
-    <div class="drawer lg:drawer-open h-screen">
+    <div class="drawer lg:drawer-open h-screen overflow-hidden">
       <input id="admin-drawer" type="checkbox" class="drawer-toggle" />
-      <div class="drawer-content flex flex-col min-w-0 h-full">
-        <!-- Navbar for mobile -->
-        <div class="navbar lg:hidden">
-          <div class="flex-none">
+      <div class="drawer-content flex flex-col min-w-0 h-full overflow-hidden">
+        <!-- Topbar with breadcrumbs, notification bell, and chat -->
+        <div class="navbar bg-base-100 sticky top-0 z-10">
+          <div class="flex-none lg:hidden">
             <label for="admin-drawer" class="btn btn-square btn-ghost">
               <.icon name="hero-bars-3" class="size-6" />
+            </label>
+          </div>
+          <div class="flex-1 min-w-0">
+            <%= if @workspace || @project || @page || @breadcrumbs != [] do %>
+              <nav class="breadcrumbs text-sm overflow-x-auto ml-2 md:ml-4 lg:ml-6">
+                <ul class="flex-nowrap">
+                  <%= if @breadcrumbs != [] do %>
+                    <%= for crumb <- @breadcrumbs do %>
+                      <li>
+                        <%= if Map.get(crumb, :navigate) do %>
+                          <.link navigate={Map.get(crumb, :navigate)} class="hover:underline">
+                            {render_slot(crumb)}
+                          </.link>
+                        <% else %>
+                          <span class="text-base-content/70">{render_slot(crumb)}</span>
+                        <% end %>
+                      </li>
+                    <% end %>
+                  <% else %>
+                    <li>
+                      <.link navigate={~p"/app"} class="hover:underline">Home</.link>
+                    </li>
+                    <%= if @workspace do %>
+                      <li>
+                        <.link navigate={~p"/app/workspaces"} class="hover:underline">
+                          Workspaces
+                        </.link>
+                      </li>
+                      <li>
+                        <.link
+                          navigate={~p"/app/workspaces/#{@workspace.slug}"}
+                          class="hover:underline"
+                        >
+                          {@workspace.name}
+                        </.link>
+                      </li>
+                    <% end %>
+                    <%= if @project do %>
+                      <li>
+                        <.link
+                          navigate={~p"/app/workspaces/#{@workspace.slug}/projects/#{@project.slug}"}
+                          class="hover:underline"
+                        >
+                          {@project.name}
+                        </.link>
+                      </li>
+                    <% end %>
+                    <%= if @page do %>
+                      <li>
+                        <span class="text-base-content/70">{@page.title}</span>
+                      </li>
+                    <% end %>
+                  <% end %>
+                </ul>
+              </nav>
+            <% end %>
+          </div>
+          <div class="flex-none flex items-center gap-2">
+            <.live_component
+              module={JargaWeb.NotificationsLive.NotificationBell}
+              id="notification-bell-topbar"
+              current_user={@current_scope.user}
+            />
+            <label
+              for="chat-drawer-global-chat-panel"
+              class="btn btn-ghost btn-circle"
+              aria-label="Open chat"
+            >
+              <.icon name="hero-chat-bubble-left-right" class="size-6" />
             </label>
           </div>
         </div>
         
     <!-- Page content -->
-        <main class="flex-1 flex flex-col px-3 sm:px-6 pb-6 pt-0 lg:p-8">
+        <main class="flex-1 flex flex-col px-3 sm:px-6 pb-6 pt-0 lg:p-8 overflow-y-auto">
           {render_slot(@inner_block)}
         </main>
 
@@ -105,7 +180,7 @@ defmodule JargaWeb.Layouts do
       </div>
       
     <!-- Sidebar -->
-      <div class="drawer-side">
+      <div class="drawer-side z-20">
         <label for="admin-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
         <aside class="bg-base-200 min-h-full w-80 p-4 flex flex-col">
           <!-- Logo/Brand -->

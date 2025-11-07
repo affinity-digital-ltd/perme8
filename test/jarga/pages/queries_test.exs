@@ -22,7 +22,7 @@ defmodule Jarga.Pages.QueriesTest do
       user1 = user_fixture()
       user2 = user_fixture()
       workspace = workspace_fixture(user1)
-      {:ok, _} = Jarga.Workspaces.invite_member(user1, workspace.id, user2.email, :member)
+      {:ok, _} = invite_and_accept_member(user1, workspace.id, user2.email, :member)
 
       {:ok, page1} = Pages.create_page(user1, workspace.id, %{title: "Page 1"})
       {:ok, page2} = Pages.create_page(user2, workspace.id, %{title: "Page 2"})
@@ -58,7 +58,7 @@ defmodule Jarga.Pages.QueriesTest do
       owner = user_fixture()
       member = user_fixture()
       workspace = workspace_fixture(owner)
-      {:ok, _} = Jarga.Workspaces.invite_member(owner, workspace.id, member.email, :member)
+      {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       {:ok, page} = Pages.create_page(owner, workspace.id, %{title: "Public Page"})
       {:ok, _page} = Pages.update_page(owner, page.id, %{is_public: true})
@@ -76,7 +76,7 @@ defmodule Jarga.Pages.QueriesTest do
       user1 = user_fixture()
       user2 = user_fixture()
       workspace = workspace_fixture(user1)
-      {:ok, _} = Jarga.Workspaces.invite_member(user1, workspace.id, user2.email, :member)
+      {:ok, _} = invite_and_accept_member(user1, workspace.id, user2.email, :member)
 
       {:ok, page} = Pages.create_page(user1, workspace.id, %{title: "Private Page"})
 
@@ -282,7 +282,7 @@ defmodule Jarga.Pages.QueriesTest do
       user1 = user_fixture()
       user2 = user_fixture()
       workspace = workspace_fixture(user1)
-      {:ok, _} = Jarga.Workspaces.invite_member(user1, workspace.id, user2.email, :member)
+      {:ok, _} = invite_and_accept_member(user1, workspace.id, user2.email, :member)
       project = project_fixture(user1, workspace)
 
       # Create pages in different combinations

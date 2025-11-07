@@ -18,6 +18,10 @@ defmodule JargaWeb.UserSessionController do
       {:ok, {user, tokens_to_disconnect}} ->
         UserAuth.disconnect_sessions(tokens_to_disconnect)
 
+        # Create notifications for any pending workspace invitations
+        # This ensures new users see invitations sent before they signed up
+        Jarga.Workspaces.create_notifications_for_pending_invitations(user)
+
         conn
         |> put_flash(:info, info)
         |> UserAuth.log_in_user(user, user_params)

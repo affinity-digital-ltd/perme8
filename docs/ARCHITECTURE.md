@@ -186,6 +186,154 @@ end
 - Handle different error cases appropriately
 - Don't access internal context modules
 
+#### LiveView Streams Pattern
+
+**LiveView streams** provide memory-efficient rendering for large collections by only sending changed items to the client instead of the entire list.
+
+##### When to Use Streams
+
+✅ **Use streams for**:
+- Large collections (>20 items)
+- Real-time lists that update frequently
+- Collections where individual items change independently
+- Memory-constrained scenarios
+
+❌ **Don't use streams for**:
+- Small, static lists (<10 items)
+- Collections that always reload entirely
+- Simple dropdowns or selects
+
+##### Implementing Streams in LiveComponents
+
+**CRITICAL**: Streams in stateful LiveComponents require specific initialization:
+
+1. **Initialize stream in `mount/1`** (called once):
+```elixir
+@impl true
+def mount(socket) do
+  {:ok, stream(socket, :notifications, [])}
+end
+```
+
+2. **Populate stream in `update/2`** (called on every update):
+```elixir
+@impl true
+def update(assigns, socket) do
+  socket =
+    socket
+    |> assign(assigns)
+    |> maybe_load_notifications()
+
+  {:ok, socket}
+end
+
+defp load_notifications(socket) do
+  notifications = Notifications.list_notifications(user_id, limit: 20)
+
+  socket
+  |> stream(:notifications, notifications, reset: true)
+  |> assign(:unread_count, unread_count)
+end
+```
+
+3. **Render with `phx-update="stream"`**:
+```heex
+<div id="notifications" phx-update="stream">
+  <div id="notifications-empty-state" class="hidden only:block">
+    No notifications
+  </div>
+  <div :for={{dom_id, notification} <- @streams.notifications} id={dom_id}>
+    <.notification_item notification={notification} />
+  </div>
+</div>
+```
+
+**Key points**:
+- Stream must be configured in `mount/1` before any items are inserted
+- Once configured, a stream may not be re-configured
+- Use `reset: true` when replacing entire collection
+- Use `stream_insert/3` or `stream_delete/3` for individual updates
+
+##### Streams and Conditional Rendering
+
+**⚠️ CRITICAL LIMITATION**: Streams do NOT work inside conditional rendering blocks.
+
+**❌ WRONG - Stream inside conditional**:
+```heex
+<%= if @show_dropdown do %>
+  <div id="notifications" phx-update="stream">
+    <div :for={{id, item} <- @streams.notifications} id={id}>
+      {item.text}
+    </div>
+  </div>
+<% end %>
+```
+
+This appears to compile but **stream items will not render**. Phoenix LiveView cannot properly track stream changes when the parent element is conditionally rendered.
+
+**✅ CORRECT - CSS-based visibility**:
+```heex
+<div
+  id="notifications-dropdown"
+  class={"#{if !@show_dropdown, do: "hidden"}"}
+>
+  <div id="notifications" phx-update="stream">
+    <div :for={{id, item} <- @streams.notifications} id={id}>
+      {item.text}
+    </div>
+  </div>
+</div>
+```
+
+**Solution**: Use CSS to show/hide the container instead of conditional rendering:
+- Keep the stream container always in the DOM
+- Use `hidden` class or similar to toggle visibility
+- Stream updates work correctly because the element always exists
+
+**Why this happens**:
+- Streams require a stable DOM element with `phx-update="stream"`
+- Conditional rendering removes/adds the element from the DOM tree
+- LiveView loses track of the stream's state when the parent is removed
+- This is a known limitation of Phoenix LiveView streams (as of v1.1.16)
+
+##### Empty States with Streams
+
+Use Tailwind's `only:` pseudo-class for empty states:
+
+```heex
+<div id="items" phx-update="stream">
+  <div id="items-empty-state" class="hidden only:block">
+    No items yet
+  </div>
+  <div :for={{id, item} <- @streams.items} id={id}>
+    {item.name}
+  </div>
+</div>
+```
+
+The `only:` selector displays the empty state only when it's the only child of the stream container.
+
+##### Performance Benefits
+
+**Before (with regular assigns)**:
+- 20 items ≈ ~40KB sent to client on each update
+- Every change resends entire list
+- Memory grows with list size in socket
+
+**After (with streams)**:
+- Initial load: ~40KB (same)
+- Single update: ~2KB (only changed item)
+- Memory: constant regardless of list size
+- DOM updates: surgical, only changed elements
+
+##### Real-World Example
+
+See `lib/jarga_web/live/notifications_live/notification_bell.ex` for a complete example of:
+- Stream initialization in a LiveComponent
+- CSS-based conditional rendering
+- Empty state handling
+- PubSub integration with streams
+
 ### Core Layer (Contexts)
 
 The Core Layer is further organized into three sub-layers following Clean Architecture:

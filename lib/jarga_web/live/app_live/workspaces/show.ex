@@ -15,14 +15,8 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.admin flash={@flash} current_scope={@current_scope}>
+    <Layouts.admin flash={@flash} current_scope={@current_scope} workspace={@workspace}>
       <div class="space-y-8">
-        <.breadcrumbs>
-          <:crumb navigate={~p"/app"}>Home</:crumb>
-          <:crumb navigate={~p"/app/workspaces"}>Workspaces</:crumb>
-          <:crumb>{@workspace.name}</:crumb>
-        </.breadcrumbs>
-
         <%= if can_edit_workspace?(@current_member) || can_manage_members?(@current_member) || can_delete_workspace?(@current_member) do %>
           <div class="flex items-center justify-end">
             <.kebab_menu>
@@ -283,9 +277,9 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
                           <th class="font-semibold text-right">Actions</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody id="members-list">
                         <%= for member <- @members do %>
-                          <tr class="hover">
+                          <tr class="hover" id={"member-#{member.id}"}>
                             <td>
                               <div class="flex items-center gap-2">
                                 <div class="avatar placeholder">
@@ -805,6 +799,28 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
       end)
 
     {:noreply, assign(socket, projects: projects)}
+  end
+
+  @impl true
+  def handle_info({:member_joined, _user_id}, socket) do
+    # Reload members list if modal is open
+    if socket.assigns.show_members_modal do
+      members = Workspaces.list_members(socket.assigns.workspace.id)
+      {:noreply, assign(socket, members: members)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_info({:invitation_declined, _user_id}, socket) do
+    # Reload members list if modal is open
+    if socket.assigns.show_members_modal do
+      members = Workspaces.list_members(socket.assigns.workspace.id)
+      {:noreply, assign(socket, members: members)}
+    else
+      {:noreply, socket}
+    end
   end
 
   # Chat panel streaming messages

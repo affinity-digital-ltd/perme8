@@ -28,7 +28,7 @@ defmodule Jarga.Workspaces.UseCases.InviteMember do
   alias Jarga.Accounts
   alias Jarga.Workspaces.WorkspaceMember
   alias Jarga.Workspaces.Policies.MembershipPolicy
-  alias Jarga.Workspaces.Infrastructure.MembershipRepository
+  alias Jarga.Workspaces.Infrastructure.{MembershipRepository, PubSubNotifier}
 
   @doc """
   Executes the invite member use case.
@@ -42,7 +42,8 @@ defmodule Jarga.Workspaces.UseCases.InviteMember do
     - `:role` - Role to assign (:admin, :member, or :guest)
 
   - `opts` - Keyword list of options:
-    - `:notifier` - Optional notifier module (default: uses real notifier)
+    - `:notifier` - Optional email notifier module (default: uses real notifier)
+    - `:pubsub_notifier` - Optional PubSub notifier module (default: PubSubNotifier)
 
   ## Returns
 
@@ -60,16 +61,14 @@ defmodule Jarga.Workspaces.UseCases.InviteMember do
     } = params
 
     notifier = Keyword.get(opts, :notifier)
+    pubsub_notifier = Keyword.get(opts, :pubsub_notifier, PubSubNotifier)
 
     with :ok <- validate_role(role),
          {:ok, workspace} <- verify_inviter_membership(inviter, workspace_id),
          :ok <- check_not_already_member(workspace_id, email),
          user <- find_user_by_email_case_insensitive(email) do
-      if user do
-        add_existing_user_as_member(workspace, user, role, inviter, notifier)
-      else
-        create_pending_invitation(workspace, email, role, inviter, notifier)
-      end
+      # Always create pending invitation (requires acceptance via notification)
+      create_pending_invitation(workspace, email, role, inviter, user, notifier, pubsub_notifier)
     end
   end
 
@@ -112,59 +111,74 @@ defmodule Jarga.Workspaces.UseCases.InviteMember do
     Accounts.get_user_by_email_case_insensitive(email)
   end
 
-  defp add_existing_user_as_member(workspace, user, role, inviter, notifier) do
-    now = DateTime.utc_now()
+  defp create_pending_invitation(workspace, email, role, inviter, user, notifier, pubsub_notifier) do
+    result =
+      Repo.transact(fn ->
+        # Create workspace_member record (pending invitation)
+        attrs = %{
+          workspace_id: workspace.id,
+          user_id: nil,
+          email: email,
+          role: role,
+          invited_by: inviter.id,
+          invited_at: DateTime.utc_now() |> DateTime.truncate(:second),
+          joined_at: nil
+        }
 
-    attrs = %{
-      workspace_id: workspace.id,
-      user_id: user.id,
-      email: user.email,
-      role: role,
-      invited_by: inviter.id,
-      invited_at: now,
-      joined_at: now
-    }
+        case create_workspace_member(attrs) do
+          {:ok, invitation} ->
+            # Send email notifications if notifier is provided
+            send_email_notification(notifier, user, email, workspace, inviter)
 
-    case %WorkspaceMember{}
-         |> WorkspaceMember.changeset(attrs)
-         |> Repo.insert() do
-      {:ok, member} ->
-        # Send notifications if notifier is provided
-        if notifier do
-          notifier.notify_existing_user(user, workspace, inviter)
+            {:ok, invitation}
+
+          error ->
+            error
         end
+      end)
 
-        {:ok, {:member_added, member}}
+    # Broadcast AFTER transaction commits to avoid race conditions
+    case result do
+      {:ok, invitation} ->
+        maybe_create_notification(user, workspace, role, inviter, pubsub_notifier)
+        {:ok, {:invitation_sent, invitation}}
 
-      {:error, changeset} ->
-        {:error, changeset}
+      error ->
+        error
     end
   end
 
-  defp create_pending_invitation(workspace, email, role, inviter, notifier) do
-    attrs = %{
-      workspace_id: workspace.id,
-      user_id: nil,
-      email: email,
-      role: role,
-      invited_by: inviter.id,
-      invited_at: DateTime.utc_now(),
-      joined_at: nil
-    }
+  defp create_workspace_member(attrs) do
+    %WorkspaceMember{}
+    |> WorkspaceMember.changeset(attrs)
+    |> Repo.insert()
+  end
 
-    case %WorkspaceMember{}
-         |> WorkspaceMember.changeset(attrs)
-         |> Repo.insert() do
-      {:ok, invitation} ->
-        # Send notifications if notifier is provided
-        if notifier do
-          notifier.notify_new_user(email, workspace, inviter)
-        end
+  defp maybe_create_notification(nil, _workspace, _role, _inviter, _pubsub_notifier),
+    do: {:ok, nil}
 
-        {:ok, {:invitation_sent, invitation}}
+  defp maybe_create_notification(user, workspace, role, inviter, pubsub_notifier) do
+    # Broadcast event for notification creation (existing users only)
+    inviter_name = "#{inviter.first_name} #{inviter.last_name}"
 
-      {:error, changeset} ->
-        {:error, changeset}
-    end
+    pubsub_notifier.broadcast_invitation_created(
+      user.id,
+      workspace.id,
+      workspace.name,
+      inviter_name,
+      to_string(role)
+    )
+
+    {:ok, nil}
+  end
+
+  defp send_email_notification(nil, _user, _email, _workspace, _inviter), do: :ok
+
+  defp send_email_notification(notifier, nil, email, workspace, inviter) do
+    notifier.notify_new_user(email, workspace, inviter)
+  end
+
+  defp send_email_notification(notifier, user, _email, workspace, inviter) do
+    notifier.notify_existing_user(user, workspace, inviter)
   end
 end

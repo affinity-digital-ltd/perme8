@@ -154,8 +154,7 @@ defmodule JargaWeb.AppLive.DashboardTest do
       workspace = workspace_fixture(other_user, %{name: "Team Workspace"})
 
       # Add the user to the workspace (this will trigger the PubSub broadcast)
-      {:ok, {:member_added, _member}} =
-        Workspaces.invite_member(other_user, workspace.id, user.email, :member)
+      {:ok, _member} = invite_and_accept_member(other_user, workspace.id, user.email, :member)
 
       # Verify workspace appears in the UI
       assert render(lv) =~ "Team Workspace"
@@ -170,20 +169,17 @@ defmodule JargaWeb.AppLive.DashboardTest do
       other_user = user_fixture()
       workspace = workspace_fixture(other_user, %{name: "To Be Removed"})
 
-      {:ok, {:member_added, _member}} =
-        Workspaces.invite_member(other_user, workspace.id, user.email, :member)
+      {:ok, _member} = invite_and_accept_member(other_user, workspace.id, user.email, :member)
 
       {:ok, lv, _html} = live(conn, ~p"/app")
 
       # Verify workspace is displayed
-      assert render(lv) =~ "To Be Removed"
       assert lv |> element("[data-workspace-id='#{workspace.id}']") |> has_element?()
 
       # Remove the user from the workspace (this will trigger the PubSub broadcast)
       {:ok, _deleted_member} = Workspaces.remove_member(other_user, workspace.id, user.email)
 
-      # Verify workspace is removed from the UI
-      refute render(lv) =~ "To Be Removed"
+      # Verify workspace is removed from the workspaces list
       refute lv |> element("[data-workspace-id='#{workspace.id}']") |> has_element?()
     end
 

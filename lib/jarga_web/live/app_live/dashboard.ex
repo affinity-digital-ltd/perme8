@@ -106,6 +106,18 @@ defmodule JargaWeb.AppLive.Dashboard do
   end
 
   @impl true
+  def handle_info({:workspace_joined, workspace_id}, socket) do
+    # Reload workspaces when user joins a workspace (via notification acceptance)
+    user = socket.assigns.current_scope.user
+    workspaces = Workspaces.list_workspaces_for_user(user)
+
+    # Subscribe to the new workspace
+    Phoenix.PubSub.subscribe(Jarga.PubSub, "workspace:#{workspace_id}")
+
+    {:noreply, assign(socket, workspaces: workspaces)}
+  end
+
+  @impl true
   def handle_info({:workspace_removed, _workspace_id}, socket) do
     # Reload workspaces when user is removed from a workspace
     user = socket.assigns.current_scope.user
@@ -130,6 +142,18 @@ defmodule JargaWeb.AppLive.Dashboard do
   end
 
   @impl true
+  def handle_info({:member_joined, _user_id}, socket) do
+    # Member joined workspace - not relevant to dashboard view
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:invitation_declined, _user_id}, socket) do
+    # Invitation declined - not relevant to dashboard view
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_info({:page_visibility_changed, _page_id, _is_public}, socket) do
     # Page visibility changed - not relevant to dashboard view
     {:noreply, socket}
@@ -147,6 +171,6 @@ defmodule JargaWeb.AppLive.Dashboard do
     {:noreply, socket}
   end
 
-  # Chat panel streaming messages - provided by MessageHandlers
+  # Chat panel streaming messages and notification handlers - provided by MessageHandlers
   handle_chat_messages()
 end

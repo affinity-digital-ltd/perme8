@@ -1,7 +1,7 @@
 defmodule Jarga.Workspaces.UseCases.ChangeMemberRoleTest do
   use Jarga.DataCase, async: true
 
-  alias Jarga.Workspaces.UseCases.{InviteMember, ChangeMemberRole}
+  alias Jarga.Workspaces.UseCases.ChangeMemberRole
   import Jarga.AccountsFixtures
   import Jarga.WorkspacesFixtures
 
@@ -17,12 +17,9 @@ defmodule Jarga.Workspaces.UseCases.ChangeMemberRoleTest do
       workspace = workspace_fixture(owner)
       member = user_fixture()
 
-      # First add member as admin
-      {:ok, {:member_added, _}} =
-        InviteMember.execute(
-          %{inviter: owner, workspace_id: workspace.id, email: member.email, role: :admin},
-          notifier: MockNotifier
-        )
+      # First add member as admin (and accept invitation)
+      {:ok, _member} =
+        invite_and_accept_member(owner, workspace.id, member.email, :admin)
 
       # Change role to member
       params = %{
@@ -42,12 +39,9 @@ defmodule Jarga.Workspaces.UseCases.ChangeMemberRoleTest do
       workspace = workspace_fixture(owner)
       member = user_fixture()
 
-      # Add member
-      {:ok, {:member_added, _}} =
-        InviteMember.execute(
-          %{inviter: owner, workspace_id: workspace.id, email: member.email, role: :member},
-          notifier: MockNotifier
-        )
+      # Add member (and accept invitation)
+      {:ok, _member} =
+        invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       # Change to guest
       params = %{
@@ -66,12 +60,9 @@ defmodule Jarga.Workspaces.UseCases.ChangeMemberRoleTest do
       workspace = workspace_fixture(owner)
       member = user_fixture()
 
-      # Add as guest
-      {:ok, {:member_added, _}} =
-        InviteMember.execute(
-          %{inviter: owner, workspace_id: workspace.id, email: member.email, role: :guest},
-          notifier: MockNotifier
-        )
+      # Add as guest (and accept invitation)
+      {:ok, _member} =
+        invite_and_accept_member(owner, workspace.id, member.email, :guest)
 
       # Change to admin
       params = %{
@@ -92,11 +83,8 @@ defmodule Jarga.Workspaces.UseCases.ChangeMemberRoleTest do
       workspace = workspace_fixture(owner)
       member = user_fixture()
 
-      {:ok, {:member_added, _}} =
-        InviteMember.execute(
-          %{inviter: owner, workspace_id: workspace.id, email: member.email, role: :member},
-          notifier: MockNotifier
-        )
+      {:ok, _member} =
+        invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       params = %{
         actor: owner,
@@ -128,11 +116,8 @@ defmodule Jarga.Workspaces.UseCases.ChangeMemberRoleTest do
       non_member = user_fixture()
       member = user_fixture()
 
-      {:ok, {:member_added, _}} =
-        InviteMember.execute(
-          %{inviter: owner, workspace_id: workspace.id, email: member.email, role: :member},
-          notifier: MockNotifier
-        )
+      {:ok, _member} =
+        invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       params = %{
         actor: non_member,

@@ -19,12 +19,9 @@ defmodule Jarga.Workspaces.UseCases.RemoveMemberTest do
       workspace = workspace_fixture(owner)
       member = user_fixture()
 
-      # Add member
-      {:ok, {:member_added, _}} =
-        InviteMember.execute(
-          %{inviter: owner, workspace_id: workspace.id, email: member.email, role: :admin},
-          notifier: MockNotifier
-        )
+      # Add member (and accept invitation)
+      {:ok, _member} =
+        invite_and_accept_member(owner, workspace.id, member.email, :admin)
 
       # Verify member exists
       members = Workspaces.list_members(workspace.id)
@@ -82,12 +79,9 @@ defmodule Jarga.Workspaces.UseCases.RemoveMemberTest do
       workspace = workspace_fixture(owner)
       member = user_fixture()
 
-      # Add member
-      {:ok, {:member_added, _}} =
-        InviteMember.execute(
-          %{inviter: owner, workspace_id: workspace.id, email: member.email, role: :admin},
-          notifier: MockNotifier
-        )
+      # Add member (and accept invitation)
+      {:ok, _member} =
+        invite_and_accept_member(owner, workspace.id, member.email, :admin)
 
       # Subscribe to the user topic
       Phoenix.PubSub.subscribe(Jarga.PubSub, "user:#{member.id}")
@@ -155,11 +149,8 @@ defmodule Jarga.Workspaces.UseCases.RemoveMemberTest do
       non_member = user_fixture()
       member = user_fixture()
 
-      {:ok, {:member_added, _}} =
-        InviteMember.execute(
-          %{inviter: owner, workspace_id: workspace.id, email: member.email, role: :member},
-          notifier: MockNotifier
-        )
+      {:ok, _member} =
+        invite_and_accept_member(owner, workspace.id, member.email, :member)
 
       params = %{
         actor: non_member,
