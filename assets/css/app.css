@@ -124,6 +124,11 @@
 /* Chat Panel Styles */
 @import './chat.css';
 
+/* Marketing Site Styles */
+.marketing-header {
+  background-color: #EFEFF3 !important;
+}
+
 /* Animation Styles */
 @import './animations.css';
 

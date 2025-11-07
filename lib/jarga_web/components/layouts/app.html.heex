@@ -1,5 +1,5 @@
 <div class="min-h-screen flex flex-col">
-  <header class="navbar bg-base-100 px-4 sm:px-6 lg:px-8">
+  <header class={"navbar bg-base-100 px-4 sm:px-6 lg:px-8 #{if !@current_scope || !@current_scope.user, do: "marketing-header"}"}>
     <div class="flex-1">
       <a href="/" class="flex items-center">
         <img

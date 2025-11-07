@@ -342,7 +342,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
             </.breadcrumbs>
           <% end %>
         </div>
-
+        
     <!-- Action Menu (hidden for guests) -->
         <%= if not @readonly do %>
           <div class="flex items-center justify-end flex-shrink-0 mb-4">
@@ -372,7 +372,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
             </.kebab_menu>
           </div>
         <% end %>
-
+        
     <!-- Title Section -->
         <div class="border-b border-base-300 pb-4 mb-4 flex-shrink-0">
           <%= if @editing_title do %>
@@ -409,7 +409,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
             </h1>
           <% end %>
         </div>
-
+        
     <!-- Editor -->
         <div class="flex-1 flex flex-col overflow-hidden">
           <%= if @readonly do %>
