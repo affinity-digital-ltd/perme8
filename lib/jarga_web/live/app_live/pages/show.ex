@@ -308,6 +308,13 @@ defmodule JargaWeb.AppLive.Pages.Show do
     end
   end
 
+  defp format_user_name(user) do
+    # Format user name as "FirstName L."
+    first_name = user.first_name || ""
+    last_initial = if user.last_name, do: String.first(user.last_name) <> ".", else: ""
+    String.trim("#{first_name} #{last_initial}")
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -342,7 +349,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
             </.breadcrumbs>
           <% end %>
         </div>
-        
+
     <!-- Action Menu (hidden for guests) -->
         <%= if not @readonly do %>
           <div class="flex items-center justify-end flex-shrink-0 mb-4">
@@ -372,7 +379,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
             </.kebab_menu>
           </div>
         <% end %>
-        
+
     <!-- Title Section -->
         <div class="border-b border-base-300 pb-4 mb-4 flex-shrink-0">
           <%= if @editing_title do %>
@@ -409,7 +416,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
             </h1>
           <% end %>
         </div>
-        
+
     <!-- Editor -->
         <div class="flex-1 flex flex-col overflow-hidden">
           <%= if @readonly do %>
@@ -425,6 +432,7 @@ defmodule JargaWeb.AppLive.Pages.Show do
             data-yjs-state={if @note.yjs_state, do: Base.encode64(@note.yjs_state), else: ""}
             data-initial-content={get_initial_markdown(@note)}
             data-readonly={if @readonly, do: "true", else: "false"}
+            data-user-name={format_user_name(@current_scope.user)}
             class={[
               "flex-1 min-h-0 cursor-text",
               if(@readonly, do: "bg-base-100 opacity-90", else: "")

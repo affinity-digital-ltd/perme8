@@ -20,6 +20,7 @@ export const MilkdownEditor = {
     const initialYjsState = this.el.dataset.yjsState || ''
     const initialContent = this.el.dataset.initialContent || ''
     const readonly = this.el.dataset.readonly === 'true'
+    const userName = this.el.dataset.userName || ''
 
     this.readonly = readonly
 
@@ -30,7 +31,7 @@ export const MilkdownEditor = {
     }
 
     // Initialize collaboration manager with initial state
-    this.collaborationManager = new CollaborationManager()
+    this.collaborationManager = new CollaborationManager({ userName })
     this.collaborationManager.initialize(initialYjsState)
 
     // Track if we have pending changes
