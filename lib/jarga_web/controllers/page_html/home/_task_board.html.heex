@@ -8,249 +8,444 @@
       </div>
       <div class="flex gap-2">
         <button class="btn btn-ghost btn-sm btn-square text-white hover:bg-white/10">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
         </button>
       </div>
     </div>
   </div>
-
-  <!-- Task List -->
-  <div class="bg-white dark:bg-base-100 p-8 pt-20 space-y-4 min-h-[450px] overflow-hidden" style="max-height: 500px;">
+  
+<!-- Task List -->
+  <div
+    class="bg-white dark:bg-base-100 p-8 pt-20 space-y-4 min-h-[450px] overflow-hidden"
+    style="max-height: 500px;"
+  >
     <div class="animate-scroll space-y-4">
-    <!-- Task 1 - Human assigned, In Progress -->
-    <div class="bg-base-200/50 dark:bg-base-200 rounded-lg p-4 border border-base-content/10 hover:border-primary/30 transition-colors cursor-pointer min-h-[120px] flex items-start">
-      <div class="flex items-start gap-3 w-full">
-        <input type="checkbox" class="checkbox checkbox-sm mt-1" />
-        <div class="flex-1 min-w-0">
-          <!-- Task Name with Doc Link -->
-          <div class="flex items-center gap-2 mb-1 flex-wrap">
-            <a href="#" class="font-semibold text-sm text-info hover:opacity-80 hover:underline flex items-center gap-1">
-              Design new checkout flow UI
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-            </a>
-            <div class="badge bg-info text-info-content border-0 badge-xs">In Progress</div>
-          </div>
-          <!-- Description -->
-          <p class="text-xs text-base-content/60 mb-2">Create wireframes and high-fidelity mockups for the new payment interface</p>
-          <!-- Metadata -->
-          <div class="flex items-center gap-3 flex-wrap text-xs">
-            <!-- Priority -->
-            <div class="flex items-center gap-1">
-              <span class="text-base-content/50">Priority:</span>
-              <div class="badge bg-error text-error-content border-0 badge-xs font-semibold">High</div>
+      <!-- Task 1 - Human assigned, In Progress -->
+      <div class="bg-base-200/50 dark:bg-base-200 rounded-lg p-4 border border-base-content/10 hover:border-primary/30 transition-colors cursor-pointer min-h-[120px] flex items-start">
+        <div class="flex items-start gap-3 w-full">
+          <input type="checkbox" class="checkbox checkbox-sm mt-1" />
+          <div class="flex-1 min-w-0">
+            <!-- Task Name with Doc Link -->
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <a
+                href="#"
+                class="font-semibold text-sm text-info hover:opacity-80 hover:underline flex items-center gap-1"
+              >
+                Design new checkout flow UI
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </a>
+              <div class="badge bg-info text-info-content border-0 badge-xs">In Progress</div>
             </div>
-            <!-- Assignee -->
-            <div class="flex items-center gap-1">
-              <span class="text-base-content/50">Assignee:</span>
+            <!-- Description -->
+            <p class="text-xs text-base-content/60 mb-2">
+              Create wireframes and high-fidelity mockups for the new payment interface
+            </p>
+            <!-- Metadata -->
+            <div class="flex items-center gap-3 flex-wrap text-xs">
+              <!-- Priority -->
               <div class="flex items-center gap-1">
-                <span class="text-lg leading-none flex items-center">👩‍💼</span>
-                <span class="text-base-content/70">Sarah Kim</span>
+                <span class="text-base-content/50">Priority:</span>
+                <div class="badge bg-error text-error-content border-0 badge-xs font-semibold">
+                  High
+                </div>
               </div>
-            </div>
-            <!-- Due Date -->
-            <div class="flex items-center gap-1 text-base-content/50">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              <span>Due in 3 days</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Task 2 - AI Agent assigned, In Progress -->
-    <div class="bg-base-200/50 dark:bg-base-200 rounded-lg p-4 border-2 border-green-400 hover:border-green-500 transition-colors min-h-[120px] flex items-start">
-      <div class="flex items-start gap-3 w-full">
-        <input type="checkbox" class="checkbox checkbox-success checkbox-sm mt-1" checked disabled />
-        <div class="flex-1 min-w-0">
-          <!-- Task Name with Doc Link and Spinner -->
-          <div class="flex items-center gap-2 mb-1 flex-wrap">
-            <a href="#" class="font-semibold text-sm text-success hover:opacity-80 hover:underline flex items-center gap-1">
-              Refactor payment service module
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-            </a>
-            <div class="badge bg-success text-success-content border-0 badge-xs">In Progress</div>
-            <div class="loading loading-spinner loading-xs text-success"></div>
-          </div>
-          <!-- Description -->
-          <p class="text-xs text-base-content/60 mb-2">Extract payment logic into reusable services, add comprehensive test coverage</p>
-          <!-- Metadata -->
-          <div class="flex items-center gap-3 flex-wrap text-xs mb-2">
-            <!-- Priority -->
-            <div class="flex items-center gap-1">
-              <span class="text-base-content/50">Priority:</span>
-              <div class="badge bg-warning text-warning-content border-0 badge-xs font-semibold">Medium</div>
-            </div>
-            <!-- Assignee - AI Agent -->
-            <div class="flex items-center gap-1">
-              <span class="text-base-content/50">Assignee:</span>
+              <!-- Assignee -->
               <div class="flex items-center gap-1">
-                <span class="text-lg leading-none flex items-center">🤖</span>
-                <span class="text-success font-semibold">Refactor Agent</span>
+                <span class="text-base-content/50">Assignee:</span>
+                <div class="flex items-center gap-1">
+                  <span class="text-lg leading-none flex items-center">👩‍💼</span>
+                  <span class="text-base-content/70">Sarah Kim</span>
+                </div>
               </div>
-            </div>
-          </div>
-          <!-- Progress bar -->
-          <div class="flex items-center gap-2">
-            <div class="flex-1 h-1.5 bg-success/20 rounded-full overflow-hidden">
-              <div class="h-full bg-success rounded-full" style="width: 65%"></div>
-            </div>
-            <span class="text-xs text-base-content/60">65%</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Task 3 - To Do -->
-    <div class="bg-base-200/50 dark:bg-base-200 rounded-lg p-4 border border-base-content/10 hover:border-primary/30 transition-colors cursor-pointer min-h-[120px] flex items-start">
-      <div class="flex items-start gap-3 w-full">
-        <input type="checkbox" class="checkbox checkbox-sm mt-1" />
-        <div class="flex-1 min-w-0">
-          <!-- Task Name with Doc Link -->
-          <div class="flex items-center gap-2 mb-1 flex-wrap">
-            <a href="#" class="font-semibold text-sm text-info hover:opacity-80 hover:underline flex items-center gap-1">
-              Generate API documentation
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-            </a>
-            <div class="badge bg-base-300 text-base-content border-0 badge-xs">To Do</div>
-          </div>
-          <!-- Description -->
-          <p class="text-xs text-base-content/60 mb-2">Auto-generate OpenAPI specs and developer docs from codebase annotations</p>
-          <!-- Metadata -->
-          <div class="flex items-center gap-3 flex-wrap text-xs">
-            <!-- Priority -->
-            <div class="flex items-center gap-1">
-              <span class="text-base-content/50">Priority:</span>
-              <div class="badge bg-neutral text-neutral-content border-0 badge-xs">Low</div>
-            </div>
-            <!-- Assignee - AI Agent -->
-            <div class="flex items-center gap-1">
-              <span class="text-base-content/50">Assignee:</span>
-              <div class="flex items-center gap-1">
-                <span class="text-lg leading-none flex items-center">🤖</span>
-                <span class="text-accent font-semibold">Documentation Agent</span>
+              <!-- Due Date -->
+              <div class="flex items-center gap-1 text-base-content/50">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                <span>Due in 3 days</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Task 4 - Awaiting Feedback -->
-    <div class="bg-base-200/50 dark:bg-base-200 rounded-lg p-4 border border-warning/30 hover:border-warning/50 transition-colors cursor-pointer min-h-[120px] flex items-start">
-      <div class="flex items-start gap-3 w-full">
-        <input type="checkbox" class="checkbox checkbox-sm mt-1" />
-        <div class="flex-1 min-w-0">
-          <!-- Task Name with Doc Link -->
-          <div class="flex items-center gap-2 mb-1 flex-wrap">
-            <a href="#" class="font-semibold text-sm text-info hover:opacity-80 hover:underline flex items-center gap-1">
-              Write integration tests for payment flow
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-            </a>
-            <div class="badge bg-warning text-warning-content border-0 badge-xs">Awaiting Feedback</div>
-          </div>
-          <!-- Description -->
-          <p class="text-xs text-base-content/60 mb-2">End-to-end tests covering success and failure scenarios, requires architecture review</p>
-          <!-- Metadata -->
-          <div class="flex items-center gap-3 flex-wrap text-xs">
-            <!-- Priority -->
-            <div class="flex items-center gap-1">
-              <span class="text-base-content/50">Priority:</span>
-              <div class="badge bg-warning text-warning-content border-0 badge-xs font-semibold">Medium</div>
+      
+<!-- Task 2 - AI Agent assigned, In Progress -->
+      <div class="bg-base-200/50 dark:bg-base-200 rounded-lg p-4 border-2 border-green-400 hover:border-green-500 transition-colors min-h-[120px] flex items-start">
+        <div class="flex items-start gap-3 w-full">
+          <input
+            type="checkbox"
+            class="checkbox checkbox-success checkbox-sm mt-1"
+            checked
+            disabled
+          />
+          <div class="flex-1 min-w-0">
+            <!-- Task Name with Doc Link and Spinner -->
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <a
+                href="#"
+                class="font-semibold text-sm text-success hover:opacity-80 hover:underline flex items-center gap-1"
+              >
+                Refactor payment service module
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </a>
+              <div class="badge bg-success text-success-content border-0 badge-xs">
+                In Progress
+              </div>
+              <div class="loading loading-spinner loading-xs text-success"></div>
             </div>
-            <!-- Assignee -->
-            <div class="flex items-center gap-1">
-              <span class="text-base-content/50">Assignee:</span>
+            <!-- Description -->
+            <p class="text-xs text-base-content/60 mb-2">
+              Extract payment logic into reusable services, add comprehensive test coverage
+            </p>
+            <!-- Metadata -->
+            <div class="flex items-center gap-3 flex-wrap text-xs mb-2">
+              <!-- Priority -->
               <div class="flex items-center gap-1">
-                <span class="text-lg leading-none flex items-center">🧑‍💻</span>
-                <span class="text-base-content/70">Alex Lee</span>
+                <span class="text-base-content/50">Priority:</span>
+                <div class="badge bg-warning text-warning-content border-0 badge-xs font-semibold">
+                  Medium
+                </div>
+              </div>
+              <!-- Assignee - AI Agent -->
+              <div class="flex items-center gap-1">
+                <span class="text-base-content/50">Assignee:</span>
+                <div class="flex items-center gap-1">
+                  <span class="text-lg leading-none flex items-center">🤖</span>
+                  <span class="text-success font-semibold">Refactor Agent</span>
+                </div>
               </div>
             </div>
-            <!-- Due Date -->
-            <div class="flex items-center gap-1 text-base-content/50">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              <span>Due in 5 days</span>
+            <!-- Progress bar -->
+            <div class="flex items-center gap-2">
+              <div class="flex-1 h-1.5 bg-success/20 rounded-full overflow-hidden">
+                <div class="h-full bg-success rounded-full" style="width: 65%"></div>
+              </div>
+              <span class="text-xs text-base-content/60">65%</span>
             </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Task 5 - On Hold -->
-    <div class="bg-base-200/50 dark:bg-base-200 rounded-lg p-4 border border-base-content/20 opacity-70 cursor-not-allowed min-h-[120px] flex items-start">
-      <div class="flex items-start gap-3 w-full">
-        <input type="checkbox" class="checkbox checkbox-sm mt-1" disabled />
-        <div class="flex-1 min-w-0">
-          <!-- Task Name with Doc Link -->
-          <div class="flex items-center gap-2 mb-1 flex-wrap">
-            <a href="#" class="font-semibold text-sm text-base-content/60 hover:underline flex items-center gap-1">
-              Implement cryptocurrency payment support
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-            </a>
-            <div class="badge bg-neutral text-neutral-content border-0 badge-xs">On Hold</div>
-          </div>
-          <!-- Description -->
-          <p class="text-xs text-base-content/60 mb-2">Add Bitcoin and Ethereum payment options - pending legal approval</p>
-          <!-- Metadata -->
-          <div class="flex items-center gap-3 flex-wrap text-xs">
-            <!-- Priority -->
-            <div class="flex items-center gap-1">
-              <span class="text-base-content/50">Priority:</span>
-              <div class="badge bg-neutral text-neutral-content border-0 badge-xs">Low</div>
+      
+<!-- Task 3 - To Do -->
+      <div class="bg-base-200/50 dark:bg-base-200 rounded-lg p-4 border border-base-content/10 hover:border-primary/30 transition-colors cursor-pointer min-h-[120px] flex items-start">
+        <div class="flex items-start gap-3 w-full">
+          <input type="checkbox" class="checkbox checkbox-sm mt-1" />
+          <div class="flex-1 min-w-0">
+            <!-- Task Name with Doc Link -->
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <a
+                href="#"
+                class="font-semibold text-sm text-info hover:opacity-80 hover:underline flex items-center gap-1"
+              >
+                Generate API documentation
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </a>
+              <div class="badge bg-base-300 text-base-content border-0 badge-xs">To Do</div>
             </div>
-            <!-- Assignee -->
-            <div class="flex items-center gap-1">
-              <span class="text-base-content/50">Assignee:</span>
-              <span class="text-base-content/50">Unassigned</span>
-            </div>
-            <!-- Blocker -->
-            <div class="flex items-center gap-1 text-warning">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-              <span>Blocked</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Task 6 - Done -->
-    <div class="bg-base-200/50 dark:bg-base-200 rounded-lg p-4 border border-base-content/10 opacity-60 min-h-[120px] flex items-start">
-      <div class="flex items-start gap-3 w-full">
-        <input type="checkbox" class="checkbox checkbox-sm mt-1" checked disabled />
-        <div class="flex-1 min-w-0">
-          <!-- Task Name with Doc Link -->
-          <div class="flex items-center gap-2 mb-1 flex-wrap">
-            <a href="#" class="font-semibold text-sm text-base-content/50 hover:underline flex items-center gap-1 line-through">
-              Update Stripe API integration to v2024
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-            </a>
-            <div class="badge bg-success text-success-content border-0 badge-xs font-semibold">Done</div>
-          </div>
-          <!-- Description -->
-          <p class="text-xs text-base-content/60 mb-2 line-through">Migrate from deprecated v2023 endpoints to latest stable version</p>
-          <!-- Metadata -->
-          <div class="flex items-center gap-3 flex-wrap text-xs">
-            <!-- Priority -->
-            <div class="flex items-center gap-1">
-              <span class="text-base-content/50">Priority:</span>
-              <div class="badge bg-error text-error-content border-0 badge-xs font-semibold">High</div>
-            </div>
-            <!-- Assignee -->
-            <div class="flex items-center gap-1">
-              <span class="text-base-content/50">Assignee:</span>
+            <!-- Description -->
+            <p class="text-xs text-base-content/60 mb-2">
+              Auto-generate OpenAPI specs and developer docs from codebase annotations
+            </p>
+            <!-- Metadata -->
+            <div class="flex items-center gap-3 flex-wrap text-xs">
+              <!-- Priority -->
               <div class="flex items-center gap-1">
-                <span class="text-lg leading-none flex items-center">👨‍💻</span>
-                <span class="text-base-content/70">Marcus J.</span>
+                <span class="text-base-content/50">Priority:</span>
+                <div class="badge bg-neutral text-neutral-content border-0 badge-xs">Low</div>
+              </div>
+              <!-- Assignee - AI Agent -->
+              <div class="flex items-center gap-1">
+                <span class="text-base-content/50">Assignee:</span>
+                <div class="flex items-center gap-1">
+                  <span class="text-lg leading-none flex items-center">🤖</span>
+                  <span class="text-accent font-semibold">Documentation Agent</span>
+                </div>
               </div>
             </div>
-            <!-- Completed -->
-            <div class="flex items-center gap-1 text-success">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-              <span>Completed 2h ago</span>
+          </div>
+        </div>
+      </div>
+      
+<!-- Task 4 - Awaiting Feedback -->
+      <div class="bg-base-200/50 dark:bg-base-200 rounded-lg p-4 border border-warning/30 hover:border-warning/50 transition-colors cursor-pointer min-h-[120px] flex items-start">
+        <div class="flex items-start gap-3 w-full">
+          <input type="checkbox" class="checkbox checkbox-sm mt-1" />
+          <div class="flex-1 min-w-0">
+            <!-- Task Name with Doc Link -->
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <a
+                href="#"
+                class="font-semibold text-sm text-info hover:opacity-80 hover:underline flex items-center gap-1"
+              >
+                Write integration tests for payment flow
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </a>
+              <div class="badge bg-warning text-warning-content border-0 badge-xs">
+                Awaiting Feedback
+              </div>
+            </div>
+            <!-- Description -->
+            <p class="text-xs text-base-content/60 mb-2">
+              End-to-end tests covering success and failure scenarios, requires architecture review
+            </p>
+            <!-- Metadata -->
+            <div class="flex items-center gap-3 flex-wrap text-xs">
+              <!-- Priority -->
+              <div class="flex items-center gap-1">
+                <span class="text-base-content/50">Priority:</span>
+                <div class="badge bg-warning text-warning-content border-0 badge-xs font-semibold">
+                  Medium
+                </div>
+              </div>
+              <!-- Assignee -->
+              <div class="flex items-center gap-1">
+                <span class="text-base-content/50">Assignee:</span>
+                <div class="flex items-center gap-1">
+                  <span class="text-lg leading-none flex items-center">🧑‍💻</span>
+                  <span class="text-base-content/70">Alex Lee</span>
+                </div>
+              </div>
+              <!-- Due Date -->
+              <div class="flex items-center gap-1 text-base-content/50">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                <span>Due in 5 days</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+      
+<!-- Task 5 - On Hold -->
+      <div class="bg-base-200/50 dark:bg-base-200 rounded-lg p-4 border border-base-content/20 opacity-70 cursor-not-allowed min-h-[120px] flex items-start">
+        <div class="flex items-start gap-3 w-full">
+          <input type="checkbox" class="checkbox checkbox-sm mt-1" disabled />
+          <div class="flex-1 min-w-0">
+            <!-- Task Name with Doc Link -->
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <a
+                href="#"
+                class="font-semibold text-sm text-base-content/60 hover:underline flex items-center gap-1"
+              >
+                Implement cryptocurrency payment support
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </a>
+              <div class="badge bg-neutral text-neutral-content border-0 badge-xs">On Hold</div>
+            </div>
+            <!-- Description -->
+            <p class="text-xs text-base-content/60 mb-2">
+              Add Bitcoin and Ethereum payment options - pending legal approval
+            </p>
+            <!-- Metadata -->
+            <div class="flex items-center gap-3 flex-wrap text-xs">
+              <!-- Priority -->
+              <div class="flex items-center gap-1">
+                <span class="text-base-content/50">Priority:</span>
+                <div class="badge bg-neutral text-neutral-content border-0 badge-xs">Low</div>
+              </div>
+              <!-- Assignee -->
+              <div class="flex items-center gap-1">
+                <span class="text-base-content/50">Assignee:</span>
+                <span class="text-base-content/50">Unassigned</span>
+              </div>
+              <!-- Blocker -->
+              <div class="flex items-center gap-1 text-warning">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <span>Blocked</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+<!-- Task 6 - Done -->
+      <div class="bg-base-200/50 dark:bg-base-200 rounded-lg p-4 border border-base-content/10 opacity-60 min-h-[120px] flex items-start">
+        <div class="flex items-start gap-3 w-full">
+          <input type="checkbox" class="checkbox checkbox-sm mt-1" checked disabled />
+          <div class="flex-1 min-w-0">
+            <!-- Task Name with Doc Link -->
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <a
+                href="#"
+                class="font-semibold text-sm text-base-content/50 hover:underline flex items-center gap-1 line-through"
+              >
+                Update Stripe API integration to v2024
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </a>
+              <div class="badge bg-success text-success-content border-0 badge-xs font-semibold">
+                Done
+              </div>
+            </div>
+            <!-- Description -->
+            <p class="text-xs text-base-content/60 mb-2 line-through">
+              Migrate from deprecated v2023 endpoints to latest stable version
+            </p>
+            <!-- Metadata -->
+            <div class="flex items-center gap-3 flex-wrap text-xs">
+              <!-- Priority -->
+              <div class="flex items-center gap-1">
+                <span class="text-base-content/50">Priority:</span>
+                <div class="badge bg-error text-error-content border-0 badge-xs font-semibold">
+                  High
+                </div>
+              </div>
+              <!-- Assignee -->
+              <div class="flex items-center gap-1">
+                <span class="text-base-content/50">Assignee:</span>
+                <div class="flex items-center gap-1">
+                  <span class="text-lg leading-none flex items-center">👨‍💻</span>
+                  <span class="text-base-content/70">Marcus J.</span>
+                </div>
+              </div>
+              <!-- Completed -->
+              <div class="flex items-center gap-1 text-success">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-3 w-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span>Completed 2h ago</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

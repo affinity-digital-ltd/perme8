@@ -1,38 +1,38 @@
 <%!-- Hero Section - Full width, no gap --%>
-<%= hero(assigns) %>
+{hero(assigns)}
 
 <%!-- Content sections with gaps --%>
 <div class="flex flex-col gap-[10px] px-[10px] pt-[10px]">
   <%!-- Row 1: Problem Statement (2 panels) --%>
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-[10px]">
     <%!-- Problem Statement Panel (Dark) --%>
-    <%= problem_statement(assigns) %>
+    {problem_statement(assigns)}
 
     <%!-- Hybrid Development Panel (Green) --%>
-    <%= hybrid_development(assigns) %>
+    {hybrid_development(assigns)}
   </div>
 
   <%!-- Row 2: AI Agents Feature --%>
-  <%= _feature_ai_agents(assigns) %>
+  {_feature_ai_agents(assigns)}
 
   <%!-- Row 3: Living Documentation --%>
-  <%= _feature_living_documentation(assigns) %>
+  {_feature_living_documentation(assigns)}
 
   <%!-- Features Section --%>
-  <%= features(assigns) %>
+  {features(assigns)}
 
   <%!-- Value Proposition Section --%>
-  <%= value_proposition(assigns) %>
+  {value_proposition(assigns)}
 
   <%!-- Testimonials Section --%>
-  <%= testimonials(assigns) %>
+  {testimonials(assigns)}
 
   <%!-- Final CTA Section --%>
-  <%= final_cta(assigns) %>
+  {final_cta(assigns)}
 </div>
 
 <%!-- Gap before footer --%>
 <div class="h-[10px]"></div>
 
 <%!-- Footer - Full width, no gap --%>
-<%= footer(assigns) %>
+{footer(assigns)}
