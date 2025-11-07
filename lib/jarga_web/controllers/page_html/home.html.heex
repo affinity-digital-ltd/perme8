@@ -1,23 +1,35 @@
-<%# Hero Section %>
+<%!-- Hero Section - Full width, no gap --%>
 <%= hero(assigns) %>
 
-<%# Problem Statement Section %>
-<%= problem_statement(assigns) %>
+<%!-- Content sections with gaps --%>
+<div class="flex flex-col gap-[10px] px-[10px] pt-[10px]">
+  <%!-- Row 1: Problem Statement (2 panels) --%>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-[10px]">
+    <%!-- Problem Statement Panel (Dark) --%>
+    <%= problem_statement(assigns) %>
 
-<%# Hybrid Development Section %>
-<%= hybrid_development(assigns) %>
+    <%!-- Hybrid Development Panel (Green) --%>
+    <%= hybrid_development(assigns) %>
+  </div>
 
-<%# Features Section %>
-<%= features(assigns) %>
+  <%!-- Row 2: AI Agents Feature --%>
+  <%= _feature_ai_agents(assigns) %>
 
-<%# Value Proposition Section %>
-<%= value_proposition(assigns) %>
+  <%!-- Row 3: Living Documentation --%>
+  <%= _feature_living_documentation(assigns) %>
 
-<%# Testimonials Section %>
-<%= testimonials(assigns) %>
+  <%!-- Features Section --%>
+  <%= features(assigns) %>
 
-<%# Final CTA Section %>
-<%= final_cta(assigns) %>
+  <%!-- Value Proposition Section --%>
+  <%= value_proposition(assigns) %>
 
-<%# Footer %>
+  <%!-- Testimonials Section --%>
+  <%= testimonials(assigns) %>
+
+  <%!-- Final CTA Section --%>
+  <%= final_cta(assigns) %>
+</div>
+
+<%!-- Footer - Full width, no gap --%>
 <%= footer(assigns) %>

@@ -97,6 +97,40 @@ if ('serviceWorker' in navigator && process.env.NODE_ENV === 'development') {
   });
 }
 
+// Intersection Observer for Collaborative Editor Animations
+// Triggers animations when the section scrolls into view
+const observeCollabEditor = () => {
+  const collabSection = document.querySelector('[data-collab-editor-section]');
+
+  if (!collabSection) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const editorDiv = entry.target.querySelector('.collab-editor-animations-paused');
+
+      if (entry.isIntersecting && editorDiv) {
+        // Start animations when section is visible
+        editorDiv.classList.remove('collab-editor-animations-paused');
+        editorDiv.classList.add('collab-editor-animations-active');
+
+        // Optionally, stop observing after first activation
+        // observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.3, // Trigger when 30% of the section is visible
+    rootMargin: '0px'
+  });
+
+  observer.observe(collabSection);
+};
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', observeCollabEditor);
+
+// Re-initialize after LiveView page transitions
+window.addEventListener('phx:page-loading-stop', observeCollabEditor);
+
 // The lines below enable quality of life phoenix_live_reload
 // development features:
 //

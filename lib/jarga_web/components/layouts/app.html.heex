@@ -1,5 +1,5 @@
-<div class="min-h-screen flex flex-col">
-  <header class="navbar bg-base-100 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen flex flex-col bg-white">
+  <header class="navbar px-4 sm:px-6 lg:px-8" style="background-color: #EFEFF3;">
     <div class="flex-1">
       <a href="/" class="flex items-center">
         <img
@@ -18,14 +18,6 @@
       <ul class="menu menu-horizontal flex items-center gap-4">
         <%= if @current_scope && @current_scope.user do %>
           <li>
-            <span class="text-sm">{@current_scope.user.email}</span>
-          </li>
-          <li>
-            <.link navigate={~p"/users/settings"} class="btn btn-ghost btn-sm">
-              Settings
-            </.link>
-          </li>
-          <li>
             <.link href={~p"/users/log-out"} method="delete" class="btn btn-ghost btn-sm">
               Log out
             </.link>
@@ -42,9 +34,6 @@
             </.link>
           </li>
         <% end %>
-        <li>
-          <.theme_toggle size="xs" />
-        </li>
       </ul>
     </div>
   </header>

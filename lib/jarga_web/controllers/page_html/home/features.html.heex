@@ -1,18 +1,4 @@
 <!-- Features Section -->
-<div id="features" class="bg-base-200 py-20 px-4">
-  <div class="max-w-7xl mx-auto">
-    <div class="text-center mb-16">
-      <h2 class="text-4xl md:text-5xl font-bold mb-4">
-        Features That Transform How You Build
-      </h2>
-      <p class="text-xl text-base-content/70">
-        Everything you need to orchestrate humans and AI together
-      </p>
-    </div>
-
-    <%= _feature_living_documentation(assigns) %>
-    <%= _feature_ai_agents(assigns) %>
-    <%= _feature_one_platform(assigns) %>
-    <%= _feature_search(assigns) %>
-  </div>
+<div id="features" class="flex flex-col gap-[10px]">
+  <%= _feature_search(assigns) %>
 </div>
