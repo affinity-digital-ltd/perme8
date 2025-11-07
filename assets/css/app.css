@@ -48,13 +48,13 @@
   --color-accent-content: oklch(15% 0 0);
   --color-neutral: oklch(20% 0 0);
   --color-neutral-content: oklch(98% 0 0);
-  --color-info: oklch(30% 0 0);
+  --color-info: oklch(65% 0.2 250);
   --color-info-content: oklch(98% 0 0);
-  --color-success: oklch(30% 0 0);
-  --color-success-content: oklch(98% 0 0);
-  --color-warning: oklch(30% 0 0);
-  --color-warning-content: oklch(98% 0 0);
-  --color-error: oklch(30% 0 0);
+  --color-success: oklch(65% 0.18 150);
+  --color-success-content: oklch(15% 0 0);
+  --color-warning: oklch(75% 0.15 85);
+  --color-warning-content: oklch(15% 0 0);
+  --color-error: oklch(60% 0.22 25);
   --color-error-content: oklch(98% 0 0);
   --radius-selector: 0.25rem;
   --radius-field: 0.25rem;
@@ -83,13 +83,13 @@
   --color-accent-content: oklch(100% 0 0);
   --color-neutral: oklch(30% 0 0);
   --color-neutral-content: oklch(100% 0 0);
-  --color-info: oklch(20% 0 0);
+  --color-info: oklch(70% 0.2 250);
   --color-info-content: oklch(100% 0 0);
-  --color-success: oklch(20% 0 0);
+  --color-success: oklch(70% 0.18 150);
   --color-success-content: oklch(100% 0 0);
-  --color-warning: oklch(20% 0 0);
-  --color-warning-content: oklch(100% 0 0);
-  --color-error: oklch(20% 0 0);
+  --color-warning: oklch(80% 0.15 85);
+  --color-warning-content: oklch(10% 0 0);
+  --color-error: oklch(65% 0.22 25);
   --color-error-content: oklch(100% 0 0);
   --radius-selector: 0.25rem;
   --radius-field: 0.25rem;
@@ -124,7 +124,10 @@
 /* Chat Panel Styles */
 @import './chat.css';
 
-/* Editor Styles */
+/* Animation Styles */
+@import './animations.css';
+
+/* Milkdown Editor Styles */
 @import '@milkdown/theme-nord/style.css';
 @import './marketing-site-editor.css';
 
@@ -141,123 +144,4 @@
 #editor-container .milkdown .editor {
   height: 100%;
   overflow: auto;
-}
-
-/* Scrolling animation for task board mockup */
-@keyframes scroll {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-45%);
-  }
-}
-
-.animate-scroll {
-  animation: scroll 8s ease-in-out infinite alternate;
-}
-
-/* Collaborative Editor Animations */
-
-/* Cursor blink animation */
-@keyframes cursor-blink {
-  0%, 49% {
-    opacity: 1;
-  }
-  50%, 100% {
-    opacity: 0;
-  }
-}
-
-.animate-cursor-blink {
-  animation: cursor-blink 1s infinite;
-}
-
-/* Typing effect - character by character reveal */
-@keyframes typing-reveal {
-  0% {
-    max-width: 0;
-    opacity: 0;
-  }
-  1% {
-    opacity: 1;
-  }
-  100% {
-    max-width: 100%;
-    opacity: 1;
-  }
-}
-
-.animate-typing-reveal {
-  display: inline-block;
-  overflow: hidden;
-  max-width: 0;
-  animation: typing-reveal 1.5s steps(9, end) forwards;
-  animation-delay: 0.5s;
-}
-
-/* Subtle pulse for active users */
-@keyframes user-pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.9;
-  }
-}
-
-.animate-user-pulse {
-  animation: user-pulse 2s ease-in-out infinite;
-}
-
-/* AI suggestion slide in */
-@keyframes ai-slide-in {
-  0% {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-ai-slide-in {
-  animation: ai-slide-in 0.5s ease-out forwards;
-  animation-delay: 3s;
-  opacity: 0;
-}
-
-/* User label float */
-@keyframes label-float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
-}
-
-.animate-label-float {
-  animation: label-float 3s ease-in-out infinite;
-}
-
-/* Paused state - animations start when class is added via IntersectionObserver */
-.collab-editor-animations-paused .animate-cursor-blink,
-.collab-editor-animations-paused .animate-typing-reveal,
-.collab-editor-animations-paused .animate-user-pulse,
-.collab-editor-animations-paused .animate-ai-slide-in,
-.collab-editor-animations-paused .animate-label-float {
-  animation-play-state: paused;
-}
-
-/* When section is visible, start animations */
-.collab-editor-animations-active .animate-cursor-blink,
-.collab-editor-animations-active .animate-typing-reveal,
-.collab-editor-animations-active .animate-user-pulse,
-.collab-editor-animations-active .animate-ai-slide-in,
-.collab-editor-animations-active .animate-label-float {
-  animation-play-state: running;
 }
