@@ -51,6 +51,33 @@ defmodule Jarga.Workspaces.Services.EmailAndPubSubNotifierTest do
 
       assert :ok = EmailAndPubSubNotifier.notify_new_user(email, workspace, inviter)
     end
+
+    test "sends email with correct registration URL" do
+      email = "newuser@example.com"
+
+      workspace = %Jarga.Workspaces.Workspace{
+        id: "workspace-456",
+        name: "Test Workspace",
+        slug: "test-workspace"
+      }
+
+      inviter = %Jarga.Accounts.User{
+        id: "inviter-789",
+        email: "inviter@example.com",
+        first_name: "Jane",
+        last_name: "Smith"
+      }
+
+      # Call the notifier
+      :ok = EmailAndPubSubNotifier.notify_new_user(email, workspace, inviter)
+
+      # Check the last sent email (Swoosh sends {:email, %Swoosh.Email{}} messages)
+      assert_received {:email, sent_email}
+
+      # Verify the signup URL points to /users/register, not /login
+      assert sent_email.text_body =~ "/users/register"
+      refute sent_email.text_body =~ "/login"
+    end
   end
 
   describe "notify_user_removed/2" do

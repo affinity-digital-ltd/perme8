@@ -23,11 +23,11 @@ defmodule Jarga.Workspaces.WorkspaceNotifierTest do
 
       assert email.to == [{"", "newuser@example.com"}]
       assert email.from == {"Jarga", "contact@example.com"}
-      assert email.subject == "You've been invited to Test Workspace"
+      assert email.subject == "You've been invited to Test Workspace on Jarga"
       assert email.text_body =~ "John Doe has invited you"
       assert email.text_body =~ "Test Workspace"
       assert email.text_body =~ signup_url
-      assert email.text_body =~ "sign up"
+      assert email.text_body =~ "Sign up"
     end
 
     test "includes workspace name in subject" do
@@ -39,7 +39,7 @@ defmodule Jarga.Workspaces.WorkspaceNotifierTest do
       {:ok, email} =
         WorkspaceNotifier.deliver_invitation_to_new_user(email_addr, workspace, inviter, url)
 
-      assert email.subject == "You've been invited to My Awesome Workspace"
+      assert email.subject == "You've been invited to My Awesome Workspace on Jarga"
     end
 
     test "includes inviter name in body" do

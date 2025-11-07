@@ -56,6 +56,8 @@ defmodule Jarga.Accounts do
   @doc """
   Gets a user by email and password.
 
+  Returns the user only if the password is valid AND the email is confirmed.
+
   ## Examples
 
       iex> get_user_by_email_and_password("foo@example.com", "correct_password")
@@ -64,11 +66,19 @@ defmodule Jarga.Accounts do
       iex> get_user_by_email_and_password("foo@example.com", "invalid_password")
       nil
 
+      iex> get_user_by_email_and_password("unconfirmed@example.com", "correct_password")
+      nil
+
   """
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
     user = Repo.get_by(User, email: email)
-    if User.valid_password?(user, password), do: user
+
+    if User.valid_password?(user, password) and user.confirmed_at != nil do
+      user
+    else
+      nil
+    end
   end
 
   @doc """
@@ -254,6 +264,7 @@ defmodule Jarga.Accounts do
       {:ok, confirmed_user} ->
         # Delete the magic link token after confirmation
         Repo.delete!(token)
+
         {:ok, {confirmed_user, []}}
 
       error ->
@@ -262,9 +273,15 @@ defmodule Jarga.Accounts do
   end
 
   defp handle_magic_link_result({%User{confirmed_at: nil} = user, _token}) do
-    user
-    |> User.confirm_changeset()
-    |> update_user_and_delete_all_tokens()
+    case user
+         |> User.confirm_changeset()
+         |> update_user_and_delete_all_tokens() do
+      {:ok, {confirmed_user, expired_tokens}} ->
+        {:ok, {confirmed_user, expired_tokens}}
+
+      error ->
+        error
+    end
   end
 
   defp handle_magic_link_result({user, token}) do

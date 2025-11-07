@@ -70,6 +70,6 @@ defmodule Jarga.Workspaces.Services.EmailAndPubSubNotifier do
 
   defp build_signup_url do
     base_url = Application.get_env(:jarga, :base_url, "http://localhost:4000")
-    "#{base_url}/login"
+    "#{base_url}/users/register"
   end
 end
