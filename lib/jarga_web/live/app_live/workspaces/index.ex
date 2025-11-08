@@ -32,7 +32,7 @@ defmodule JargaWeb.AppLive.Workspaces.Index do
           <div class="card bg-base-200">
             <div class="card-body text-center">
               <div class="flex flex-col items-center gap-4 py-8">
-                <.icon name="hero-rectangle-group" class="size-16 opacity-50" />
+                <.icon name="hero-briefcase" class="size-16 opacity-50" />
                 <div>
                   <h3 class="text-lg font-semibold">No workspaces yet</h3>
                   <p class="text-base-content/70">
