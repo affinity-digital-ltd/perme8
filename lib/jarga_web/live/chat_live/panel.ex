@@ -31,6 +31,40 @@ defmodule JargaWeb.ChatLive.Panel do
   def update(assigns, socket) do
     socket = assign(socket, assigns)
 
+    # Restore most recent session from database on first mount
+    socket =
+      if !socket.assigns[:session_restored] do
+        current_user_id = get_nested(assigns, [:current_user, :id])
+
+        restored_socket =
+          if current_user_id do
+            # Try to restore the most recent session for this user
+            case Documents.list_sessions(current_user_id, limit: 1) do
+              {:ok, [most_recent_session | _]} ->
+                case Documents.load_session(most_recent_session.id) do
+                  {:ok, db_session} ->
+                    ui_messages = convert_messages_to_ui_format(db_session.messages)
+
+                    socket
+                    |> assign(:current_session_id, db_session.id)
+                    |> assign(:messages, ui_messages)
+
+                  {:error, _} ->
+                    socket
+                end
+
+              _ ->
+                socket
+            end
+          else
+            socket
+          end
+
+        assign(restored_socket, :session_restored, true)
+      else
+        socket
+      end
+
     # Handle streaming messages sent via send_update from parent
     socket =
       cond do
@@ -171,14 +205,6 @@ defmodule JargaWeb.ChatLive.Panel do
         |> assign(:stream_buffer, "")
         |> assign(:error, nil)
 
-      # Push session_id to localStorage if this is a new session
-      socket =
-        if socket.assigns.current_session_id do
-          push_event(socket, "save_session", %{session_id: socket.assigns.current_session_id})
-        else
-          socket
-        end
-
       # Start streaming response
       case Documents.chat_stream(llm_messages, self()) do
         {:ok, _pid} ->
@@ -212,8 +238,7 @@ defmodule JargaWeb.ChatLive.Panel do
      |> assign(:stream_buffer, "")
      |> assign(:error, nil)
      |> assign(:current_session_id, nil)
-     |> assign(:view_mode, :chat)
-     |> push_event("clear_session", %{})}
+     |> assign(:view_mode, :chat)}
   end
 
   @impl true

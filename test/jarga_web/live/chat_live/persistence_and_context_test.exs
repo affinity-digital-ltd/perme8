@@ -23,12 +23,15 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       %{user: user, workspace: workspace, project: project}
     end
 
-    test "clear button removes all messages and persists empty state", %{conn: conn, user: user} do
+    test "clear button removes messages from UI (but they persist in DB)", %{
+      conn: conn,
+      user: user
+    } do
       conn = log_in_user(conn, user)
 
       {:ok, view, _html} = live(conn, ~p"/app")
 
-      # Add messages
+      # Add messages (saved to database)
       view
       |> element("#chat-message-form")
       |> render_submit(%{message: "Message 1"})
@@ -40,21 +43,21 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
       assert has_element?(view, ".chat-bubble", "Message 1")
       assert has_element?(view, ".chat-bubble", "Message 2")
 
-      # Clear chat
+      # Clear chat (clears UI only)
       view
       |> element("button[phx-click='clear_chat']")
       |> render_click()
 
-      # Messages should be cleared
+      # Messages should be cleared from UI
       refute has_element?(view, ".chat-bubble", "Message 1")
       refute has_element?(view, ".chat-bubble", "Message 2")
 
       # Navigate to another page
-      {:ok, view, _html} = live(conn, ~p"/app/workspaces")
+      {:ok, view2, _html} = live(conn, ~p"/app/workspaces")
 
-      # Chat should still be empty
-      refute has_element?(view, ".chat-bubble", "Message 1")
-      refute has_element?(view, ".chat-bubble", "Message 2")
+      # Messages are auto-restored from database
+      assert has_element?(view2, ".chat-bubble", "Message 1")
+      assert has_element?(view2, ".chat-bubble", "Message 2")
     end
   end
 

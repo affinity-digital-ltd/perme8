@@ -628,22 +628,117 @@ defmodule JargaWeb.ChatLive.PanelTest do
       %{user: user}
     end
 
-    test "drawer state managed client-side with localStorage", %{conn: conn, user: user} do
+    test "chat session auto-restores from database on mount", %{conn: conn, user: user} do
+      import Jarga.DocumentsFixtures
+
+      # Create a session in the database first
+      session = chat_session_fixture(user: user, title: "Previous Chat")
+      _msg1 = chat_message_fixture(chat_session: session, role: "user", content: "Hello database")
+      _msg2 = chat_message_fixture(chat_session: session, role: "assistant", content: "Hi from DB!")
+
       conn = log_in_user(conn, user)
 
-      {:ok, _view, html} = live(conn, ~p"/app")
+      # When we open the chat panel, it should auto-restore the most recent session
+      {:ok, view, _html} = live(conn, ~p"/app")
 
-      # Verify that ChatPanel hook is present (it handles localStorage)
-      assert html =~ ~r/phx-hook="ChatPanel"/
-      # The hook saves state to localStorage with key 'chat_collapsed'
+      # Messages from database should be restored automatically
+      assert has_element?(view, ".chat-bubble", "Hello database")
+      assert has_element?(view, ".chat-bubble", "Hi from DB!")
     end
 
-    test "messages are stored in LiveComponent state per LiveView", %{conn: conn, user: user} do
+    test "chat session persists across page navigation", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+
+      # Start on dashboard
+      {:ok, view1, _html} = live(conn, ~p"/app")
+
+      # Send a message to create a session (saved to database)
+      view1
+      |> element("#chat-message-form")
+      |> render_submit(%{message: "First message"})
+
+      assert has_element?(view1, ".chat-bubble", "First message")
+
+      # Navigate to settings (different LiveView)
+      {:ok, view2, _html} = live(conn, ~p"/users/settings")
+
+      # The chat panel should auto-restore the most recent session from database
+      assert has_element?(view2, ".chat-bubble", "First message")
+    end
+
+    test "chat session persists across browser refresh (simulated)", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
       {:ok, view, _html} = live(conn, ~p"/app")
 
-      # Send a message
+      # Send a message to create a session (saved to database)
+      view
+      |> element("#chat-message-form")
+      |> render_submit(%{message: "Before refresh"})
+
+      assert has_element?(view, ".chat-bubble", "Before refresh")
+
+      # Simulate a refresh by creating a new LiveView
+      {:ok, view2, _html} = live(conn, ~p"/app")
+
+      # Session should be auto-restored from database
+      assert has_element?(view2, ".chat-bubble", "Before refresh")
+    end
+
+    test "new conversation creates new session (old one remains in DB)", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/app")
+
+      # Create first session
+      view
+      |> element("#chat-message-form")
+      |> render_submit(%{message: "Old session"})
+
+      assert has_element?(view, ".chat-bubble", "Old session")
+
+      # Start new conversation (clears UI but keeps old session in DB)
+      view
+      |> element("button[phx-click='new_conversation']")
+      |> render_click()
+
+      refute has_element?(view, ".chat-bubble", "Old session")
+
+      # Create a new message (creates a new session)
+      view
+      |> element("#chat-message-form")
+      |> render_submit(%{message: "New session"})
+
+      assert has_element?(view, ".chat-bubble", "New session")
+
+      # Navigate to another page - should restore the NEWEST session
+      {:ok, view2, _html} = live(conn, ~p"/users/settings")
+      assert has_element?(view2, ".chat-bubble", "New session")
+    end
+
+    test "different users see their own sessions only", %{conn: conn, user: user} do
+      # Create another user with a session
+      import Jarga.DocumentsFixtures
+      other_user = user_fixture(%{email: "other@example.com"})
+      other_session = chat_session_fixture(user: other_user, title: "Other User's Chat")
+
+      _msg =
+        chat_message_fixture(chat_session: other_session, role: "user", content: "Secret message")
+
+      # Log in as first user
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/app")
+
+      # Should NOT see other user's messages
+      refute has_element?(view, ".chat-bubble", "Secret message")
+    end
+
+    test "messages are stored in database and persist across LiveViews", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} = live(conn, ~p"/app")
+
+      # Send a message (saved to database)
       view
       |> element("#chat-message-form")
       |> render_submit(%{message: "Test persistence"})
@@ -653,12 +748,10 @@ defmodule JargaWeb.ChatLive.PanelTest do
       # Navigate to settings (different LiveView)
       {:ok, view2, _html} = live(conn, ~p"/users/settings")
 
-      # Messages don't persist across different LiveView instances in PR #1
-      # This is expected behavior - each LiveView has its own component instance
-      # Future PRs will add database persistence for chat history
-      refute has_element?(view2, ".chat-bubble", "Test persistence")
+      # Messages now DO persist because they're auto-restored from database
+      assert has_element?(view2, ".chat-bubble", "Test persistence")
 
-      # But the empty chat panel is still available
+      # Chat panel is still available
       assert has_element?(view2, "#chat-drawer-global-chat-panel")
     end
 
