@@ -90,18 +90,21 @@
   height: 1.25rem;
   border: 2px solid #888;
   border-radius: 0.25rem;
-  background-color: white;
   cursor: pointer;
   transition: all 0.2s ease;
   z-index: 0;
 }
 
+/* Light mode checkbox - explicit white background */
+[data-theme="light"] #editor-container .milkdown li[data-item-type="task"]::before {
+  background-color: white;
+  border-color: #888;
+}
+
 /* Dark mode checkbox */
-@media (prefers-color-scheme: dark) {
-  #editor-container .milkdown li[data-item-type="task"]::before {
-    background-color: #2e3440;
-    border-color: #666;
-  }
+[data-theme="dark"] #editor-container .milkdown li[data-item-type="task"]::before {
+  background-color: #2e3440;
+  border-color: #666;
 }
 
 /* Checked state styling */

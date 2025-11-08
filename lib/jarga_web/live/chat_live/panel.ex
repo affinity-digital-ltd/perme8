@@ -315,6 +315,16 @@ defmodule JargaWeb.ChatLive.Panel do
     {:noreply, socket}
   end
 
+  @impl true
+  def handle_event("insert_into_note", %{"content" => content}, socket) do
+    # Validate content is not empty
+    if String.trim(content) != "" do
+      {:noreply, push_event(socket, "insert-text", %{content: content})}
+    else
+      {:noreply, socket}
+    end
+  end
+
   # Private helper functions
 
   defp verify_session_ownership(session, current_user_id) do
@@ -402,6 +412,13 @@ defmodule JargaWeb.ChatLive.Panel do
   end
 
   defp get_nested(_, _), do: nil
+
+  # Determines if insert link should be shown based on context
+  # Only show when on a page with a note attached
+  defp should_show_insert?(assigns) do
+    Map.has_key?(assigns, :page) && !is_nil(assigns[:page]) &&
+      Map.has_key?(assigns, :note) && !is_nil(assigns[:note])
+  end
 
   defp relative_time(datetime) do
     now = DateTime.utc_now()

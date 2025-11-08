@@ -72,7 +72,11 @@ defmodule JargaWeb.AppLive.PagesTest do
       assert html =~ "pinned" or html =~ "Pinned"
     end
 
-    test "allows updating page title", %{conn: conn, user: user, workspace: workspace} do
+    test "allows updating page title with autosave on blur", %{
+      conn: conn,
+      user: user,
+      workspace: workspace
+    } do
       {:ok, page} = Pages.create_page(user, workspace.id, %{title: "Original Title"})
 
       {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/pages/#{page.slug}")
@@ -80,10 +84,10 @@ defmodule JargaWeb.AppLive.PagesTest do
       # First, start editing the title
       lv |> element("h1[phx-click='start_edit_title']") |> render_click()
 
-      # Now submit the form
+      # Blur the input to trigger autosave
       lv
-      |> element("form[phx-submit='update_title']")
-      |> render_submit(%{page: %{title: "Updated Title"}})
+      |> element("input[name='page[title]']")
+      |> render_blur(%{page: %{title: "Updated Title"}})
 
       assert render(lv) =~ "Updated Title"
     end

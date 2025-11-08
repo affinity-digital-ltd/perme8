@@ -8,10 +8,25 @@ html:has(.drawer-toggle:checked) {
   scrollbar-gutter: auto !important;
 }
 
+/* Insert into note link styles */
+/* Use DaisyUI's chat-footer with native link styling */
+.chat-footer {
+  transition: opacity 0.2s ease-in-out;
+}
+
+/* Show insert link on hover */
+.chat:hover .chat-footer {
+  opacity: 1 !important;
+}
+
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
     animation: none !important;
+  }
+
+  .chat-footer {
+    transition: none !important;
   }
 }

@@ -145,29 +145,37 @@ defmodule JargaWeb.AppLive.Pages.Show do
   end
 
   @impl true
-  def handle_event("update_title", %{"page" => %{"title" => title}}, socket) do
+  def handle_event("update_title", params, socket) do
     page = socket.assigns.page
     user = socket.assigns.current_scope.user
 
-    case Pages.update_page(user, page.id, %{title: title}) do
-      {:ok, updated_page} ->
-        {:noreply,
-         socket
-         |> assign(:page, updated_page)
-         |> assign(:editing_title, false)
-         |> assign(:page_form, to_form(%{"title" => updated_page.title}))
-         |> put_flash(:info, "Page title updated")}
+    # Extract title from either form params or value param (from blur)
+    title =
+      case params do
+        %{"page" => %{"title" => t}} -> t
+        %{"value" => t} -> t
+        _ -> page.title
+      end
 
-      {:error, _changeset} ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "Failed to update title")}
+    # Only update if title changed
+    if String.trim(title) != "" && title != page.title do
+      case Pages.update_page(user, page.id, %{title: title}) do
+        {:ok, updated_page} ->
+          {:noreply,
+           socket
+           |> assign(:page, updated_page)
+           |> assign(:editing_title, false)
+           |> assign(:page_form, to_form(%{"title" => updated_page.title}))}
+
+        {:error, _changeset} ->
+          {:noreply,
+           socket
+           |> assign(:editing_title, false)
+           |> put_flash(:error, "Failed to update title")}
+      end
+    else
+      {:noreply, assign(socket, :editing_title, false)}
     end
-  end
-
-  @impl true
-  def handle_event("cancel_edit_title", _params, socket) do
-    {:noreply, assign(socket, :editing_title, false)}
   end
 
   @impl true
@@ -359,28 +367,19 @@ defmodule JargaWeb.AppLive.Pages.Show do
         <% end %>
         
     <!-- Title Section -->
-        <div class="border-b border-base-300 pb-4 mb-4 flex-shrink-0">
+        <div class="pb-4 mb-4 flex-shrink-0">
           <%= if @editing_title do %>
-            <form phx-submit="update_title" class="flex items-center gap-2">
-              <input
-                type="text"
-                name="page[title]"
-                value={@page_form[:title].value}
-                class="flex-1 text-[2em] font-bold leading-tight m-0 input input-bordered focus:input-primary"
-                autofocus
-              />
-              <.button type="submit" variant="primary" size="sm">
-                Save
-              </.button>
-              <.button
-                type="button"
-                variant="ghost"
-                size="sm"
-                phx-click="cancel_edit_title"
-              >
-                Cancel
-              </.button>
-            </form>
+            <input
+              id="page-title-input"
+              phx-hook="PageTitleInput"
+              type="text"
+              name="page[title]"
+              value={@page_form[:title].value}
+              phx-blur="update_title"
+              phx-value-title={@page_form[:title].value}
+              class="w-full text-[2em] font-bold leading-tight m-0 input input-bordered focus:input-primary"
+              autofocus
+            />
           <% else %>
             <h1
               class={[

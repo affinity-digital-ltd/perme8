@@ -203,7 +203,7 @@ defmodule JargaWeb.Layouts do
           </div>
           
     <!-- User info -->
-          <div class="px-4 py-4 border-b border-base-300">
+          <div class="px-4 py-4">
             <div class="flex items-center gap-3">
               <div class="avatar placeholder">
                 <div class="bg-primary text-primary-content w-10 rounded-full">

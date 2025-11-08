@@ -5,6 +5,8 @@ defmodule JargaWeb.ChatLive.Components.Message do
   use Phoenix.Component
 
   attr :message, :map, required: true
+  attr :show_insert, :boolean, default: false
+  attr :panel_target, :any, default: nil
 
   def message(assigns) do
     ~H"""
@@ -21,8 +23,31 @@ defmodule JargaWeb.ChatLive.Components.Message do
           <span class="inline-block w-2 h-4 bg-current opacity-75 animate-pulse ml-1">▊</span>
         <% end %>
       </div>
+
+      <%= if should_show_insert_link?(assigns) do %>
+        <div class="chat-footer text-xs opacity-70">
+          <span
+            phx-click="insert_into_note"
+            phx-target={@panel_target}
+            phx-value-content={@message.content}
+            class="link link-primary cursor-pointer"
+            role="button"
+            tabindex="0"
+            title="Insert this text into the current note"
+          >
+            insert
+          </span>
+        </div>
+      <% end %>
     </div>
     """
+  end
+
+  # Only show insert link for assistant messages that aren't streaming
+  defp should_show_insert_link?(assigns) do
+    assigns[:show_insert] == true &&
+      assigns.message.role == "assistant" &&
+      !Map.get(assigns.message, :streaming, false)
   end
 
   defp format_timestamp(timestamp) do

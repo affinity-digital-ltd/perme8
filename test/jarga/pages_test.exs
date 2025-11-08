@@ -2,6 +2,7 @@ defmodule Jarga.PagesTest do
   use Jarga.DataCase, async: true
 
   alias Jarga.Pages
+  alias Jarga.Workspaces
 
   import Jarga.AccountsFixtures
   import Jarga.WorkspacesFixtures
@@ -253,6 +254,57 @@ defmodule Jarga.PagesTest do
       {:ok, page} = Pages.create_page(user1, workspace.id, %{title: "Protected"})
 
       assert {:error, :unauthorized} = Pages.delete_page(user2, page.id)
+    end
+
+    test "allows admin to delete another user's public page" do
+      owner = user_fixture()
+      admin = user_fixture()
+      workspace = workspace_fixture(owner)
+
+      # Add admin to workspace with admin role
+      {:ok, _membership} = Workspaces.invite_member(owner, workspace.id, admin.email, :admin)
+
+      # Owner creates a public page
+      {:ok, page} =
+        Pages.create_page(owner, workspace.id, %{title: "Public Page", is_public: true})
+
+      # Admin can delete the public page
+      assert {:ok, deleted} = Pages.delete_page(admin, page.id)
+      assert deleted.id == page.id
+    end
+
+    test "returns error when admin tries to delete another user's private page" do
+      owner = user_fixture()
+      admin = user_fixture()
+      workspace = workspace_fixture(owner)
+
+      # Add admin to workspace
+      Workspaces.invite_member(owner, workspace.id, admin.email, :admin)
+
+      # Owner creates a private page
+      {:ok, page} =
+        Pages.create_page(owner, workspace.id, %{title: "Private Page", is_public: false})
+
+      # Admin cannot delete private page they don't own
+      assert {:error, :forbidden} = Pages.delete_page(admin, page.id)
+    end
+
+    test "returns error when member tries to delete another member's public page" do
+      owner = user_fixture()
+      member1 = user_fixture()
+      member2 = user_fixture()
+      workspace = workspace_fixture(owner)
+
+      # Add both members to workspace
+      {:ok, _membership1} = Workspaces.invite_member(owner, workspace.id, member1.email, :member)
+      {:ok, _membership2} = Workspaces.invite_member(owner, workspace.id, member2.email, :member)
+
+      # Member1 creates a public page
+      {:ok, page} =
+        Pages.create_page(member1, workspace.id, %{title: "Member1 Page", is_public: true})
+
+      # Member2 cannot delete Member1's page (only admins can delete others' public pages)
+      assert {:error, :forbidden} = Pages.delete_page(member2, page.id)
     end
   end
 
