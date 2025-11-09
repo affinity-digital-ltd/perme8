@@ -30,7 +30,7 @@ defmodule JargaWeb.ChatLive.Components.Message do
             phx-click="insert_into_note"
             phx-target={@panel_target}
             phx-value-content={@message.content}
-            class="link link-primary cursor-pointer"
+            class="link link-info cursor-pointer"
             role="button"
             tabindex="0"
             title="Insert this text into the current note"

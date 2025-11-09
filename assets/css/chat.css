@@ -8,6 +8,57 @@ html:has(.drawer-toggle:checked) {
   scrollbar-gutter: auto !important;
 }
 
+/* Desktop responsive behavior: Push main content when chat panel is open */
+/* Only apply on large screens (1024px and above) */
+@media (min-width: 1024px) {
+  /* When chat drawer is checked (open), push the admin drawer content to the left */
+  html:has(#chat-drawer-global-chat-panel:checked) .drawer:not(.drawer-end) > .drawer-content {
+    margin-right: 384px; /* w-96 = 384px */
+    transition: margin-right 0.3s ease-in-out;
+  }
+
+  /* Smooth transition when closing */
+  .drawer:not(.drawer-end) > .drawer-content {
+    transition: margin-right 0.3s ease-in-out;
+  }
+
+  /* Remove overlay on desktop - panel should not overlay content */
+  /* Only hide the chat drawer's overlay, not the admin sidebar's */
+  html:has(#chat-drawer-global-chat-panel:checked) .drawer.drawer-end .drawer-overlay {
+    display: none;
+  }
+
+  /* Prevent drawer-side from capturing pointer events outside the panel */
+  /* Only the panel content (ul.menu) should capture events */
+  html:has(#chat-drawer-global-chat-panel:checked) .drawer.drawer-end .drawer-side {
+    pointer-events: none;
+  }
+
+  /* Re-enable pointer events for the actual panel content */
+  html:has(#chat-drawer-global-chat-panel:checked) .drawer.drawer-end .drawer-side > * {
+    pointer-events: auto;
+  }
+
+  /* Ensure chat messages and their children can receive hover events */
+  html:has(#chat-drawer-global-chat-panel:checked) .drawer.drawer-end .drawer-side .chat,
+  html:has(#chat-drawer-global-chat-panel:checked) .drawer.drawer-end .drawer-side .chat * {
+    pointer-events: auto;
+  }
+
+  /* Hide chat toggle button in topbar when panel is open */
+  /* Only hide the topbar button, not the X button inside the panel */
+  /* Target the navbar inside drawer-content (topbar), not the one inside the panel */
+  html:has(#chat-drawer-global-chat-panel:checked) .drawer-content .navbar label[for="chat-drawer-global-chat-panel"] {
+    display: none;
+  }
+
+  /* Add padding to topbar to align notification bell with main content's right edge */
+  /* Match the lg:p-8 (2rem) padding that main content uses */
+  html:has(#chat-drawer-global-chat-panel:checked) .drawer-content > .navbar {
+    padding-right: 2rem;
+  }
+}
+
 /* Insert into note link styles */
 /* Use DaisyUI's chat-footer with native link styling */
 .chat-footer {
@@ -27,6 +78,11 @@ html:has(.drawer-toggle:checked) {
   }
 
   .chat-footer {
+    transition: none !important;
+  }
+
+  /* Disable panel transitions for reduced motion */
+  .drawer:not(.drawer-end) > .drawer-content {
     transition: none !important;
   }
 }

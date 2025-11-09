@@ -1225,6 +1225,49 @@ defmodule JargaWeb.ChatLive.PanelTest do
     end
   end
 
+  describe "Desktop responsive behavior" do
+    setup do
+      user = user_fixture()
+      %{user: user}
+    end
+
+    test "chat panel has responsive layout classes", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+      {:ok, _view, html} = live(conn, ~p"/app")
+
+      # Panel should have classes that allow responsive behavior
+      assert html =~ "drawer drawer-end"
+      # The drawer should be present and ready for responsive behavior
+      assert html =~ "chat-drawer-global-chat-panel"
+    end
+
+    test "chat panel has data attribute for responsive detection", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+      {:ok, _view, html} = live(conn, ~p"/app")
+
+      # Panel should have data attribute for JS hook to detect
+      assert html =~ ~r/data-component-id/
+    end
+
+    test "main content area exists for responsive resizing", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+      {:ok, _view, html} = live(conn, ~p"/app")
+
+      # Main content area should exist
+      assert html =~ "<main"
+      # The drawer structure supports responsive behavior
+      assert html =~ "drawer-side"
+    end
+
+    test "panel width is fixed for consistent layout", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+      {:ok, _view, html} = live(conn, ~p"/app")
+
+      # Panel should have fixed width (w-96 = 384px)
+      assert html =~ "w-96"
+    end
+  end
+
   describe "insert into note functionality" do
     import Jarga.NotesFixtures
 

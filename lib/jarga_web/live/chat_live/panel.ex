@@ -16,6 +16,9 @@ defmodule JargaWeb.ChatLive.Panel do
   def mount(socket) do
     {:ok,
      socket
+     # Initial server-side state (overridden by JavaScript hook based on screen size)
+     # Desktop (≥1024px): opens by default
+     # Mobile (<1024px): closed by default
      |> assign(:collapsed, true)
      |> assign(:messages, [])
      |> assign(:current_message, "")

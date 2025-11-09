@@ -32,7 +32,7 @@
     </label>
 
     <%!-- Chat panel content --%>
-    <ul class="menu bg-base-100 min-h-full w-96 p-0 flex flex-col">
+    <ul class="menu bg-base-200 min-h-full w-96 p-0 flex flex-col">
       <%!-- Header --%>
       <div class="navbar bg-base-200 border-b border-base-300">
         <%= if @view_mode == :chat do %>
@@ -152,7 +152,7 @@
         </div>
 
         <%!-- Input area --%>
-        <div class="p-4 bg-base-100 border-t border-base-300">
+        <div class="p-4 bg-base-200 border-t border-base-300">
           <form
             id="chat-message-form"
             phx-submit="send_message"

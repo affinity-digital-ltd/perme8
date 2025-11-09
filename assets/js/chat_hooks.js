@@ -1,11 +1,20 @@
 /**
  * JavaScript hooks for the chat panel component
- * Handles localStorage persistence, keyboard shortcuts, and auto-scroll
+ * Handles responsive panel state, keyboard shortcuts, and auto-scroll
  */
 
 export const ChatPanel = {
   mounted() {
     this.toggleBtn = document.getElementById('chat-toggle-btn')
+    this.userInteracted = false // Track if user has manually toggled
+
+    // Desktop breakpoint (lg in Tailwind)
+    this.DESKTOP_BREAKPOINT = 1024
+
+    // Check if screen is desktop size
+    this.isDesktop = () => {
+      return window.innerWidth >= this.DESKTOP_BREAKPOINT
+    }
 
     // Store reference to update function
     this.updateButtonVisibility = () => {
@@ -35,29 +44,49 @@ export const ChatPanel = {
           }
         }, 150)
       }
-
-      // Save state to localStorage
-      localStorage.setItem('chat_collapsed', !this.el.checked)
     })
 
-    // Load collapsed state from localStorage
-    const collapsed = localStorage.getItem('chat_collapsed')
-    if (collapsed !== null) {
-      this.el.checked = collapsed === 'false'
+    // Set initial state based on screen size (responsive defaults)
+    // Desktop: open by default, Mobile/tablet: closed by default
+    if (this.isDesktop()) {
+      this.el.checked = true
+    } else {
+      this.el.checked = false
     }
 
     // Initial button visibility
     this.updateButtonVisibility()
 
+    // Handle window resize - update panel state if crossing breakpoint
+    this.handleResize = () => {
+      // Only auto-adjust if user hasn't manually toggled
+      if (!this.userInteracted) {
+        const shouldBeOpen = this.isDesktop()
+        if (this.el.checked !== shouldBeOpen) {
+          this.el.checked = shouldBeOpen
+          this.updateButtonVisibility()
+        }
+      }
+    }
+
+    window.addEventListener('resize', this.handleResize)
+
+    // Mark as user interaction on click
+    this.el.addEventListener('click', () => {
+      this.userInteracted = true
+    })
+
     // Keyboard shortcut: Cmd/Ctrl + K to toggle
     this.handleKeyboard = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault()
+        this.userInteracted = true
         this.el.click()
       }
 
       // Escape to close
       if (e.key === 'Escape' && this.el.checked) {
+        this.userInteracted = true
         this.el.click()
       }
     }
@@ -75,6 +104,9 @@ export const ChatPanel = {
   destroyed() {
     if (this.handleKeyboard) {
       document.removeEventListener('keydown', this.handleKeyboard)
+    }
+    if (this.handleResize) {
+      window.removeEventListener('resize', this.handleResize)
     }
   }
 }
