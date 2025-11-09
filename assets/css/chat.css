@@ -4,10 +4,8 @@
 
 /* Fix scrollbar-gutter jump when drawer opens */
 /* Override DaisyUI's default behavior that causes layout shift */
-@important {
-  html:has(.drawer-toggle:checked) {
-    scrollbar-gutter: auto;
-  }
+html:has(.drawer-toggle:checked) {
+  scrollbar-gutter: auto !important;
 }
 
 /* Desktop responsive behavior: Push main content when chat panel is open */
@@ -68,10 +66,8 @@
 }
 
 /* Show insert link on hover */
-@important {
-  .chat:hover .chat-footer {
-    @apply opacity-100;
-  }
+.chat:hover .chat-footer {
+  @apply opacity-100 #{!important};
 }
 
 /* Markdown styling in chat bubbles */
@@ -120,11 +116,9 @@
   @apply list-decimal;
 }
 
-@important {
-  .chat-markdown li {
-    @apply mb-1;
-    display: list-item;
-  }
+.chat-markdown li {
+  @apply mb-1;
+  display: list-item !important;
 }
 
 /* Task list (checkbox) styling */
@@ -132,11 +126,9 @@
   @apply list-none pl-2;
 }
 
-@important {
-  .chat-markdown li:has(input[type="checkbox"]) {
-    @apply list-none ml-0 grid grid-cols-[auto_1fr] gap-2 items-start;
-    display: grid;
-  }
+.chat-markdown li:has(input[type="checkbox"]) {
+  @apply list-none ml-0 grid grid-cols-[auto_1fr] gap-2 items-start;
+  display: grid !important;
 }
 
 /* Ensure content after checkbox doesn't break layout */
@@ -181,20 +173,18 @@
 }
 
 /* Accessibility */
-@important {
-  @media (prefers-reduced-motion: reduce) {
-    * {
-      transition: none;
-      animation: none;
-    }
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 
-    .chat-footer {
-      transition: none;
-    }
+  .chat-footer {
+    transition: none !important;
+  }
 
-    /* Disable panel transitions for reduced motion */
-    .drawer:not(.drawer-end) > .drawer-content {
-      transition: none;
-    }
+  /* Disable panel transitions for reduced motion */
+  .drawer:not(.drawer-end) > .drawer-content {
+    transition: none !important;
   }
 }
