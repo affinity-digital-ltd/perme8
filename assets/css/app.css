@@ -125,8 +125,10 @@
 @import './chat.css';
 
 /* Marketing Site Styles */
-.marketing-header {
-  background-color: #EFEFF3 !important;
+@important {
+  .marketing-header {
+    background-color: #EFEFF3;
+  }
 }
 
 /* Animation Styles */

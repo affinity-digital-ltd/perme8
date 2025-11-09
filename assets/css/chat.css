@@ -4,8 +4,10 @@
 
 /* Fix scrollbar-gutter jump when drawer opens */
 /* Override DaisyUI's default behavior that causes layout shift */
-html:has(.drawer-toggle:checked) {
-  scrollbar-gutter: auto !important;
+@important {
+  html:has(.drawer-toggle:checked) {
+    scrollbar-gutter: auto;
+  }
 }
 
 /* Desktop responsive behavior: Push main content when chat panel is open */
@@ -66,8 +68,10 @@ html:has(.drawer-toggle:checked) {
 }
 
 /* Show insert link on hover */
-.chat:hover .chat-footer {
-  @apply opacity-100 #{!important};
+@important {
+  .chat:hover .chat-footer {
+    @apply opacity-100;
+  }
 }
 
 /* Markdown styling in chat bubbles */
@@ -116,9 +120,11 @@ html:has(.drawer-toggle:checked) {
   @apply list-decimal;
 }
 
-.chat-markdown li {
-  @apply mb-1;
-  display: list-item !important;
+@important {
+  .chat-markdown li {
+    @apply mb-1;
+    display: list-item;
+  }
 }
 
 /* Task list (checkbox) styling */
@@ -126,9 +132,11 @@ html:has(.drawer-toggle:checked) {
   @apply list-none pl-2;
 }
 
-.chat-markdown li:has(input[type="checkbox"]) {
-  @apply list-none ml-0 grid grid-cols-[auto_1fr] gap-2 items-start;
-  display: grid !important;
+@important {
+  .chat-markdown li:has(input[type="checkbox"]) {
+    @apply list-none ml-0 grid grid-cols-[auto_1fr] gap-2 items-start;
+    display: grid;
+  }
 }
 
 /* Ensure content after checkbox doesn't break layout */
@@ -173,18 +181,20 @@ html:has(.drawer-toggle:checked) {
 }
 
 /* Accessibility */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-    animation: none !important;
-  }
+@important {
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none;
+      animation: none;
+    }
 
-  .chat-footer {
-    transition: none !important;
-  }
+    .chat-footer {
+      transition: none;
+    }
 
-  /* Disable panel transitions for reduced motion */
-  .drawer:not(.drawer-end) > .drawer-content {
-    transition: none !important;
+    /* Disable panel transitions for reduced motion */
+    .drawer:not(.drawer-end) > .drawer-content {
+      transition: none;
+    }
   }
 }

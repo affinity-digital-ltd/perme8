@@ -61,38 +61,40 @@
 
 /* Task List (Checkbox) Styles for GFM */
 /* Target task list items by data attribute - use high specificity to override theme */
-#editor-container .milkdown li[data-item-type="task"] {
-  list-style: none !important;
-  position: relative;
-  padding-left: 2rem;
-  cursor: pointer;
-  user-select: none;
-  /* Reset margins to ensure consistent vertical spacing for both nested and non-nested items */
-  margin-block-start: 0 !important;
-  margin-block-end: calc(var(--spacing) * 1) !important;
-  margin-bottom: calc(var(--spacing) * 1) !important;
-}
+@important {
+  #editor-container .milkdown li[data-item-type="task"] {
+    list-style: none;
+    position: relative;
+    padding-left: 2rem;
+    cursor: pointer;
+    user-select: none;
+    /* Reset margins to ensure consistent vertical spacing for both nested and non-nested items */
+    margin-block-start: 0;
+    margin-block-end: calc(var(--spacing) * 1);
+    margin-bottom: calc(var(--spacing) * 1);
+  }
 
-/* Hide the bullet point */
-#editor-container .milkdown li[data-item-type="task"]::marker {
-  content: '' !important;
-  display: none !important;
-}
+  /* Hide the bullet point */
+  #editor-container .milkdown li[data-item-type="task"]::marker {
+    content: '';
+    display: none;
+  }
 
-/* Create checkbox using ::before pseudo-element */
-#editor-container .milkdown li[data-item-type="task"]::before {
-  content: "" !important;
-  display: block !important;
-  position: absolute;
-  left: 0;
-  top: 0.125rem;
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 2px solid #888;
-  border-radius: 0.25rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 0;
+  /* Create checkbox using ::before pseudo-element */
+  #editor-container .milkdown li[data-item-type="task"]::before {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0.125rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid #888;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 0;
+  }
 }
 
 /* Light mode checkbox - explicit white background */
@@ -107,43 +109,45 @@
   border-color: #666;
 }
 
-/* Checked state styling */
-#editor-container .milkdown li[data-item-type="task"][data-checked="true"]::before {
-  background-color: #5e81ac !important;
-  border-color: #5e81ac !important;
-}
+@important {
+  /* Checked state styling */
+  #editor-container .milkdown li[data-item-type="task"][data-checked="true"]::before {
+    background-color: #5e81ac;
+    border-color: #5e81ac;
+  }
 
-/* Checkmark for checked items */
-#editor-container .milkdown li[data-item-type="task"][data-checked="true"]::after {
-  content: "" !important;
-  display: block !important;
-  position: absolute;
-  left: 0.45rem;
-  top: 0.375rem;
-  width: 0.35rem;
-  height: 0.65rem;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-  pointer-events: none;
-  z-index: 1;
-}
+  /* Checkmark for checked items */
+  #editor-container .milkdown li[data-item-type="task"][data-checked="true"]::after {
+    content: "";
+    display: block;
+    position: absolute;
+    left: 0.45rem;
+    top: 0.375rem;
+    width: 0.35rem;
+    height: 0.65rem;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    pointer-events: none;
+    z-index: 1;
+  }
 
-/* Hover state */
-#editor-container .milkdown li[data-item-type="task"]:hover::before {
-  border-color: #444 !important;
-}
+  /* Hover state */
+  #editor-container .milkdown li[data-item-type="task"]:hover::before {
+    border-color: #444;
+  }
 
-/* Remove extra margin from paragraph inside task items */
-#editor-container .milkdown li[data-item-type="task"] > p {
-  margin: 0 !important;
-  user-select: text;
-  cursor: text;
-}
+  /* Remove extra margin from paragraph inside task items */
+  #editor-container .milkdown li[data-item-type="task"] > p {
+    margin: 0;
+    user-select: text;
+    cursor: text;
+  }
 
-/* Ensure nested lists inside task items don't add extra vertical spacing */
-#editor-container .milkdown li[data-item-type="task"] > ul,
-#editor-container .milkdown li[data-item-type="task"] > ol {
-  margin-block-start: calc(var(--spacing) * 1) !important;
-  margin-block-end: 0 !important;
+  /* Ensure nested lists inside task items don't add extra vertical spacing */
+  #editor-container .milkdown li[data-item-type="task"] > ul,
+  #editor-container .milkdown li[data-item-type="task"] > ol {
+    margin-block-start: calc(var(--spacing) * 1);
+    margin-block-end: 0;
+  }
 }
