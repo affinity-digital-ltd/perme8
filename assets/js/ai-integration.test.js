@@ -5,6 +5,7 @@ describe('AIAssistantManager - Integration', () => {
   let aiAssistant
   let mockView
   let mockSchema
+  let mockParser
   let mockPushEvent
 
   beforeEach(() => {
@@ -15,6 +16,21 @@ describe('AIAssistantManager - Integration', () => {
         text: vi.fn()
       }
     }
+
+    // Mock parser that returns a document with content
+    mockParser = vi.fn((markdown) => ({
+      content: {
+        forEach: vi.fn((callback) => {
+          // Simulate a parsed paragraph node
+          callback({
+            type: { name: 'paragraph' },
+            content: { size: markdown.length },
+            nodeSize: markdown.length + 2,
+            isInline: false
+          })
+        })
+      }
+    }))
 
     mockView = {
       state: {
@@ -37,6 +53,7 @@ describe('AIAssistantManager - Integration', () => {
     aiAssistant = new AIAssistantManager({
       view: mockView,
       schema: mockSchema,
+      parser: mockParser,
       pushEvent: mockPushEvent
     })
   })

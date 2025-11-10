@@ -19,13 +19,15 @@ export class AIAssistantManager {
    * @param {Object} options
    * @param {Object} options.view - ProseMirror EditorView
    * @param {Object} options.schema - ProseMirror schema
+   * @param {Function} options.parser - Milkdown markdown parser
    * @param {Function} options.pushEvent - LiveView pushEvent function
    */
   constructor(options) {
-    console.log('[AIAssistantManager] Constructing with options:', { hasView: !!options.view, hasSchema: !!options.schema, hasPushEvent: !!options.pushEvent })
+    console.log('[AIAssistantManager] Constructing with options:', { hasView: !!options.view, hasSchema: !!options.schema, hasParser: !!options.parser, hasPushEvent: !!options.pushEvent })
 
     this.view = options.view
     this.schema = options.schema
+    this.parser = options.parser
     this.pushEvent = options.pushEvent
 
     // Track active AI queries
@@ -126,8 +128,21 @@ export class AIAssistantManager {
     if (nodePos !== null && parentNode) {
       const tr = state.tr
 
-      // Split response by line breaks and create proper paragraph nodes
-      const lines = response.split('\n')
+      // Parse markdown response into ProseMirror nodes
+      // The parser returns either a Node or a string (on error)
+      const parsed = this.parser(response.trim())
+
+      // Handle parser errors
+      if (!parsed || typeof parsed === 'string') {
+        console.error('[AIAssistant] Failed to parse markdown:', parsed)
+        return
+      }
+
+      // Extract the content nodes (skip the top-level doc node)
+      const nodes = []
+      parsed.content.forEach(node => {
+        nodes.push(node)
+      })
 
       // Calculate positions BEFORE making any changes
       const parentStart = nodePos - indexInParent - 1
@@ -136,40 +151,33 @@ export class AIAssistantManager {
       // Delete the AI response node
       tr.delete(nodePos, nodePos + 1)
 
-      // If the AI response is inside a paragraph, insert the first line as text
+      // If the AI response is inside a paragraph, we need to handle inline vs block content
       if (parentNode.type.name === 'paragraph') {
-        // Insert first line as text inline at the position where we deleted
-        if (lines[0]) {
-          tr.insertText(lines[0], nodePos)
-        }
+        // Check if we have any block-level nodes (paragraphs, headings, lists, etc.)
+        const hasBlockNodes = nodes.some(node => !node.isInline && node.type.name !== 'text')
 
-        // Calculate where to insert remaining paragraphs (after the current paragraph)
-        // After deletion and first line insertion, we need to map the parent end position
-        const afterFirstLine = nodePos + (lines[0] ? lines[0].length : 0)
-        const remainingInParent = parentEnd - (nodePos + 1) // Content after the AI node
-        const insertAfterParent = afterFirstLine + remainingInParent
+        if (!hasBlockNodes && nodes.length === 1 && nodes[0].type.name === 'paragraph') {
+          // Single paragraph - insert its content inline
+          const inlineContent = nodes[0].content
+          tr.insert(nodePos, inlineContent)
+        } else {
+          // Has block nodes - need to split the current paragraph and insert blocks
+          const remainingInParent = parentEnd - (nodePos + 1) // Content after the AI node
+          const insertAfterParent = nodePos + remainingInParent
 
-        // Insert remaining lines as new paragraphs after the current paragraph
-        // Insert them with increasing positions to maintain order
-        let currentInsertPos = insertAfterParent
-        for (let i = 1; i < lines.length; i++) {
-          const paragraphNode = schema.nodes.paragraph.create(
-            null,
-            lines[i] ? schema.text(lines[i]) : null
-          )
-          tr.insert(currentInsertPos, paragraphNode)
-          currentInsertPos += paragraphNode.nodeSize
+          // Insert block nodes after the current paragraph
+          let currentInsertPos = insertAfterParent
+          nodes.forEach((node) => {
+            tr.insert(currentInsertPos, node)
+            currentInsertPos += node.nodeSize
+          })
         }
       } else {
-        // Not in a paragraph, insert all lines as paragraphs at the deletion point
+        // Not in a paragraph, insert all parsed nodes at the deletion point
         let currentPos = nodePos
-        lines.forEach((line) => {
-          const paragraphNode = schema.nodes.paragraph.create(
-            null,
-            line ? schema.text(line) : null
-          )
-          tr.insert(currentPos, paragraphNode)
-          currentPos += paragraphNode.nodeSize
+        nodes.forEach((node) => {
+          tr.insert(currentPos, node)
+          currentPos += node.nodeSize
         })
       }
 
@@ -279,6 +287,7 @@ export class AIAssistantManager {
     // Clear references
     this.view = null
     this.schema = null
+    this.parser = null
     this.pushEvent = null
     this.activeQueries.clear()
   }

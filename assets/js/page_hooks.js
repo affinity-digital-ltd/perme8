@@ -1,4 +1,4 @@
-import { Editor, rootCtx, editorViewCtx, defaultValueCtx, serializerCtx } from '@milkdown/core'
+import { Editor, rootCtx, editorViewCtx, defaultValueCtx, serializerCtx, parserCtx } from '@milkdown/core'
 import { commonmark } from '@milkdown/preset-commonmark'
 import { gfm } from '@milkdown/preset-gfm'
 import { nord } from '@milkdown/theme-nord'
@@ -145,6 +145,7 @@ export const MilkdownEditor = {
     editor.create().then(() => {
       this.editor.action((ctx) => {
         const view = ctx.get(editorViewCtx)
+        const parser = ctx.get(parserCtx)
         const state = view.state
 
         // Initialize AI Assistant Manager BEFORE configuring plugins
@@ -152,6 +153,7 @@ export const MilkdownEditor = {
         this.aiAssistant = new AIAssistantManager({
           view,
           schema: state.schema,
+          parser,
           pushEvent: this.pushEvent.bind(this)
         })
 
@@ -507,33 +509,27 @@ export const MilkdownEditor = {
     try {
       this.editor.action((ctx) => {
         const view = ctx.get(editorViewCtx)
-        if (!view) return
+        const parser = ctx.get(parserCtx)
+        if (!view || !parser) return
 
         const { state } = view
         const { schema } = state
         const { selection } = state
 
-        // Split content into paragraphs
-        const paragraphs = content.trim().split('\n\n').filter(p => p.trim().length > 0)
+        // Parse markdown content into ProseMirror nodes
+        // The parser returns either a Node or a string (on error)
+        const parsed = parser(content.trim())
 
-        // Create paragraph nodes for each paragraph
+        // Handle parser errors (like clipboard plugin does)
+        if (!parsed || typeof parsed === 'string') {
+          console.error('Error parsing markdown:', parsed)
+          return
+        }
+
+        // Extract the content nodes (skip the top-level doc node)
         const nodes = []
-
-        paragraphs.forEach(para => {
-          // Split by single newlines to handle line breaks within paragraphs
-          const lines = para.split('\n').filter(l => l.trim().length > 0)
-
-          if (lines.length > 0) {
-            // Create text nodes with hard breaks
-            const textNodes = []
-            lines.forEach((line, idx) => {
-              textNodes.push(schema.text(line))
-              if (idx < lines.length - 1) {
-                textNodes.push(schema.nodes.hardbreak.create())
-              }
-            })
-            nodes.push(schema.nodes.paragraph.create(null, textNodes))
-          }
+        parsed.content.forEach(node => {
+          nodes.push(node)
         })
 
         // Add empty paragraph for spacing
@@ -562,7 +558,7 @@ export const MilkdownEditor = {
         // Focus the editor
         view.focus()
 
-        console.log(`Inserted ${nodes.length} paragraph nodes`)
+        console.log(`Inserted ${nodes.length} parsed nodes from markdown`)
       })
     } catch (error) {
       console.error('Error inserting text into editor:', error)

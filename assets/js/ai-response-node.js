@@ -63,22 +63,20 @@ export const aiResponseNode = $node('ai_response', (ctx) => ({
     return dom
   },
 
+  // This node is only created programmatically, never from markdown
+  // But we need to provide a parseMarkdown spec that never matches
   parseMarkdown: {
-    block: 'ai_response',
-    getAttrs: () => ({
-      nodeId: '',
-      state: 'streaming',
-      content: '',
-      error: ''
-    })
+    match: () => false,
+    runner: () => {}
   },
 
   toMarkdown: {
     match: (node) => node.type.name === 'ai_response',
     runner: (state, node) => {
-      state.addNode('fence', undefined, node.attrs.content || '', {
-        info: 'ai-response'
-      })
+      // The AI response node is temporary - it gets replaced with parsed markdown
+      // when the response completes. During serialization while streaming,
+      // we just skip outputting it to avoid serialization errors.
+      // The content will be properly saved once handleAIDone replaces this node.
     }
   }
 }))
