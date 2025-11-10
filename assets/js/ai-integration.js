@@ -132,10 +132,6 @@ export class AIAssistantManager {
 
       // Calculate positions BEFORE making any changes
       const parentStart = nodePos - indexInParent - 1
-      const parentEnd = parentStart + parentNode.nodeSize
-
-      // Delete the AI response node
-      tr.delete(nodePos, nodePos + 1)
 
       // If the AI response is inside a paragraph, we need to handle inline vs block content
       if (parentNode.type.name === 'paragraph') {
@@ -143,23 +139,53 @@ export class AIAssistantManager {
         const hasBlockNodes = nodes.some(node => !node.isInline && node.type.name !== 'text')
 
         if (!hasBlockNodes && nodes.length === 1 && nodes[0].type.name === 'paragraph') {
-          // Single paragraph - insert its content inline
+          // Single paragraph - delete AI node and insert its content inline
           const inlineContent = nodes[0].content
+          tr.delete(nodePos, nodePos + 1)
           tr.insert(nodePos, inlineContent)
-        } else {
-          // Has block nodes - need to split the current paragraph and insert blocks
-          const remainingInParent = parentEnd - (nodePos + 1) // Content after the AI node
-          const insertAfterParent = nodePos + remainingInParent
+        } else if (hasBlockNodes) {
+          // Has block nodes - split the paragraph at the AI node position
+          // and insert the block nodes at the split point
 
-          // Insert block nodes after the current paragraph
-          let currentInsertPos = insertAfterParent
+          // Split the paragraph at the AI node position
+          const beforeContent = parentNode.content.cut(0, indexInParent)
+          const afterContent = parentNode.content.cut(indexInParent + 1)
+
+          // Delete the entire parent paragraph
+          tr.delete(parentStart, parentStart + parentNode.nodeSize)
+
+          let currentPos = parentStart
+
+          // Insert before-content as a paragraph if it exists
+          if (beforeContent.size > 0) {
+            const beforePara = schema.nodes.paragraph.create(null, beforeContent)
+            tr.insert(currentPos, beforePara)
+            currentPos += beforePara.nodeSize
+          }
+
+          // Insert all block nodes at the current position
           nodes.forEach((node) => {
-            tr.insert(currentInsertPos, node)
-            currentInsertPos += node.nodeSize
+            tr.insert(currentPos, node)
+            currentPos += node.nodeSize
+          })
+
+          // Insert after-content as a paragraph if it exists
+          if (afterContent.size > 0) {
+            const afterPara = schema.nodes.paragraph.create(null, afterContent)
+            tr.insert(currentPos, afterPara)
+          }
+        } else {
+          // Multiple inline nodes or single non-paragraph node
+          tr.delete(nodePos, nodePos + 1)
+          let currentPos = nodePos
+          nodes.forEach((node) => {
+            tr.insert(currentPos, node)
+            currentPos += node.nodeSize
           })
         }
       } else {
-        // Not in a paragraph, insert all parsed nodes at the deletion point
+        // Not in a paragraph, delete AI node and insert all parsed nodes at the deletion point
+        tr.delete(nodePos, nodePos + 1)
         let currentPos = nodePos
         nodes.forEach((node) => {
           tr.insert(currentPos, node)

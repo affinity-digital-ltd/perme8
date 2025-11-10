@@ -100,7 +100,14 @@ describe('AIAssistantManager - Integration', () => {
         callback(
           { type: { name: 'ai_response' }, attrs: { nodeId } },
           5,
-          { type: { name: 'paragraph' }, nodeSize: 10 },
+          {
+            type: { name: 'paragraph' },
+            nodeSize: 10,
+            content: {
+              size: 1,
+              cut: vi.fn((from, to) => ({ size: 0 }))
+            }
+          },
           0
         )
       })
@@ -207,7 +214,14 @@ describe('AIAssistantManager - Integration', () => {
         callback(
           { type: { name: 'ai_response' }, attrs: { nodeId } },
           5,
-          { type: { name: 'paragraph' }, nodeSize: 10 },
+          {
+            type: { name: 'paragraph' },
+            nodeSize: 10,
+            content: {
+              size: 1,
+              cut: vi.fn((from, to) => ({ size: 0 }))
+            }
+          },
           0
         )
       })
