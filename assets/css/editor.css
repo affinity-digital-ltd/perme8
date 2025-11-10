@@ -7,6 +7,16 @@
   flex-direction: column;
 }
 
+/* Ensure paragraphs have proper vertical spacing */
+#editor-container .ProseMirror p {
+  margin-bottom: 1em;
+}
+
+/* Remove bottom margin from last paragraph to avoid extra space */
+#editor-container .ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+
 #editor-container .milkdown {
   padding: 0;
   flex: 1;
