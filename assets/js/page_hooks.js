@@ -6,7 +6,6 @@ import { clipboard } from '@milkdown/plugin-clipboard'
 import { CollaborationManager } from './collaboration'
 import { aiResponseNode } from './ai-response-node'
 import { AIAssistantManager } from './ai-integration'
-import { remarkBreaksPlugin } from './remark-breaks-plugin'
 
 /**
  * MilkdownEditor Hook
@@ -137,7 +136,6 @@ export const MilkdownEditor = {
       .use(nord)
       .use(commonmark)
       .use(gfm)
-      .use(remarkBreaksPlugin)
       .use(clipboard)
       .use(aiResponseNode)
 
@@ -190,7 +188,6 @@ export const MilkdownEditor = {
       .use(nord)
       .use(commonmark)
       .use(gfm)
-      .use(remarkBreaksPlugin)
 
     this.editor = editor
 
