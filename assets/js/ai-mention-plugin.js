@@ -7,7 +7,7 @@
 import { Plugin, PluginKey } from '@milkdown/prose/state'
 import { Decoration, DecorationSet } from '@milkdown/prose/view'
 
-const AI_MENTION_REGEX = /@ai\s+(.+)/i
+const AI_MENTION_REGEX = /@j\s+(.+)/i
 
 export const aiMentionPluginKey = new PluginKey('ai-mention')
 
