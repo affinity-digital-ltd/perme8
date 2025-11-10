@@ -44,9 +44,9 @@ export const aiResponseNode = $node('ai_response', (ctx) => ({
     dom.dataset.state = state
 
     if (state === 'error') {
-      // Show error inline
+      // Show error inline with DaisyUI error color
       dom.textContent = `[AI Error: ${error || 'Unknown error'}]`
-      dom.style.color = '#ef4444'
+      dom.className = 'text-error'
     } else {
       // Show the content as plain text
       dom.textContent = content || ''
@@ -56,9 +56,6 @@ export const aiResponseNode = $node('ai_response', (ctx) => ({
         const cursor = document.createElement('span')
         cursor.className = 'ai-streaming-cursor'
         cursor.textContent = '▊'
-        cursor.style.animation = 'blink 1s step-end infinite'
-        cursor.style.marginLeft = '2px'
-        cursor.style.color = 'inherit'
         dom.appendChild(cursor)
       }
     }
