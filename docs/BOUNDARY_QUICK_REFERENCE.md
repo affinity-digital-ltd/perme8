@@ -429,6 +429,7 @@ end
 
 ## Further Reading
 
-- [docs/ARCHITECTURE.md](ARCHITECTURE.md) - Complete architecture documentation
+- [docs/BACKEND_DESIGN_PRINCIPLES.md](BACKEND_DESIGN_PRINCIPLES.md) - Complete boundary configuration and architectural documentation
+- [docs/BEST_PRACTICES.md](BEST_PRACTICES.md) - Practical Phoenix and LiveView guidelines
 - [Boundary Hex Docs](https://hexdocs.pm/boundary) - Library documentation
 - [VBT Articles](https://www.veribigthings.com/posts/towards-maintainable-elixir-the-core-and-the-interface) - Architectural inspiration
