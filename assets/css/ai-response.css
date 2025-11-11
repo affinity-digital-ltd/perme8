@@ -1,32 +1,32 @@
 /**
- * AI Response Node Styles
+ * Agent Response Node Styles
  *
- * Minimal styles for seamless AI responses in the editor.
+ * Minimal styles for seamless agent responses in the editor.
  * Uses Tailwind utilities via @apply where possible.
  */
 
-/* AI Mention Active State (while typing @ai) */
-.ai-mention-active {
+/* Mention Active State (while typing @j) */
+.mention-active {
   @apply bg-primary/20 rounded px-1 py-0.5;
 }
 
-/* Remove ProseMirror selection outline from AI response nodes */
+/* Remove ProseMirror selection outline from agent response nodes */
 span[data-node-id] {
   @apply !outline-none !shadow-none;
 }
 
-/* When AI response is selected, remove ProseMirror's default node selection styling */
+/* When agent response is selected, remove ProseMirror's default node selection styling */
 .ProseMirror-selectednode[data-node-id] {
   @apply !outline-none !shadow-none !bg-transparent;
 }
 
-/* Blinking cursor animation for streaming AI responses */
+/* Blinking cursor animation for streaming agent responses */
 @keyframes blink {
   50% {
     opacity: 0;
   }
 }
 
-.ai-streaming-cursor {
+.streaming-cursor {
   animation: blink 1s step-end infinite;
 }

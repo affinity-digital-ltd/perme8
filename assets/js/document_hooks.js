@@ -5,7 +5,7 @@ import { nord } from '@milkdown/theme-nord'
 import { clipboard } from '@milkdown/plugin-clipboard'
 import { CollaborationManager } from './collaboration'
 import { aiResponseNode } from './ai-response-node'
-import { AIAssistantManager } from './ai-integration'
+import { AgentAssistantManager } from './ai-integration'
 
 /**
  * MilkdownEditor Hook
@@ -86,22 +86,22 @@ export const MilkdownEditor = {
       this.insertTextIntoEditor(content)
     })
 
-    // Listen for AI streaming events
+    // Listen for agent streaming events
     this.handleEvent('ai_chunk', (data) => {
-      if (this.aiAssistant) {
-        this.aiAssistant.handleAIChunk(data)
+      if (this.agentAssistant) {
+        this.agentAssistant.handleChunk(data)
       }
     })
 
     this.handleEvent('ai_done', (data) => {
-      if (this.aiAssistant) {
-        this.aiAssistant.handleAIDone(data)
+      if (this.agentAssistant) {
+        this.agentAssistant.handleDone(data)
       }
     })
 
     this.handleEvent('ai_error', (data) => {
-      if (this.aiAssistant) {
-        this.aiAssistant.handleAIError(data)
+      if (this.agentAssistant) {
+        this.agentAssistant.handleError(data)
       }
     })
 
@@ -148,20 +148,20 @@ export const MilkdownEditor = {
         const parser = ctx.get(parserCtx)
         const state = view.state
 
-        // Initialize AI Assistant Manager BEFORE configuring plugins
-        this.aiAssistant = new AIAssistantManager({
+        // Initialize Agent Assistant Manager BEFORE configuring plugins
+        this.agentAssistant = new AgentAssistantManager({
           view,
           schema: state.schema,
           parser,
           pushEvent: this.pushEvent.bind(this)
         })
 
-        // Create AI mention plugin
-        const aiPlugin = this.aiAssistant.createPlugin()
+        // Create mention plugin
+        const mentionPlugin = this.agentAssistant.createPlugin()
 
-        // Configure ProseMirror with collaboration + undo/redo + AI plugins
-        // IMPORTANT: AI plugin is added FIRST so it can handle Enter key before other plugins
-        const newState = this.collaborationManager.configureProseMirrorPlugins(view, state, [aiPlugin])
+        // Configure ProseMirror with collaboration + undo/redo + mention plugins
+        // IMPORTANT: Mention plugin is added FIRST so it can handle Enter key before other plugins
+        const newState = this.collaborationManager.configureProseMirrorPlugins(view, state, [mentionPlugin])
         view.updateState(newState)
 
         // Add click handler for task list checkboxes
@@ -453,7 +453,7 @@ export const MilkdownEditor = {
   },
 
   _buildSyncMessage(hasLocalChanges) {
-    let message = 'This page has been edited elsewhere.\n\n'
+    let message = 'This document has been edited elsewhere.\n\n'
 
     if (hasLocalChanges) {
       message += 'You have unsaved local changes. Click OK to:\n' +
@@ -564,15 +564,15 @@ export const MilkdownEditor = {
   },
 
   setupESCKeyHandler(view) {
-    // Add ESC key handler to cancel active AI queries
+    // Add ESC key handler to cancel active agent queries
     const escHandler = (event) => {
-      if (event.key === 'Escape' && this.aiAssistant) {
-        // Check if there are active AI queries
-        const activeInfo = this.aiAssistant.getActiveQueriesInfo()
+      if (event.key === 'Escape' && this.agentAssistant) {
+        // Check if there are active agent queries
+        const activeInfo = this.agentAssistant.getActiveQueriesInfo()
 
         if (activeInfo.count > 0) {
           // Cancel all active queries when ESC is pressed
-          this.aiAssistant.cancelAllQueries()
+          this.agentAssistant.cancelAllQueries()
           event.preventDefault()
           event.stopPropagation()
         }
@@ -649,10 +649,10 @@ export const MilkdownEditor = {
       this.escKeyHandler = null
     }
 
-    // Cleanup AI assistant
-    if (this.aiAssistant) {
-      this.aiAssistant.destroy()
-      this.aiAssistant = null
+    // Cleanup agent assistant
+    if (this.agentAssistant) {
+      this.agentAssistant.destroy()
+      this.agentAssistant = null
     }
 
     if (this.collaborationManager) {
@@ -665,13 +665,13 @@ export const MilkdownEditor = {
 }
 
 /**
- * PageTitleInput Hook
+ * DocumentTitleInput Hook
  *
- * Handles keyboard interactions for the page title input:
+ * Handles keyboard interactions for the document title input:
  * - Enter key: blur input (triggers autosave) and focus editor
  * - Escape key: cancel editing without saving
  */
-export const PageTitleInput = {
+export const DocumentTitleInput = {
   mounted() {
     this.handleKeyDown = (e) => {
       if (e.key === 'Enter') {

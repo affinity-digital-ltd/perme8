@@ -1,14 +1,14 @@
 /**
- * AI Response Node for Milkdown
+ * Agent Response Node for Milkdown
  *
- * This creates a custom ProseMirror node for AI responses.
+ * This creates a custom ProseMirror node for agent responses.
  * Uses the core Milkdown plugin API.
  */
 
 import { $ctx, $node } from '@milkdown/utils'
 
 /**
- * AI Response Node Schema
+ * Agent Response Node Schema
  */
 export const aiResponseNode = $node('ai_response', (ctx) => ({
   group: 'inline',
@@ -45,7 +45,7 @@ export const aiResponseNode = $node('ai_response', (ctx) => ({
 
     if (state === 'error') {
       // Show error inline with DaisyUI error color
-      dom.textContent = `[AI Error: ${error || 'Unknown error'}]`
+      dom.textContent = `[Agent Error: ${error || 'Unknown error'}]`
       dom.className = 'text-error'
     } else {
       // Show the content as plain text
@@ -54,7 +54,7 @@ export const aiResponseNode = $node('ai_response', (ctx) => ({
       // Add blinking cursor if streaming and has content
       if (state === 'streaming' && content) {
         const cursor = document.createElement('span')
-        cursor.className = 'ai-streaming-cursor'
+        cursor.className = 'streaming-cursor'
         cursor.textContent = '▊'
         dom.appendChild(cursor)
       }
@@ -73,16 +73,16 @@ export const aiResponseNode = $node('ai_response', (ctx) => ({
   toMarkdown: {
     match: (node) => node.type.name === 'ai_response',
     runner: (state, node) => {
-      // The AI response node is temporary - it gets replaced with parsed markdown
+      // The agent response node is temporary - it gets replaced with parsed markdown
       // when the response completes. During serialization while streaming,
       // we just skip outputting it to avoid serialization errors.
-      // The content will be properly saved once handleAIDone replaces this node.
+      // The content will be properly saved once handleDone replaces this node.
     }
   }
 }))
 
 /**
- * Update AI response node by ID
+ * Update agent response node by ID
  */
 export function updateAIResponseNode(view, nodeId, updates) {
   const { state } = view
@@ -100,7 +100,7 @@ export function updateAIResponseNode(view, nodeId, updates) {
   })
 
   if (nodePos === null || !nodeToUpdate) {
-    console.warn(`AI response node not found: ${nodeId}`)
+    console.warn(`Agent response node not found: ${nodeId}`)
     return false
   }
 
@@ -112,7 +112,7 @@ export function updateAIResponseNode(view, nodeId, updates) {
 }
 
 /**
- * Append chunk to AI response node
+ * Append chunk to agent response node
  */
 export function appendChunkToNode(view, nodeId, chunk) {
   const { state } = view

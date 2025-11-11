@@ -1,24 +1,24 @@
 /**
- * AI Mention Detection Plugin
+ * Mention Detection Plugin
  *
- * Detects @ai mentions and triggers AI queries on Enter key.
+ * Detects @j mentions and triggers agent queries on Enter key.
  */
 
 import { Plugin, PluginKey } from '@milkdown/prose/state'
 import { Decoration, DecorationSet } from '@milkdown/prose/view'
 
-const AI_MENTION_REGEX = /@j\s+(.+)/i
+const MENTION_REGEX = /@j\s+(.+)/i
 
-export const aiMentionPluginKey = new PluginKey('ai-mention')
+export const mentionPluginKey = new PluginKey('mention')
 
 /**
- * Create AI Mention Plugin
+ * Create Mention Plugin
  */
-export function createAIMentionPlugin(options) {
-  const { onAIQuery, schema } = options
+export function createMentionPlugin(options) {
+  const { onQuery, schema } = options
 
   return new Plugin({
-    key: aiMentionPluginKey,
+    key: mentionPluginKey,
 
     state: {
       init() {
@@ -34,13 +34,13 @@ export function createAIMentionPlugin(options) {
 
         if (tr.selectionSet || tr.docChanged) {
           const { $from } = tr.selection
-          const mention = findAIMentionAtCursor($from)
+          const mention = findMentionAtCursor($from)
 
           if (mention) {
             const decoration = Decoration.inline(
               mention.from,
               mention.to,
-              { class: 'ai-mention-active' }
+              { class: 'mention-active' }
             )
             decorations = DecorationSet.create(tr.doc, [decoration])
             activeMention = mention
@@ -77,16 +77,16 @@ export function createAIMentionPlugin(options) {
         event.preventDefault()
 
         const nodeId = generateNodeId()
-        const aiNode = createAIResponseNode(schema, nodeId)
+        const responseNode = createAgentResponseNode(schema, nodeId)
         const { from, to } = mention
 
         const tr = view.state.tr
         tr.delete(from, to)
-        tr.insert(from, aiNode)
+        tr.insert(from, responseNode)
         view.dispatch(tr)
 
-        if (onAIQuery) {
-          onAIQuery({ question, nodeId })
+        if (onQuery) {
+          onQuery({ question, nodeId })
         }
 
         return true
@@ -95,14 +95,14 @@ export function createAIMentionPlugin(options) {
   })
 }
 
-function findAIMentionAtCursor($pos) {
+function findMentionAtCursor($pos) {
   const { parent, parentOffset } = $pos
 
   if (parent.type.name !== 'paragraph') return null
 
   const text = parent.textContent
   const matches = []
-  const regex = new RegExp(AI_MENTION_REGEX, 'gi')
+  const regex = new RegExp(MENTION_REGEX, 'gi')
   let match
 
   while ((match = regex.exec(text)) !== null) {
@@ -128,16 +128,16 @@ function findAIMentionAtCursor($pos) {
 }
 
 function extractQuestion(text) {
-  const match = text.match(AI_MENTION_REGEX)
+  const match = text.match(MENTION_REGEX)
   return match ? match[1].trim() : ''
 }
 
-function createAIResponseNode(schema, nodeId) {
+function createAgentResponseNode(schema, nodeId) {
   const nodeType = schema.nodes.ai_response
 
   if (!nodeType) {
     console.error('ai_response node type not found in schema')
-    return schema.nodes.paragraph.create(null, schema.text('[AI Response]'))
+    return schema.nodes.paragraph.create(null, schema.text('[Agent Response]'))
   }
 
   return nodeType.create({
@@ -149,10 +149,10 @@ function createAIResponseNode(schema, nodeId) {
 }
 
 function generateNodeId() {
-  return `ai_node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  return `agent_node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
 
-export function updateAIResponseNode(view, nodeId, updates) {
+export function updateAgentResponseNode(view, nodeId, updates) {
   const { state } = view
   const { doc } = state
 

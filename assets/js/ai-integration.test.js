@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { AIAssistantManager } from './ai-integration'
+import { AgentAssistantManager } from './ai-integration'
 
-describe('AIAssistantManager - Integration', () => {
-  let aiAssistant
+describe('AgentAssistantManager - Integration', () => {
+  let agentAssistant
   let mockView
   let mockSchema
   let mockParser
@@ -50,7 +50,7 @@ describe('AIAssistantManager - Integration', () => {
 
     mockPushEvent = vi.fn()
 
-    aiAssistant = new AIAssistantManager({
+    agentAssistant = new AgentAssistantManager({
       view: mockView,
       schema: mockSchema,
       parser: mockParser,
@@ -59,27 +59,27 @@ describe('AIAssistantManager - Integration', () => {
   })
 
   afterEach(() => {
-    if (aiAssistant) {
-      aiAssistant.destroy()
+    if (agentAssistant) {
+      agentAssistant.destroy()
     }
   })
 
-  describe('AI query lifecycle', () => {
+  describe('Agent query lifecycle', () => {
     it('should track active queries', () => {
       const nodeId = 'test_node_123'
       const question = 'What is the meaning of life?'
 
-      aiAssistant.handleAIQuery({ question, nodeId })
+      agentAssistant.handleQuery({ question, nodeId })
 
-      expect(aiAssistant.activeQueries.has(nodeId)).toBe(true)
-      expect(aiAssistant.activeQueries.get(nodeId).question).toBe(question)
+      expect(agentAssistant.activeQueries.has(nodeId)).toBe(true)
+      expect(agentAssistant.activeQueries.get(nodeId).question).toBe(question)
     })
 
     it('should send query to LiveView', () => {
       const nodeId = 'test_node_456'
       const question = 'How do I test this?'
 
-      aiAssistant.handleAIQuery({ question, nodeId })
+      agentAssistant.handleQuery({ question, nodeId })
 
       expect(mockPushEvent).toHaveBeenCalledWith('ai_query', {
         question,
@@ -90,7 +90,7 @@ describe('AIAssistantManager - Integration', () => {
     it('should cleanup query on completion', () => {
       const nodeId = 'test_node_789'
 
-      aiAssistant.activeQueries.set(nodeId, {
+      agentAssistant.activeQueries.set(nodeId, {
         question: 'test',
         startTime: Date.now()
       })
@@ -112,15 +112,15 @@ describe('AIAssistantManager - Integration', () => {
         )
       })
 
-      aiAssistant.handleAIDone({ node_id: nodeId, response: 'Test response' })
+      agentAssistant.handleDone({ node_id: nodeId, response: 'Test response' })
 
-      expect(aiAssistant.activeQueries.has(nodeId)).toBe(false)
+      expect(agentAssistant.activeQueries.has(nodeId)).toBe(false)
     })
 
     it('should cancel active query', () => {
       const nodeId = 'cancel_test'
 
-      aiAssistant.activeQueries.set(nodeId, {
+      agentAssistant.activeQueries.set(nodeId, {
         question: 'test',
         startTime: Date.now()
       })
@@ -128,37 +128,37 @@ describe('AIAssistantManager - Integration', () => {
       // Mock doc.descendants to prevent warnings
       mockView.state.doc.descendants = vi.fn()
 
-      aiAssistant.cancelQuery(nodeId)
+      agentAssistant.cancelQuery(nodeId)
 
-      expect(aiAssistant.activeQueries.has(nodeId)).toBe(false)
+      expect(agentAssistant.activeQueries.has(nodeId)).toBe(false)
     })
 
     it('should cancel all active queries', () => {
-      aiAssistant.activeQueries.set('query1', { question: 'q1', startTime: Date.now() })
-      aiAssistant.activeQueries.set('query2', { question: 'q2', startTime: Date.now() })
-      aiAssistant.activeQueries.set('query3', { question: 'q3', startTime: Date.now() })
+      agentAssistant.activeQueries.set('query1', { question: 'q1', startTime: Date.now() })
+      agentAssistant.activeQueries.set('query2', { question: 'q2', startTime: Date.now() })
+      agentAssistant.activeQueries.set('query3', { question: 'q3', startTime: Date.now() })
 
       // Mock doc.descendants to prevent warnings
       mockView.state.doc.descendants = vi.fn()
 
-      aiAssistant.cancelAllQueries()
+      agentAssistant.cancelAllQueries()
 
-      expect(aiAssistant.activeQueries.size).toBe(0)
+      expect(agentAssistant.activeQueries.size).toBe(0)
     })
   })
 
   describe('Plugin creation', () => {
-    it('should create AI mention plugin', () => {
-      const plugin = aiAssistant.createPlugin()
+    it('should create mention plugin', () => {
+      const plugin = agentAssistant.createPlugin()
 
       expect(plugin).toBeDefined()
       expect(plugin.spec).toBeDefined()
     })
 
     it('should pass correct callbacks to plugin', () => {
-      const plugin = aiAssistant.createPlugin()
+      const plugin = agentAssistant.createPlugin()
 
-      // The plugin should have been created with the handleAIQuery callback
+      // The plugin should have been created with the handleQuery callback
       // We verify this by checking that createPlugin doesn't throw
       expect(plugin).toBeDefined()
     })
@@ -166,10 +166,10 @@ describe('AIAssistantManager - Integration', () => {
 
   describe('Query statistics', () => {
     it('should return active queries info', () => {
-      aiAssistant.activeQueries.set('node1', { question: 'q1', startTime: Date.now() - 1000 })
-      aiAssistant.activeQueries.set('node2', { question: 'q2', startTime: Date.now() - 500 })
+      agentAssistant.activeQueries.set('node1', { question: 'q1', startTime: Date.now() - 1000 })
+      agentAssistant.activeQueries.set('node2', { question: 'q2', startTime: Date.now() - 500 })
 
-      const info = aiAssistant.getActiveQueriesInfo()
+      const info = agentAssistant.getActiveQueriesInfo()
 
       expect(info.count).toBe(2)
       expect(info.queries).toHaveLength(2)
@@ -189,12 +189,12 @@ describe('AIAssistantManager - Integration', () => {
 
       // This should not throw or access ySyncPluginKey
       expect(() => {
-        aiAssistant.handleAIQuery({ question, nodeId })
+        agentAssistant.handleQuery({ question, nodeId })
       }).not.toThrow()
 
       // Verify we didn't try to import ySyncPluginKey
       // (checking that the import was removed)
-      const aiIntegrationSource = aiAssistant.constructor.toString()
+      const aiIntegrationSource = agentAssistant.constructor.toString()
       expect(aiIntegrationSource).not.toContain('stopCapturing')
     })
 
@@ -204,7 +204,7 @@ describe('AIAssistantManager - Integration', () => {
 
       const nodeId = 'collab_test'
 
-      aiAssistant.activeQueries.set(nodeId, {
+      agentAssistant.activeQueries.set(nodeId, {
         question: 'test',
         startTime: Date.now()
       })
@@ -227,7 +227,7 @@ describe('AIAssistantManager - Integration', () => {
       })
 
       // This should dispatch transactions normally
-      aiAssistant.handleAIDone({ node_id: nodeId, response: 'Test' })
+      agentAssistant.handleDone({ node_id: nodeId, response: 'Test' })
 
       // Verify dispatch was called (y-prosemirror will handle undo tracking)
       expect(mockView.dispatch).toHaveBeenCalled()

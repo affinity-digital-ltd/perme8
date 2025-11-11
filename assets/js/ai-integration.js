@@ -1,20 +1,20 @@
-import { createAIMentionPlugin, updateAIResponseNode, appendChunkToNode } from './ai-mention-plugin'
+import { createMentionPlugin, updateAgentResponseNode, appendChunkToNode } from './ai-mention-plugin'
 
 /**
- * AI Assistant Manager
+ * Agent Assistant Manager
  *
- * Coordinates AI assistance between:
+ * Coordinates agent assistance between:
  * - Milkdown editor (ProseMirror view)
- * - AI mention plugin (detection and node creation)
+ * - Mention plugin (detection and node creation)
  * - LiveView hook (server communication)
  *
  * Responsibilities:
- * - Configure AI mention plugin with callbacks
- * - Handle AI query requests
+ * - Configure mention plugin with callbacks
+ * - Handle agent query requests
  * - Process streaming responses
- * - Update AI response nodes
+ * - Update agent response nodes
  */
-export class AIAssistantManager {
+export class AgentAssistantManager {
   /**
    * @param {Object} options
    * @param {Object} options.view - ProseMirror EditorView
@@ -28,18 +28,18 @@ export class AIAssistantManager {
     this.parser = options.parser
     this.pushEvent = options.pushEvent
 
-    // Track active AI queries
+    // Track active agent queries
     this.activeQueries = new Map() // nodeId -> { question, startTime }
 
     // Bind methods
-    this.handleAIQuery = this.handleAIQuery.bind(this)
-    this.handleAIChunk = this.handleAIChunk.bind(this)
-    this.handleAIDone = this.handleAIDone.bind(this)
-    this.handleAIError = this.handleAIError.bind(this)
+    this.handleQuery = this.handleQuery.bind(this)
+    this.handleChunk = this.handleChunk.bind(this)
+    this.handleDone = this.handleDone.bind(this)
+    this.handleError = this.handleError.bind(this)
   }
 
   /**
-   * Create and return the AI mention plugin instance
+   * Create and return the mention plugin instance
    *
    * This should be called after the manager is created to get the
    * ProseMirror plugin instance.
@@ -47,20 +47,20 @@ export class AIAssistantManager {
    * @returns {Plugin} - ProseMirror plugin
    */
   createPlugin() {
-    return createAIMentionPlugin({
+    return createMentionPlugin({
       schema: this.schema,
-      onAIQuery: this.handleAIQuery
+      onQuery: this.handleQuery
     })
   }
 
   /**
-   * Handle AI query trigger from mention plugin
+   * Handle agent query trigger from mention plugin
    *
    * @param {Object} params
    * @param {string} params.question - User's question
-   * @param {string} params.nodeId - AI response node ID
+   * @param {string} params.nodeId - Agent response node ID
    */
-  handleAIQuery({ question, nodeId }) {
+  handleQuery({ question, nodeId }) {
     // Track query
     this.activeQueries.set(nodeId, {
       question,
@@ -81,7 +81,7 @@ export class AIAssistantManager {
    * @param {string} data.node_id - Node ID
    * @param {string} data.chunk - Text chunk
    */
-  handleAIChunk({ node_id, chunk }) {
+  handleChunk({ node_id, chunk }) {
     // Append chunk to node
     appendChunkToNode(this.view, node_id, chunk)
   }
@@ -93,8 +93,8 @@ export class AIAssistantManager {
    * @param {string} data.node_id - Node ID
    * @param {string} data.response - Complete response text
    */
-  handleAIDone({ node_id, response }) {
-    // Find the AI response node and replace it with properly formatted content
+  handleDone({ node_id, response }) {
+    // Find the agent response node and replace it with properly formatted content
     const { state } = this.view
     const { doc, schema } = state
 
@@ -120,7 +120,7 @@ export class AIAssistantManager {
 
       // Handle parser errors
       if (!parsed || typeof parsed === 'string') {
-        console.error('[AIAssistant] Failed to parse markdown:', parsed)
+        console.error('[AgentAssistant] Failed to parse markdown:', parsed)
         return
       }
 
@@ -207,9 +207,9 @@ export class AIAssistantManager {
    * @param {string} data.node_id - Node ID
    * @param {string} data.error - Error message
    */
-  handleAIError({ node_id, error }) {
+  handleError({ node_id, error }) {
     // Update node to error state
-    const success = updateAIResponseNode(this.view, node_id, {
+    const success = updateAgentResponseNode(this.view, node_id, {
       state: 'error',
       error: error || 'An unknown error occurred',
       content: '' // Clear content on error
@@ -247,7 +247,7 @@ export class AIAssistantManager {
 
     if (query) {
       // Update node to error state (cancelled)
-      updateAIResponseNode(this.view, nodeId, {
+      updateAgentResponseNode(this.view, nodeId, {
         state: 'error',
         error: 'Query cancelled by user',
         content: ''

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { MilkdownEditor } from './page_hooks'
+import { MilkdownEditor } from './document_hooks'
 import { CollaborationManager } from './collaboration'
 import { editorViewCtx, parserCtx } from '@milkdown/core'
 

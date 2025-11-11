@@ -5,8 +5,8 @@
  * Hooks are organized by domain into separate files for better maintainability.
  */
 
-// Editor and page hooks
-export { MilkdownEditor, PageTitleInput } from './page_hooks'
+// Editor and document hooks
+export { MilkdownEditor, DocumentTitleInput } from './document_hooks'
 
 // Chat hooks
 export { ChatPanel, ChatMessages, ChatInput } from './chat_hooks'
@@ -15,7 +15,7 @@ export { ChatPanel, ChatMessages, ChatInput } from './chat_hooks'
 export { AutoHideFlash } from './flash_hooks'
 
 // Default export for Phoenix LiveView
-import { MilkdownEditor, PageTitleInput } from './page_hooks'
+import { MilkdownEditor, DocumentTitleInput } from './document_hooks'
 import { ChatPanel, ChatMessages, ChatInput } from './chat_hooks'
 import { AutoHideFlash } from './flash_hooks'
 
@@ -25,5 +25,5 @@ export default {
   ChatMessages,
   ChatInput,
   AutoHideFlash,
-  PageTitleInput
+  DocumentTitleInput
 }
