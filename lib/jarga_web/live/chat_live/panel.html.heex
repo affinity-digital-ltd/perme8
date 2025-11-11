@@ -101,7 +101,7 @@
           <%= if Enum.empty?(@messages) and @stream_buffer == "" do %>
             <div class="flex flex-col items-center justify-center h-full text-center">
               <.icon name="hero-chat-bubble-left-ellipsis" class="w-12 h-12 opacity-30" />
-              <p class="text-sm mt-2 opacity-60">Ask me anything about this page</p>
+              <p class="text-sm mt-2 opacity-60">Ask me anything about this document</p>
             </div>
           <% end %>
 
@@ -165,7 +165,7 @@
               value={@current_message}
               phx-change="update_message"
               phx-target={@myself}
-              placeholder="Ask about this page..."
+              placeholder="Ask about this document..."
               rows="3"
               class="textarea textarea-bordered w-full resize-none"
               disabled={@streaming}

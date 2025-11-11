@@ -506,7 +506,7 @@ defmodule JargaWeb.AppLive.Documents.Show do
           <%= if @readonly do %>
             <div class="alert alert-info mb-4 flex-shrink-0">
               <.icon name="hero-eye" class="size-5" />
-              <span>You are viewing this page in read-only mode.</span>
+              <span>You are viewing this document in read-only mode.</span>
             </div>
           <% end %>
           <div
