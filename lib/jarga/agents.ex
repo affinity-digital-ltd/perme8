@@ -157,7 +157,7 @@ defmodule Jarga.Agents do
       ...>   assigns: socket.assigns,
       ...>   node_id: "ai_node_123"
       ...> }
-      iex> ai_query(params, self())
+      iex> agent_query(params, self())
       {:ok, #PID<0.123.0>}
 
       # Then receive messages:

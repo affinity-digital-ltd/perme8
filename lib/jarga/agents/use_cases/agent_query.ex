@@ -13,7 +13,7 @@ defmodule Jarga.Agents.UseCases.AgentQuery do
       ...>   question: "How do I structure a Phoenix context?",
       ...>   assigns: socket.assigns
       ...> }
-      iex> AIQuery.execute(params, self())
+      iex> AgentQuery.execute(params, self())
       {:ok, #PID<0.123.0>}
 
       # Then receive messages:
