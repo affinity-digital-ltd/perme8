@@ -1,4 +1,5 @@
-import { createMentionPlugin, updateAgentResponseNode, appendChunkToAgentNode } from '../mentions/agent-mention-plugin'
+import { createMentionPlugin } from '../mentions/agent-mention-plugin'
+import { updateAgentResponseNode, appendChunkToAgentNode } from '../mentions/mention-utils'
 
 /**
  * Agent Assistant Manager

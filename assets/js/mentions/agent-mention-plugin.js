@@ -6,7 +6,6 @@
 
 import { Plugin, PluginKey } from '@milkdown/prose/state'
 import { Decoration, DecorationSet } from '@milkdown/prose/view'
-import { updateAgentResponseNode, appendChunkToAgentNode } from './mention-utils'
 
 const MENTION_REGEX = /@j\s+(.+)/i
 
@@ -152,6 +151,3 @@ function createAgentResponseNode(schema, nodeId) {
 function generateNodeId() {
   return `agent_node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 }
-
-// Re-export utilities for backwards compatibility
-export { updateAgentResponseNode, appendChunkToAgentNode }
