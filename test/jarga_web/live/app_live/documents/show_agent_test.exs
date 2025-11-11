@@ -53,7 +53,7 @@ defmodule JargaWeb.AppLive.Documents.ShowAITest do
       assert Process.alive?(view.pid)
     end
 
-    test "Agents.ai_query function is accessible", %{
+    test "Agents.agent_query function is accessible", %{
       conn: conn,
       user: user,
       workspace: workspace,
@@ -64,7 +64,7 @@ defmodule JargaWeb.AppLive.Documents.ShowAITest do
       {:ok, view, _html} =
         live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
 
-      # Verify the Agents.ai_query function exists and is callable
+      # Verify the Agents.agent_query function exists and is callable
       assert function_exported?(Jarga.Agents, :agent_query, 2)
 
       assert Process.alive?(view.pid)
@@ -406,10 +406,10 @@ defmodule JargaWeb.AppLive.Documents.ShowAITest do
     end
   end
 
-  describe "Agents.cancel_ai_query/2" do
+  describe "Agents.cancel_agent_query/2" do
     test "function exists and is callable" do
       # Verify the cancel function exists
-      assert function_exported?(Jarga.Agents, :cancel_ai_query, 2)
+      assert function_exported?(Jarga.Agents, :cancel_agent_query, 2)
 
       # Test with a dummy process
       test_pid =
@@ -422,7 +422,7 @@ defmodule JargaWeb.AppLive.Documents.ShowAITest do
         end)
 
       # Call the cancel function
-      assert :ok = Jarga.Agents.cancel_ai_query(test_pid, "test_node")
+      assert :ok = Jarga.Agents.cancel_agent_query(test_pid, "test_node")
 
       # Give time for message to be received
       Process.sleep(10)
@@ -467,7 +467,7 @@ defmodule JargaWeb.AppLive.Documents.ShowAITest do
       # Normal operations should still work
       # Toggle pin
       view
-      |> element("button", "Pin Page")
+      |> element("button", "Pin Document")
       |> render_click()
 
       # View should still work

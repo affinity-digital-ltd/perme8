@@ -436,21 +436,22 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
       {:ok, _} = invite_and_accept_member(user, workspace.id, other_user.email, :member)
 
       # Other user creates a private page
-      {:ok, page} = Jarga.Pages.create_page(other_user, workspace.id, %{title: "Private Page"})
+      {:ok, page} =
+        Jarga.Documents.create_document(other_user, workspace.id, %{title: "Private Page"})
 
       # Current user views the workspace
       {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       # Verify private page is not visible
       refute render(lv) =~ "Private Page"
-      refute lv |> element("[data-page-id='#{page.id}']") |> has_element?()
+      refute lv |> element("[data-document-id='#{page.id}']") |> has_element?()
 
       # Other user makes the page public
-      {:ok, _} = Jarga.Pages.update_page(other_user, page.id, %{is_public: true})
+      {:ok, _} = Jarga.Documents.update_document(other_user, page.id, %{is_public: true})
 
       # Verify page now appears in the UI
       assert render(lv) =~ "Private Page"
-      assert lv |> element("[data-page-id='#{page.id}']") |> has_element?()
+      assert lv |> element("[data-document-id='#{page.id}']") |> has_element?()
     end
 
     test "updates page list in real-time when page becomes private", %{
@@ -464,22 +465,24 @@ defmodule JargaWeb.AppLive.WorkspacesTest do
       {:ok, _} = invite_and_accept_member(user, workspace.id, other_user.email, :member)
 
       # Other user creates a public page
-      {:ok, page} = Jarga.Pages.create_page(other_user, workspace.id, %{title: "Public Page"})
-      {:ok, page} = Jarga.Pages.update_page(other_user, page.id, %{is_public: true})
+      {:ok, page} =
+        Jarga.Documents.create_document(other_user, workspace.id, %{title: "Public Page"})
+
+      {:ok, page} = Jarga.Documents.update_document(other_user, page.id, %{is_public: true})
 
       # Current user views the workspace
       {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       # Verify public page is visible
       assert render(lv) =~ "Public Page"
-      assert lv |> element("[data-page-id='#{page.id}']") |> has_element?()
+      assert lv |> element("[data-document-id='#{page.id}']") |> has_element?()
 
       # Other user makes the page private
-      {:ok, _} = Jarga.Pages.update_page(other_user, page.id, %{is_public: false})
+      {:ok, _} = Jarga.Documents.update_document(other_user, page.id, %{is_public: false})
 
       # Verify page is removed from the UI
       refute render(lv) =~ "Public Page"
-      refute lv |> element("[data-page-id='#{page.id}']") |> has_element?()
+      refute lv |> element("[data-document-id='#{page.id}']") |> has_element?()
     end
   end
 

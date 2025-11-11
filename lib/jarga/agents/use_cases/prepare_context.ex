@@ -127,7 +127,7 @@ defmodule Jarga.Agents.UseCases.PrepareContext do
     # Build the page URL if we have the necessary information
     page_url =
       if workspace_slug && page_slug do
-        "/app/workspaces/#{workspace_slug}/pages/#{page_slug}"
+        "/app/workspaces/#{workspace_slug}/documents/#{page_slug}"
       else
         nil
       end

@@ -11,7 +11,7 @@ defmodule Jarga.Agents do
     exports: [
       Infrastructure.Services.LlmClient,
       UseCases.PrepareContext,
-      UseCases.AIQuery,
+      UseCases.AgentQuery,
       UseCases.CreateSession,
       UseCases.SaveMessage,
       UseCases.LoadSession,
@@ -25,7 +25,7 @@ defmodule Jarga.Agents do
 
   alias Jarga.Agents.UseCases.{
     PrepareContext,
-    AIQuery,
+    AgentQuery,
     CreateSession,
     SaveMessage,
     LoadSession,
@@ -162,32 +162,32 @@ defmodule Jarga.Agents do
 
       # Then receive messages:
       receive do
-        {:ai_chunk, node_id, chunk} -> IO.puts(chunk)
-        {:ai_done, node_id, response} -> IO.puts("Complete!")
-        {:ai_error, node_id, reason} -> IO.puts("Error: " <> reason)
+        {:agent_chunk, node_id, chunk} -> IO.puts(chunk)
+        {:agent_done, node_id, response} -> IO.puts("Complete!")
+        {:agent_error, node_id, reason} -> IO.puts("Error: " <> reason)
       end
 
   """
-  defdelegate ai_query(params, caller_pid), to: AIQuery, as: :execute
+  defdelegate agent_query(params, caller_pid), to: AgentQuery, as: :execute
 
   @doc """
-  Cancels an active AI query.
+  Cancels an active agent query.
 
   Terminates the streaming process for the given node_id.
 
   ## Parameters
-    - query_pid: Process PID returned from ai_query/2
+    - query_pid: Process PID returned from agent_query/2
     - node_id: Node ID for the query
 
   ## Examples
 
-      iex> {:ok, pid} = Agents.ai_query(params, self())
-      iex> Agents.cancel_ai_query(pid, "node_123")
+      iex> {:ok, pid} = Agents.agent_query(params, self())
+      iex> Agents.cancel_agent_query(pid, "node_123")
       :ok
 
   """
-  @spec cancel_ai_query(pid(), String.t()) :: :ok
-  def cancel_ai_query(query_pid, node_id) when is_pid(query_pid) and is_binary(node_id) do
+  @spec cancel_agent_query(pid(), String.t()) :: :ok
+  def cancel_agent_query(query_pid, node_id) when is_pid(query_pid) and is_binary(node_id) do
     # Send cancel signal to the query process
     send(query_pid, {:cancel, node_id})
     :ok

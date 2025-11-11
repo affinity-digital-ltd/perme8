@@ -11,7 +11,7 @@ defmodule Jarga.Documents.Domain.SlugGeneratorTest do
 
       result = SlugGenerator.generate("My Document", @workspace_id, uniqueness_checker)
 
-      assert result == "my-page"
+      assert result == "my-document"
     end
 
     test "converts spaces to hyphens" do
@@ -173,7 +173,7 @@ defmodule Jarga.Documents.Domain.SlugGeneratorTest do
 
       SlugGenerator.generate("My Document", @workspace_id, uniqueness_checker)
 
-      assert_receive {:slug, "my-page"}
+      assert_receive {:slug, "my-document"}
     end
   end
 end

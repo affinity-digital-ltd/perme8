@@ -11,7 +11,11 @@ defmodule JargaWeb.AppLive.Documents.Show do
   alias Ecto.Adapters.SQL.Sandbox
 
   @impl true
-  def mount(%{"workspace_slug" => workspace_slug, "document_slug" => document_slug}, _session, socket) do
+  def mount(
+        %{"workspace_slug" => workspace_slug, "document_slug" => document_slug},
+        _session,
+        socket
+      ) do
     user = socket.assigns.current_scope.user
 
     # Optimized: get workspace and member in single query
@@ -204,7 +208,10 @@ defmodule JargaWeb.AppLive.Documents.Show do
         {:noreply,
          socket
          |> assign(:document, updated_document)
-         |> put_flash(:info, if(updated_document.is_pinned, do: "Document pinned", else: "Document unpinned"))}
+         |> put_flash(
+           :info,
+           if(updated_document.is_pinned, do: "Document pinned", else: "Document unpinned")
+         )}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to update pin status")}
@@ -264,10 +271,10 @@ defmodule JargaWeb.AppLive.Documents.Show do
         assigns: socket.assigns
       }
 
-      case Agents.ai_query(params, parent) do
+      case Agents.agent_query(params, parent) do
         {:ok, query_pid} ->
           # Send PID back to LiveView for tracking
-          send(parent, {:ai_query_started, node_id, query_pid})
+          send(parent, {:agent_query_started, node_id, query_pid})
 
         {:error, reason} ->
           send(parent, {:ai_error, node_id, reason})
@@ -289,7 +296,7 @@ defmodule JargaWeb.AppLive.Documents.Show do
 
       query_pid ->
         # Cancel the query
-        Agents.cancel_ai_query(query_pid, node_id)
+        Agents.cancel_agent_query(query_pid, node_id)
 
         # Remove from tracking
         updated_queries = Map.delete(active_queries, node_id)
@@ -366,7 +373,7 @@ defmodule JargaWeb.AppLive.Documents.Show do
   end
 
   @impl true
-  def handle_info({:ai_query_started, node_id, query_pid}, socket) do
+  def handle_info({:agent_query_started, node_id, query_pid}, socket) do
     # Track the query PID for potential cancellation
     active_queries = Map.get(socket.assigns, :active_agent_queries, %{})
     updated_queries = Map.put(active_queries, node_id, query_pid)
@@ -472,7 +479,7 @@ defmodule JargaWeb.AppLive.Documents.Show do
             </.kebab_menu>
           </div>
         <% end %>
-
+        
     <!-- Title Section -->
         <div class="pb-4 mb-4 flex-shrink-0">
           <%= if @editing_title do %>

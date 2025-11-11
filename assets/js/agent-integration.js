@@ -1,4 +1,4 @@
-import { createMentionPlugin, updateAgentResponseNode, appendChunkToNode } from './ai-mention-plugin'
+import { createMentionPlugin, updateAgentResponseNode, appendChunkToAgentNode } from './agent-mention-plugin'
 
 /**
  * Agent Assistant Manager
@@ -83,7 +83,7 @@ export class AgentAssistantManager {
    */
   handleChunk({ node_id, chunk }) {
     // Append chunk to node
-    appendChunkToNode(this.view, node_id, chunk)
+    appendChunkToAgentNode(this.view, node_id, chunk)
   }
 
   /**
@@ -103,7 +103,7 @@ export class AgentAssistantManager {
     let indexInParent = null
 
     doc.descendants((node, pos, parent, index) => {
-      if (node.type.name === 'ai_response' && node.attrs.nodeId === node_id) {
+      if (node.type.name === 'agent_response' && node.attrs.nodeId === node_id) {
         nodePos = pos
         parentNode = parent
         indexInParent = index

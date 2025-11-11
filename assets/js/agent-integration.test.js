@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { AgentAssistantManager } from './ai-integration'
+import { AgentAssistantManager } from './agent-integration'
 
 describe('AgentAssistantManager - Integration', () => {
   let agentAssistant
@@ -98,7 +98,7 @@ describe('AgentAssistantManager - Integration', () => {
       // Mock doc.descendants to simulate finding a node
       mockView.state.doc.descendants = vi.fn((callback) => {
         callback(
-          { type: { name: 'ai_response' }, attrs: { nodeId } },
+          { type: { name: 'agent_response' }, attrs: { nodeId } },
           5,
           {
             type: { name: 'paragraph' },
@@ -212,7 +212,7 @@ describe('AgentAssistantManager - Integration', () => {
       // Mock doc.descendants
       mockView.state.doc.descendants = vi.fn((callback) => {
         callback(
-          { type: { name: 'ai_response' }, attrs: { nodeId } },
+          { type: { name: 'agent_response' }, attrs: { nodeId } },
           5,
           {
             type: { name: 'paragraph' },

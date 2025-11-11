@@ -136,5 +136,5 @@
 @import '@milkdown/theme-nord/style.css';
 @import './editor.css';
 
-/* AI Response Styles */
-@import './ai-response.css';
+/* Agent Response Styles */
+@import './agent-response.css';

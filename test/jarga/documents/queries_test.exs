@@ -60,7 +60,9 @@ defmodule Jarga.Documents.QueriesTest do
       workspace = workspace_fixture(owner)
       {:ok, _} = invite_and_accept_member(owner, workspace.id, member.email, :member)
 
-      {:ok, document} = Documents.create_document(owner, workspace.id, %{title: "Public Document"})
+      {:ok, document} =
+        Documents.create_document(owner, workspace.id, %{title: "Public Document"})
+
       {:ok, _document} = Documents.update_document(owner, document.id, %{is_public: true})
 
       results =
@@ -78,7 +80,8 @@ defmodule Jarga.Documents.QueriesTest do
       workspace = workspace_fixture(user1)
       {:ok, _} = invite_and_accept_member(user1, workspace.id, user2.email, :member)
 
-      {:ok, document} = Documents.create_document(user1, workspace.id, %{title: "Private Document"})
+      {:ok, document} =
+        Documents.create_document(user1, workspace.id, %{title: "Private Document"})
 
       results =
         Queries.base()
@@ -94,7 +97,9 @@ defmodule Jarga.Documents.QueriesTest do
       user2 = user_fixture()
       workspace = workspace_fixture(user1)
 
-      {:ok, document} = Documents.create_document(user1, workspace.id, %{title: "Public Document"})
+      {:ok, document} =
+        Documents.create_document(user1, workspace.id, %{title: "Public Document"})
+
       {:ok, _document} = Documents.update_document(user1, document.id, %{is_public: true})
 
       results =
@@ -135,10 +140,16 @@ defmodule Jarga.Documents.QueriesTest do
       project2 = project_fixture(user, workspace)
 
       {:ok, document1} =
-        Documents.create_document(user, workspace.id, %{title: "Document 1", project_id: project1.id})
+        Documents.create_document(user, workspace.id, %{
+          title: "Document 1",
+          project_id: project1.id
+        })
 
       {:ok, document2} =
-        Documents.create_document(user, workspace.id, %{title: "Document 2", project_id: project2.id})
+        Documents.create_document(user, workspace.id, %{
+          title: "Document 2",
+          project_id: project2.id
+        })
 
       results =
         Queries.base()
@@ -287,12 +298,18 @@ defmodule Jarga.Documents.QueriesTest do
 
       # Create documents in different combinations
       {:ok, document1} =
-        Documents.create_document(user1, workspace.id, %{title: "Document 1", project_id: project.id})
+        Documents.create_document(user1, workspace.id, %{
+          title: "Document 1",
+          project_id: project.id
+        })
 
       {:ok, _document2} = Documents.create_document(user1, workspace.id, %{title: "Document 2"})
 
       {:ok, _document3} =
-        Documents.create_document(user2, workspace.id, %{title: "Document 3", project_id: project.id})
+        Documents.create_document(user2, workspace.id, %{
+          title: "Document 3",
+          project_id: project.id
+        })
 
       results =
         Queries.base()

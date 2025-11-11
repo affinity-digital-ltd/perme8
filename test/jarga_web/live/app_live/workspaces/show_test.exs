@@ -87,8 +87,8 @@ defmodule JargaWeb.AppLive.Workspaces.ShowTest do
       user: user,
       workspace: workspace
     } do
-      {:ok, document1} = Documents.create_page(user, workspace.id, %{title: "Document One"})
-      {:ok, document2} = Documents.create_page(user, workspace.id, %{title: "Document Two"})
+      {:ok, document1} = Documents.create_document(user, workspace.id, %{title: "Document One"})
+      {:ok, document2} = Documents.create_document(user, workspace.id, %{title: "Document Two"})
 
       {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
@@ -103,7 +103,8 @@ defmodule JargaWeb.AppLive.Workspaces.ShowTest do
       user: user,
       workspace: workspace
     } do
-      {:ok, document} = Documents.create_page(user, workspace.id, %{title: "Pinned", is_pinned: true})
+      {:ok, document} =
+        Documents.create_document(user, workspace.id, %{title: "Pinned", is_pinned: true})
 
       {:ok, _lv, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
@@ -205,12 +206,12 @@ defmodule JargaWeb.AppLive.Workspaces.ShowTest do
       user: user,
       workspace: workspace
     } do
-      {:ok, document} = Documents.create_page(user, workspace.id, %{title: "Test Document"})
+      {:ok, document} = Documents.create_document(user, workspace.id, %{title: "Test Document"})
 
       {:ok, lv, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       # Simulate PubSub event
-      send(lv.pid, {:page_visibility_changed, document.id, true})
+      send(lv.pid, {:document_visibility_changed, document.id, true})
 
       assert render(lv) =~ "Test Document"
     end
@@ -220,14 +221,14 @@ defmodule JargaWeb.AppLive.Workspaces.ShowTest do
       user: user,
       workspace: workspace
     } do
-      {:ok, document} = Documents.create_page(user, workspace.id, %{title: "Test Document"})
+      {:ok, document} = Documents.create_document(user, workspace.id, %{title: "Test Document"})
 
       {:ok, lv, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       refute html =~ "lucide-pin"
 
       # Simulate PubSub event
-      send(lv.pid, {:page_pinned_changed, document.id, true})
+      send(lv.pid, {:document_pinned_changed, document.id, true})
 
       html = render(lv)
       assert html =~ "lucide-pin"
@@ -238,14 +239,14 @@ defmodule JargaWeb.AppLive.Workspaces.ShowTest do
       user: user,
       workspace: workspace
     } do
-      {:ok, document} = Documents.create_page(user, workspace.id, %{title: "Original Title"})
+      {:ok, document} = Documents.create_document(user, workspace.id, %{title: "Original Title"})
 
       {:ok, lv, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}")
 
       assert html =~ "Original Title"
 
       # Simulate PubSub event
-      send(lv.pid, {:page_title_changed, document.id, "Updated Title"})
+      send(lv.pid, {:document_title_changed, document.id, "Updated Title"})
 
       html = render(lv)
       assert html =~ "Updated Title"

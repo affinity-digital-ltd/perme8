@@ -24,7 +24,7 @@ defmodule Jarga.Agents.UseCases.PrepareContextTest do
 
       assert context.page_info == %{
                page_title: "Project Plan",
-               page_url: "/app/workspaces/my-workspace/pages/project-plan"
+               page_url: "/app/workspaces/my-workspace/documents/project-plan"
              }
     end
 
@@ -109,7 +109,7 @@ defmodule Jarga.Agents.UseCases.PrepareContextTest do
 
       assert context.page_info == %{
                page_title: "Roadmap 2024",
-               page_url: "/app/workspaces/acme-corp/pages/roadmap-2024"
+               page_url: "/app/workspaces/acme-corp/documents/roadmap-2024"
              }
     end
   end

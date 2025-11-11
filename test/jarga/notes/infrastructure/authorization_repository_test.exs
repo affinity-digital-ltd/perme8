@@ -118,7 +118,8 @@ defmodule Jarga.Notes.Infrastructure.AuthorizationRepositoryTest do
       note = note_fixture(owner, workspace.id)
 
       # Create a public document with the note
-      {:ok, document} = Documents.create_document(owner, workspace.id, %{title: "Public Document"})
+      {:ok, document} =
+        Documents.create_document(owner, workspace.id, %{title: "Public Document"})
 
       %DocumentComponent{}
       |> DocumentComponent.changeset(%{
@@ -150,7 +151,8 @@ defmodule Jarga.Notes.Infrastructure.AuthorizationRepositoryTest do
       note = note_fixture(user1, workspace.id)
 
       # Create a private document with the note
-      {:ok, document} = Documents.create_document(user1, workspace.id, %{title: "Private Document"})
+      {:ok, document} =
+        Documents.create_document(user1, workspace.id, %{title: "Private Document"})
 
       %DocumentComponent{}
       |> DocumentComponent.changeset(%{

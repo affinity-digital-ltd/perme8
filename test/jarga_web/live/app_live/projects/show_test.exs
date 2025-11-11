@@ -92,10 +92,16 @@ defmodule JargaWeb.AppLive.Projects.ShowTest do
       project: project
     } do
       {:ok, document1} =
-        Documents.create_page(user, workspace.id, %{title: "Document One", project_id: project.id})
+        Documents.create_document(user, workspace.id, %{
+          title: "Document One",
+          project_id: project.id
+        })
 
       {:ok, document2} =
-        Documents.create_page(user, workspace.id, %{title: "Document Two", project_id: project.id})
+        Documents.create_document(user, workspace.id, %{
+          title: "Document Two",
+          project_id: project.id
+        })
 
       {:ok, _lv, html} =
         live(conn, ~p"/app/workspaces/#{workspace.slug}/projects/#{project.slug}")
@@ -114,7 +120,7 @@ defmodule JargaWeb.AppLive.Projects.ShowTest do
       project: project
     } do
       {:ok, document} =
-        Documents.create_page(user, workspace.id, %{
+        Documents.create_document(user, workspace.id, %{
           title: "Pinned Document",
           project_id: project.id,
           is_pinned: true
@@ -267,14 +273,17 @@ defmodule JargaWeb.AppLive.Projects.ShowTest do
       project: project
     } do
       {:ok, document} =
-        Documents.create_page(user, workspace.id, %{title: "Original Title", project_id: project.id})
+        Documents.create_document(user, workspace.id, %{
+          title: "Original Title",
+          project_id: project.id
+        })
 
       {:ok, lv, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/projects/#{project.slug}")
 
       assert html =~ "Original Title"
 
       # Simulate PubSub event
-      send(lv.pid, {:page_title_changed, document.id, "Updated Title"})
+      send(lv.pid, {:document_title_changed, document.id, "Updated Title"})
 
       html = render(lv)
       assert html =~ "Updated Title"
@@ -288,13 +297,16 @@ defmodule JargaWeb.AppLive.Projects.ShowTest do
       project: project
     } do
       {:ok, document} =
-        Documents.create_page(user, workspace.id, %{title: "Test Document", project_id: project.id})
+        Documents.create_document(user, workspace.id, %{
+          title: "Test Document",
+          project_id: project.id
+        })
 
       {:ok, lv, _html} =
         live(conn, ~p"/app/workspaces/#{workspace.slug}/projects/#{project.slug}")
 
       # Simulate PubSub event
-      send(lv.pid, {:page_visibility_changed, document.id, true})
+      send(lv.pid, {:document_visibility_changed, document.id, true})
 
       # Page list should be reloaded
       assert render(lv) =~ "Test Document"

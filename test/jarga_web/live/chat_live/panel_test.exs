@@ -7,6 +7,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
   import Jarga.ProjectsFixtures
   import Jarga.DocumentsFixtures
 
+  alias Jarga.Agents
   alias JargaWeb.ChatLive.Components.Message
 
   describe "Panel component" do
@@ -66,7 +67,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       {:ok, _view, html} = live(conn, ~p"/app")
 
       # Should show empty state message
-      assert html =~ "Ask me anything about this page"
+      assert html =~ "Ask me anything about this document"
     end
 
     test "clear button is disabled when no messages", %{conn: conn, user: user} do
@@ -121,7 +122,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       # Messages should be cleared
       refute has_element?(view, ".chat-bubble", "Test message")
       # Should show empty state again
-      assert render(view) =~ "Ask me anything about this page"
+      assert render(view) =~ "Ask me anything about this document"
     end
 
     @tag :evaluation
@@ -230,7 +231,8 @@ defmodule JargaWeb.ChatLive.PanelTest do
           content: "The Porsche 911 is a legendary sports car."
         })
 
-      {:ok, view, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
+      {:ok, view, _html} =
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
 
       # Send a message to trigger context extraction
       view
@@ -263,7 +265,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       {:ok, _view, html} = live(conn, ~p"/app")
 
       # Check for placeholder
-      assert html =~ "Ask about this page..."
+      assert html =~ "Ask about this document..."
     end
 
     test "chat input uses ChatInput hook for keyboard handling", %{conn: conn, user: user} do
@@ -556,7 +558,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
 
       # Chat should remain empty
       assert has_element?(view, "#chat-messages")
-      assert render(view) =~ "Ask me anything about this page"
+      assert render(view) =~ "Ask me anything about this document"
     end
 
     test "new_conversation button clears current session", %{conn: conn, user: user} do
@@ -579,7 +581,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       # Messages should be cleared
       refute has_element?(view, ".chat-bubble", "Test message")
       # Should show empty state
-      assert render(view) =~ "Ask me anything about this page"
+      assert render(view) =~ "Ask me anything about this document"
     end
 
     test "chat panel has phx-target for component-scoped events", %{conn: conn, user: user} do
@@ -619,8 +621,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       refute has_element?(view, "p", "Old Conversation")
 
       # Verify session was deleted from database via context
-      alias Jarga.Agents
-      assert {:error, :not_found} = Documents.load_session(session.id)
+      assert {:error, :not_found} = Agents.load_session(session.id)
     end
   end
 
@@ -679,7 +680,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       |> render_hook("restore_session", %{"session_id" => ""})
 
       # Should not crash
-      assert render(view) =~ "Ask me anything about this page"
+      assert render(view) =~ "Ask me anything about this document"
     end
 
     test "handles delete_session when user is nil" do
@@ -871,8 +872,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert has_element?(view, ".chat-bubble", "Create session")
 
       # Verify session was created
-      alias Jarga.Agents
-      {:ok, sessions} = Documents.list_sessions(user.id, limit: 1)
+      {:ok, sessions} = Agents.list_sessions(user.id, limit: 1)
       assert length(sessions) == 1
     end
 
@@ -891,12 +891,11 @@ defmodule JargaWeb.ChatLive.PanelTest do
       |> render_submit(%{message: "Second"})
 
       # Should only have one session
-      alias Jarga.Agents
-      {:ok, sessions} = Documents.list_sessions(user.id, limit: 10)
+      {:ok, sessions} = Agents.list_sessions(user.id, limit: 10)
       assert length(sessions) == 1
 
       # Both messages should be in same session
-      {:ok, session} = Documents.load_session(hd(sessions).id)
+      {:ok, session} = Agents.load_session(hd(sessions).id)
       assert length(session.messages) == 2
     end
 
@@ -915,7 +914,9 @@ defmodule JargaWeb.ChatLive.PanelTest do
       document = document_fixture(user, workspace, project)
 
       conn = log_in_user(conn, user)
-      {:ok, view, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
+
+      {:ok, view, _html} =
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
 
       # Send message to trigger context extraction
       view
@@ -954,7 +955,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       |> render_hook("restore_session", %{"session_id" => session.id})
 
       # Should show empty state
-      assert render(view) =~ "Ask me anything about this page"
+      assert render(view) =~ "Ask me anything about this document"
     end
 
     test "handles very long messages", %{conn: conn, user: user} do
@@ -1059,7 +1060,6 @@ defmodule JargaWeb.ChatLive.PanelTest do
       user: user
     } do
       import Jarga.AgentsFixtures
-      alias Jarga.Agents
 
       conn = log_in_user(conn, user)
       {:ok, view, _html} = live(conn, ~p"/app")
@@ -1072,7 +1072,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert has_element?(view, ".chat-bubble", "First session")
 
       # Get the first session ID
-      {:ok, sessions_after_first} = Documents.list_sessions(user.id, limit: 10)
+      {:ok, sessions_after_first} = Agents.list_sessions(user.id, limit: 10)
       assert length(sessions_after_first) == 1
       first_session_id = hd(sessions_after_first).id
 
@@ -1092,7 +1092,7 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert has_element?(view, ".chat-bubble", "Second session")
 
       # Verify we now have 2 sessions in the database
-      {:ok, sessions_after_second} = Documents.list_sessions(user.id, limit: 10)
+      {:ok, sessions_after_second} = Agents.list_sessions(user.id, limit: 10)
       assert length(sessions_after_second) == 2
 
       # Verify both sessions exist and are different
@@ -1103,12 +1103,12 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert second_session_id != nil
 
       # Load the first session to verify its messages weren't affected
-      {:ok, first_session} = Documents.load_session(first_session_id)
+      {:ok, first_session} = Agents.load_session(first_session_id)
       assert length(first_session.messages) == 1
       assert hd(first_session.messages).content == "First session"
 
       # Load the second session to verify it has the new message
-      {:ok, second_session} = Documents.load_session(second_session_id)
+      {:ok, second_session} = Agents.load_session(second_session_id)
       assert length(second_session.messages) == 1
       assert hd(second_session.messages).content == "Second session"
     end
@@ -1211,7 +1211,8 @@ defmodule JargaWeb.ChatLive.PanelTest do
           content: "This is test content about authentication."
         })
 
-      {:ok, view, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
+      {:ok, view, _html} =
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
 
       # Send a message
       view
@@ -1486,7 +1487,9 @@ defmodule JargaWeb.ChatLive.PanelTest do
       document = document_fixture(user, workspace, project)
 
       conn = log_in_user(conn, user)
-      {:ok, _view, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
+
+      {:ok, _view, html} =
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
 
       # Chat panel should be present
       assert html =~ "chat-panel"
@@ -1503,7 +1506,9 @@ defmodule JargaWeb.ChatLive.PanelTest do
       _note = note_fixture(user, workspace.id, %{})
 
       conn = log_in_user(conn, user)
-      {:ok, _view, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
+
+      {:ok, _view, html} =
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
 
       # Chat panel should be present
       assert html =~ "chat-panel"

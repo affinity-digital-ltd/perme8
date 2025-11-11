@@ -147,7 +147,8 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
     } do
       conn = log_in_user(conn, user)
 
-      {:ok, view, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
+      {:ok, view, _html} =
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
 
       view
       |> element("#chat-message-form")
@@ -253,7 +254,8 @@ defmodule JargaWeb.ChatLive.PersistenceAndContextTest do
     } do
       conn = log_in_user(conn, user)
 
-      {:ok, view, _html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
+      {:ok, view, _html} =
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
 
       # Verify we're on the correct page
       assert render(view) =~ document.title

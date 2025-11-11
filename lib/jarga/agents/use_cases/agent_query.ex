@@ -1,8 +1,8 @@
-defmodule Jarga.Agents.UseCases.AIQuery do
+defmodule Jarga.Agents.UseCases.AgentQuery do
   @moduledoc """
-  Execute AI query within editor context and stream response.
+  Execute agent query within editor context and stream response.
 
-  This use case handles in-editor AI requests by:
+  This use case handles in-editor agent requests by:
   - Extracting page context from assigns
   - Building contextualized system message
   - Streaming LLM response to caller process
@@ -29,7 +29,7 @@ defmodule Jarga.Agents.UseCases.AIQuery do
   @max_content_chars 3000
 
   @doc """
-  Executes an AI query with page context.
+  Executes an agent query with page context.
 
   ## Parameters
     - params: Map with required keys:
@@ -65,7 +65,7 @@ defmodule Jarga.Agents.UseCases.AIQuery do
   defp handle_streaming(messages, caller_pid, node_id) do
     # Set node_id in process dictionary for tracking
     if node_id do
-      Process.put(:ai_node_id, node_id)
+      Process.put(:agent_node_id, node_id)
     end
 
     # Call LlmClient to start streaming
@@ -125,7 +125,7 @@ defmodule Jarga.Agents.UseCases.AIQuery do
     after
       # Timeout after 60 seconds
       60_000 ->
-        error = "AI query timed out after 60 seconds"
+        error = "Agent query timed out after 60 seconds"
 
         if node_id do
           send(caller_pid, {:agent_error, node_id, error})
@@ -182,7 +182,7 @@ defmodule Jarga.Agents.UseCases.AIQuery do
 
   defp build_system_message(context) do
     base_prompt = """
-    You are an AI assistant helping within a note-taking editor.
+    You are an agent assistant helping within a note-taking editor.
     Provide concise, helpful responses in markdown format.
     Keep responses brief and actionable.
     """

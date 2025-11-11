@@ -1,7 +1,7 @@
-defmodule Jarga.Agents.UseCases.AIQueryTest do
+defmodule Jarga.Agents.UseCases.AgentQueryTest do
   use Jarga.DataCase, async: true
 
-  alias Jarga.Agents.UseCases.AIQuery
+  alias Jarga.Agents.UseCases.AgentQuery
 
   describe "execute/2" do
     setup do
@@ -24,7 +24,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
       }
 
       # Should successfully start execution
-      result = AIQuery.execute(params, self())
+      result = AgentQuery.execute(params, self())
 
       # Should return ok tuple with pid
       assert {:ok, pid} = result
@@ -42,7 +42,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
 
       # We'll need to capture what messages are sent to LLMClient
       # For now, just verify it executes
-      {:ok, _pid} = AIQuery.execute(params, self())
+      {:ok, _pid} = AgentQuery.execute(params, self())
 
       # Clean up any messages
       receive do
@@ -58,7 +58,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
         assigns: assigns
       }
 
-      {:ok, _pid} = AIQuery.execute(params, self())
+      {:ok, _pid} = AgentQuery.execute(params, self())
 
       receive do
         _ -> :ok
@@ -73,7 +73,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
         assigns: assigns
       }
 
-      {:ok, _pid} = AIQuery.execute(params, self())
+      {:ok, _pid} = AgentQuery.execute(params, self())
 
       receive do
         _ -> :ok
@@ -90,7 +90,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
       }
 
       # Should still work with minimal context
-      result = AIQuery.execute(params, self())
+      result = AgentQuery.execute(params, self())
       assert {:ok, _pid} = result
 
       receive do
@@ -113,7 +113,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
         assigns: assigns
       }
 
-      {:ok, _pid} = AIQuery.execute(params, self())
+      {:ok, _pid} = AgentQuery.execute(params, self())
 
       # Should not crash with long content
       receive do
@@ -129,7 +129,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
         assigns: %{current_workspace: %{name: "Test"}}
       }
 
-      {:ok, pid} = AIQuery.execute(params, self())
+      {:ok, pid} = AgentQuery.execute(params, self())
 
       # Should successfully spawn streaming process
       assert is_pid(pid)
@@ -142,7 +142,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
         assigns: %{}
       }
 
-      {:ok, _pid} = AIQuery.execute(params, self())
+      {:ok, _pid} = AgentQuery.execute(params, self())
 
       # Should eventually receive done
       # Increase timeout for actual LLM response
@@ -157,7 +157,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
         assigns: %{}
       }
 
-      result = AIQuery.execute(params, self())
+      result = AgentQuery.execute(params, self())
 
       # Should return ok even if LLM fails (error sent as message)
       assert {:ok, _pid} = result
@@ -178,7 +178,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
         assigns: %{}
       }
 
-      {:ok, pid} = AIQuery.execute(params, self())
+      {:ok, pid} = AgentQuery.execute(params, self())
 
       # Verify execution started
       assert is_pid(pid)
@@ -206,7 +206,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
         assigns: assigns
       }
 
-      {:ok, pid} = AIQuery.execute(params, self())
+      {:ok, pid} = AgentQuery.execute(params, self())
 
       assert is_pid(pid)
       Process.sleep(10)
@@ -219,7 +219,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
         assigns: %{}
       }
 
-      {:ok, pid} = AIQuery.execute(params, self())
+      {:ok, pid} = AgentQuery.execute(params, self())
 
       # Should be able to pass node_id through for tracking
       assert is_pid(pid)
@@ -234,7 +234,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
         assigns: %{current_workspace: %{name: "Workspace"}}
       }
 
-      {:ok, pid} = AIQuery.execute(params, self())
+      {:ok, pid} = AgentQuery.execute(params, self())
 
       # Verify execution started successfully
       assert is_pid(pid)
@@ -247,7 +247,7 @@ defmodule Jarga.Agents.UseCases.AIQueryTest do
         assigns: %{}
       }
 
-      {:ok, pid} = AIQuery.execute(params, self())
+      {:ok, pid} = AgentQuery.execute(params, self())
 
       assert is_pid(pid)
       Process.sleep(10)

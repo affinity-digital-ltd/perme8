@@ -10,7 +10,7 @@ import { $ctx, $node } from '@milkdown/utils'
 /**
  * Agent Response Node Schema
  */
-export const aiResponseNode = $node('ai_response', (ctx) => ({
+export const agentResponseNode = $node('agent_response', (ctx) => ({
   group: 'inline',
   inline: true,
   atom: true,
@@ -23,7 +23,7 @@ export const aiResponseNode = $node('ai_response', (ctx) => ({
   },
 
   parseDOM: [{
-    tag: 'span.ai-response',
+    tag: 'span.agent-response',
     getAttrs: (dom) => {
       if (!(dom instanceof HTMLElement)) return false
       return {
@@ -71,7 +71,7 @@ export const aiResponseNode = $node('ai_response', (ctx) => ({
   },
 
   toMarkdown: {
-    match: (node) => node.type.name === 'ai_response',
+    match: (node) => node.type.name === 'agent_response',
     runner: (state, node) => {
       // The agent response node is temporary - it gets replaced with parsed markdown
       // when the response completes. During serialization while streaming,
@@ -84,7 +84,7 @@ export const aiResponseNode = $node('ai_response', (ctx) => ({
 /**
  * Update agent response node by ID
  */
-export function updateAIResponseNode(view, nodeId, updates) {
+export function updateAgentResponseNode(view, nodeId, updates) {
   const { state } = view
   const { doc } = state
 
@@ -92,7 +92,7 @@ export function updateAIResponseNode(view, nodeId, updates) {
   let nodeToUpdate = null
 
   doc.descendants((node, pos) => {
-    if (node.type.name === 'ai_response' && node.attrs.nodeId === nodeId) {
+    if (node.type.name === 'agent_response' && node.attrs.nodeId === nodeId) {
       nodePos = pos
       nodeToUpdate = node
       return false
@@ -114,7 +114,7 @@ export function updateAIResponseNode(view, nodeId, updates) {
 /**
  * Append chunk to agent response node
  */
-export function appendChunkToNode(view, nodeId, chunk) {
+export function appendChunkToAgentNode(view, nodeId, chunk) {
   const { state } = view
   const { doc } = state
 
@@ -122,7 +122,7 @@ export function appendChunkToNode(view, nodeId, chunk) {
   let nodeToUpdate = null
 
   doc.descendants((node, pos) => {
-    if (node.type.name === 'ai_response' && node.attrs.nodeId === nodeId) {
+    if (node.type.name === 'agent_response' && node.attrs.nodeId === nodeId) {
       nodePos = pos
       nodeToUpdate = node
       return false

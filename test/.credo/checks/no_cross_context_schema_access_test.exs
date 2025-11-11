@@ -97,7 +97,7 @@ defmodule Jarga.Credo.Check.Architecture.NoCrossContextSchemaAccessTest do
     end
     """
 
-    issues = run_check(source, "lib/jarga/pages/infrastructure/component_repository.ex")
+    issues = run_check(source, "lib/jarga/documents/infrastructure/component_repository.ex")
     assert [] == issues
   end
 

@@ -133,10 +133,10 @@ function extractQuestion(text) {
 }
 
 function createAgentResponseNode(schema, nodeId) {
-  const nodeType = schema.nodes.ai_response
+  const nodeType = schema.nodes.agent_response
 
   if (!nodeType) {
-    console.error('ai_response node type not found in schema')
+    console.error('agent_response node type not found in schema')
     return schema.nodes.paragraph.create(null, schema.text('[Agent Response]'))
   }
 
@@ -160,7 +160,7 @@ export function updateAgentResponseNode(view, nodeId, updates) {
   let nodeToUpdate = null
 
   doc.descendants((node, pos) => {
-    if (node.type.name === 'ai_response' && node.attrs.nodeId === nodeId) {
+    if (node.type.name === 'agent_response' && node.attrs.nodeId === nodeId) {
       nodePos = pos
       nodeToUpdate = node
       return false
@@ -178,7 +178,7 @@ export function updateAgentResponseNode(view, nodeId, updates) {
   return true
 }
 
-export function appendChunkToNode(view, nodeId, chunk) {
+export function appendChunkToAgentNode(view, nodeId, chunk) {
   const { state } = view
   const { doc } = state
 
@@ -186,7 +186,7 @@ export function appendChunkToNode(view, nodeId, chunk) {
   let nodeToUpdate = null
 
   doc.descendants((node, pos) => {
-    if (node.type.name === 'ai_response' && node.attrs.nodeId === nodeId) {
+    if (node.type.name === 'agent_response' && node.attrs.nodeId === nodeId) {
       nodePos = pos
       nodeToUpdate = node
       return false

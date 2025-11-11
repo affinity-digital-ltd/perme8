@@ -43,7 +43,9 @@ defmodule Jarga.Documents.Infrastructure.AuthorizationRepositoryTest do
       workspace = workspace_fixture(user)
       {:ok, document} = Documents.create_document(user, workspace.id, %{title: "My Document"})
 
-      assert {:ok, fetched_document} = AuthorizationRepository.verify_document_access(user, document.id)
+      assert {:ok, fetched_document} =
+               AuthorizationRepository.verify_document_access(user, document.id)
+
       assert fetched_document.id == document.id
     end
 
@@ -51,16 +53,20 @@ defmodule Jarga.Documents.Infrastructure.AuthorizationRepositoryTest do
       user = user_fixture()
       fake_id = Ecto.UUID.generate()
 
-      assert {:error, :document_not_found} = AuthorizationRepository.verify_document_access(user, fake_id)
+      assert {:error, :document_not_found} =
+               AuthorizationRepository.verify_document_access(user, fake_id)
     end
 
     test "returns {:error, :unauthorized} when document exists but belongs to another user" do
       user1 = user_fixture()
       user2 = user_fixture()
       workspace = workspace_fixture(user1)
-      {:ok, document} = Documents.create_document(user1, workspace.id, %{title: "Private Document"})
 
-      assert {:error, :unauthorized} = AuthorizationRepository.verify_document_access(user2, document.id)
+      {:ok, document} =
+        Documents.create_document(user1, workspace.id, %{title: "Private Document"})
+
+      assert {:error, :unauthorized} =
+               AuthorizationRepository.verify_document_access(user2, document.id)
     end
   end
 

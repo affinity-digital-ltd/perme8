@@ -21,7 +21,9 @@ defmodule Jarga.Documents.Document do
     belongs_to(:created_by_user, Jarga.Accounts.User, foreign_key: :created_by)
 
     # Polymorphic components (notes, task lists, sheets, etc.)
-    has_many(:document_components, Jarga.Documents.DocumentComponent, preload_order: [asc: :position])
+    has_many(:document_components, Jarga.Documents.DocumentComponent,
+      preload_order: [asc: :position]
+    )
 
     timestamps(type: :utc_datetime)
   end
@@ -42,9 +44,9 @@ defmodule Jarga.Documents.Document do
     |> validate_required([:title, :slug, :user_id, :workspace_id, :created_by])
     |> validate_length(:title, min: 1)
     |> unique_constraint(:slug, name: :documents_workspace_id_slug_index)
-    |> foreign_key_constraint(:user_id)
-    |> foreign_key_constraint(:workspace_id)
-    |> foreign_key_constraint(:project_id)
-    |> foreign_key_constraint(:created_by)
+    |> foreign_key_constraint(:user_id, name: :pages_user_id_fkey)
+    |> foreign_key_constraint(:workspace_id, name: :pages_workspace_id_fkey)
+    |> foreign_key_constraint(:project_id, name: :pages_project_id_fkey)
+    |> foreign_key_constraint(:created_by, name: :pages_created_by_fkey)
   end
 end
