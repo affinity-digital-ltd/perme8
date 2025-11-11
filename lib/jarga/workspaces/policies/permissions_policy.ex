@@ -2,14 +2,14 @@ defmodule Jarga.Workspaces.Policies.PermissionsPolicy do
   @moduledoc """
   Domain-level permission policy for workspace members.
 
-  Defines what actions each role can perform on workspaces, projects, and pages.
+  Defines what actions each role can perform on workspaces, projects, and documents.
   This is pure domain logic with no infrastructure dependencies.
 
   ## Role Hierarchy
   - **Guest**: Can only view content, no editing, creating or deleting
-  - **Member**: Can create and manage their own content, edit shared pages
-  - **Admin**: Can manage all projects, shared pages, and workspace. Cannot manage non-shared pages or delete workspace
-  - **Owner**: Full control except managing non-public pages of others
+  - **Member**: Can create and manage their own content, edit shared documents
+  - **Admin**: Can manage all projects, shared documents, and workspace. Cannot manage non-shared documents or delete workspace
+  - **Owner**: Full control except managing non-public documents of others
   """
 
   @type role :: :guest | :member | :admin | :owner
@@ -26,10 +26,10 @@ defmodule Jarga.Workspaces.Policies.PermissionsPolicy do
       true
 
       # Permission check with context
-      iex> can?(:member, :edit_page, owns_resource: true, is_public: false)
+      iex> can?(:member, :edit_document, owns_resource: true, is_public: false)
       true
 
-      iex> can?(:member, :edit_page, owns_resource: false, is_public: false)
+      iex> can?(:member, :edit_document, owns_resource: false, is_public: false)
       false
   """
   @spec can?(role(), action(), context()) :: boolean()
@@ -72,41 +72,41 @@ defmodule Jarga.Workspaces.Policies.PermissionsPolicy do
       when role in [:admin, :owner],
       do: true
 
-  # Page permissions - viewing
-  def can?(_role, :view_page, _context), do: true
+  # Document permissions - viewing
+  def can?(_role, :view_document, _context), do: true
 
-  # Page permissions - creating
-  def can?(role, :create_page, _context)
+  # Document permissions - creating
+  def can?(role, :create_document, _context)
       when role in [:member, :admin, :owner],
       do: true
 
-  # Page permissions - editing own page
-  def can?(role, :edit_page, owns_resource: true, is_public: _)
+  # Document permissions - editing own document
+  def can?(role, :edit_document, owns_resource: true, is_public: _)
       when role in [:member, :admin, :owner],
       do: true
 
-  # Page permissions - editing shared (public) page
-  # Members and admins can edit shared pages, but owner cannot (per requirements)
-  def can?(role, :edit_page, owns_resource: false, is_public: true)
+  # Document permissions - editing shared (public) document
+  # Members and admins can edit shared documents, but owner cannot (per requirements)
+  def can?(role, :edit_document, owns_resource: false, is_public: true)
       when role in [:member, :admin],
       do: true
 
-  # Page permissions - deleting own page
-  def can?(role, :delete_page, owns_resource: true)
+  # Document permissions - deleting own document
+  def can?(role, :delete_document, owns_resource: true)
       when role in [:member, :admin, :owner],
       do: true
 
-  # Page permissions - deleting others' shared page
-  # Admin can only delete shared pages (owner cannot per requirements)
-  def can?(:admin, :delete_page, owns_resource: false, is_public: true), do: true
+  # Document permissions - deleting others' shared document
+  # Admin can only delete shared documents (owner cannot per requirements)
+  def can?(:admin, :delete_document, owns_resource: false, is_public: true), do: true
 
-  # Page permissions - pinning own page
-  def can?(role, :pin_page, owns_resource: true, is_public: _)
+  # Document permissions - pinning own document
+  def can?(role, :pin_document, owns_resource: true, is_public: _)
       when role in [:member, :admin, :owner],
       do: true
 
-  # Page permissions - pinning shared (public) page
-  def can?(role, :pin_page, owns_resource: false, is_public: true)
+  # Document permissions - pinning shared (public) document
+  def can?(role, :pin_document, owns_resource: false, is_public: true)
       when role in [:member, :admin, :owner],
       do: true
 
