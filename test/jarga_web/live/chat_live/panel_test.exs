@@ -1198,7 +1198,10 @@ defmodule JargaWeb.ChatLive.PanelTest do
     end
 
     @tag :evaluation
-    test "assistant messages include source citation when on a document", %{conn: conn, user: user} do
+    test "assistant messages include source citation when on a document", %{
+      conn: conn,
+      user: user
+    } do
       conn = log_in_user(conn, user)
 
       # Create a workspace and page with content
