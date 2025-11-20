@@ -102,6 +102,22 @@ defmodule Jarga.Agents do
   defdelegate build_system_message(context), to: PrepareContext
 
   @doc """
+  Builds a system message that combines an agent's custom prompt with document context.
+
+  If the agent has a custom system_prompt, it combines it with document context.
+  Otherwise, uses the default system message with context.
+
+  ## Examples
+
+      iex> agent = %{system_prompt: "You are a code reviewer."}
+      iex> context = %{current_workspace: "ACME", document_content: "..."}
+      iex> build_system_message_with_agent(agent, context)
+      {:ok, %{role: "system", content: "You are a code reviewer.\\n\\nCurrent context:\\n..."}}
+
+  """
+  defdelegate build_system_message_with_agent(agent, context), to: PrepareContext
+
+  @doc """
   Sends a chat completion request to the LLM.
 
   ## Examples

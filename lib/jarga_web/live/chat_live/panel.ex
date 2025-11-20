@@ -584,12 +584,9 @@ defmodule JargaWeb.ChatLive.Panel do
   end
 
   # Builds system message based on agent configuration
+  # Always combines agent's custom prompt with document context
   defp build_system_message(selected_agent, document_context) do
-    if selected_agent && selected_agent.system_prompt && selected_agent.system_prompt != "" do
-      {:ok, %{role: "system", content: selected_agent.system_prompt}}
-    else
-      Agents.build_system_message(document_context)
-    end
+    Agents.build_system_message_with_agent(selected_agent, document_context)
   end
 
   # Builds LLM options based on agent configuration

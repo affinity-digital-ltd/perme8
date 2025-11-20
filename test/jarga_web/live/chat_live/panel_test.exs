@@ -1524,6 +1524,10 @@ defmodule JargaWeb.ChatLive.PanelTest do
   # test/jarga/agents/use_cases/agent_query_test.exs in the "LLM configuration options" section.
   # These tests verify that agent settings (model, temperature) are properly passed to the LLM client.
 
+  # NOTE: Agent context combination tests are in
+  # test/jarga/agents/use_cases/prepare_context_with_agent_test.exs
+  # These unit tests verify that agent system_prompt is properly combined with document context.
+
   describe "Agent selection on session restore" do
     setup do
       user = user_fixture()

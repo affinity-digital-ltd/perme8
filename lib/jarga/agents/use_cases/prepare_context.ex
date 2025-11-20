@@ -34,12 +34,42 @@ defmodule Jarga.Agents.UseCases.PrepareContext do
       current_user: get_nested(assigns, [:current_user, :email]),
       current_workspace: get_nested(assigns, [:current_workspace, :name]),
       current_project: get_nested(assigns, [:current_project, :name]),
-      document_title: assigns[:page_title],
+      document_title: assigns[:document_title] || assigns[:page_title],
       document_content: extract_document_content(assigns),
       document_info: extract_document_info(assigns)
     }
 
     {:ok, context}
+  end
+
+  @doc """
+  Builds a system message that combines an agent's custom prompt with document context.
+
+  If the agent has a custom system_prompt, it will be combined with the document context.
+  If the agent has no system_prompt or agent is nil, falls back to default system message with context.
+
+  ## Parameters
+    - agent: Map with optional `system_prompt` field, or nil
+    - context: Document context map
+
+  Returns `{:ok, message}` where message is a map with `:role` and `:content` keys.
+
+  ## Examples
+
+      iex> agent = %{system_prompt: "You are a code reviewer."}
+      iex> context = %{current_workspace: "ACME", document_content: "..."}
+      iex> build_system_message_with_agent(agent, context)
+      {:ok, %{role: "system", content: "You are a code reviewer.\\n\\nCurrent context:\\n..."}}
+
+  """
+  def build_system_message_with_agent(agent, context) do
+    # Agent has custom system prompt - combine it with context
+    # Otherwise use default with context
+    if agent && has_custom_prompt?(agent) do
+      build_combined_message(agent.system_prompt, context)
+    else
+      build_system_message(context)
+    end
   end
 
   @doc """
@@ -121,8 +151,8 @@ defmodule Jarga.Agents.UseCases.PrepareContext do
   defp extract_document_info(assigns) do
     # Extract document metadata for source citations
     workspace_slug = get_nested(assigns, [:current_workspace, :slug])
-    document_slug = get_nested(assigns, [:page, :slug])
-    document_title = assigns[:page_title]
+    document_slug = get_nested(assigns, [:document, :slug])
+    document_title = assigns[:document_title] || assigns[:page_title]
 
     # Build the document URL if we have the necessary information
     document_url =
@@ -156,4 +186,79 @@ defmodule Jarga.Agents.UseCases.PrepareContext do
   end
 
   defp get_nested(_, _), do: nil
+
+  # Checks if agent has a custom system prompt (non-nil and non-empty)
+  defp has_custom_prompt?(agent) do
+    agent.system_prompt && String.trim(agent.system_prompt) != ""
+  end
+
+  # Builds a system message that combines custom prompt with document context
+  defp build_combined_message(custom_prompt, context) do
+    context_parts = build_context_parts(context)
+
+    message =
+      if Enum.empty?(context_parts) do
+        # No context - just use custom prompt
+        %{
+          role: "system",
+          content: custom_prompt
+        }
+      else
+        # Combine custom prompt with context
+        context_text = Enum.join(context_parts, "\n")
+
+        %{
+          role: "system",
+          content: """
+          #{custom_prompt}
+
+          Current context:
+          #{context_text}
+          """
+        }
+      end
+
+    {:ok, message}
+  end
+
+  # Extracts context parts into a list of strings
+  defp build_context_parts(context) do
+    []
+    |> maybe_add_workspace(context)
+    |> maybe_add_project(context)
+    |> maybe_add_document_title(context)
+    |> maybe_add_document_content(context)
+  end
+
+  defp maybe_add_workspace(parts, context) do
+    if context[:current_workspace] do
+      parts ++ ["You are viewing workspace: #{context.current_workspace}"]
+    else
+      parts
+    end
+  end
+
+  defp maybe_add_project(parts, context) do
+    if context[:current_project] do
+      parts ++ ["You are viewing project: #{context.current_project}"]
+    else
+      parts
+    end
+  end
+
+  defp maybe_add_document_title(parts, context) do
+    if context[:document_title] do
+      parts ++ ["Document title: #{context.document_title}"]
+    else
+      parts
+    end
+  end
+
+  defp maybe_add_document_content(parts, context) do
+    if context[:document_content] do
+      parts ++ ["Document content:\n#{context.document_content}"]
+    else
+      parts
+    end
+  end
 end

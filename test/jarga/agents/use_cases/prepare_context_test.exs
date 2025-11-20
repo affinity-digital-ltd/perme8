@@ -10,7 +10,7 @@ defmodule Jarga.Agents.UseCases.PrepareContextTest do
         current_workspace: %{name: "My Workspace", slug: "my-workspace"},
         current_project: %{name: "My Project"},
         page_title: "Project Plan",
-        page: %{slug: "project-plan"},
+        document: %{slug: "project-plan"},
         note: %{note_content: %{"markdown" => "# Project Plan\n\nThis is the content"}}
       }
 
@@ -77,7 +77,7 @@ defmodule Jarga.Agents.UseCases.PrepareContextTest do
     test "handles missing document info when workspace slug is missing" do
       assigns = %{
         page_title: "Page",
-        page: %{slug: "page"}
+        document: %{slug: "page"}
         # workspace slug missing
       }
 
@@ -90,7 +90,7 @@ defmodule Jarga.Agents.UseCases.PrepareContextTest do
       assigns = %{
         page_title: "Page",
         current_workspace: %{slug: "workspace"}
-        # page slug missing
+        # document slug missing
       }
 
       assert {:ok, context} = PrepareContext.execute(assigns)
@@ -101,7 +101,7 @@ defmodule Jarga.Agents.UseCases.PrepareContextTest do
     test "builds correct document URL from workspace and document slugs" do
       assigns = %{
         current_workspace: %{slug: "acme-corp"},
-        page: %{slug: "roadmap-2024"},
+        document: %{slug: "roadmap-2024"},
         page_title: "Roadmap 2024"
       }
 
@@ -154,6 +154,56 @@ defmodule Jarga.Agents.UseCases.PrepareContextTest do
 
       assert message.content =~ "Workspace"
       refute message.content =~ "project:"
+    end
+  end
+
+  describe "execute/1 - document_title field name" do
+    test "extracts document title from document_title field (new naming)" do
+      assigns = %{
+        current_workspace: %{name: "Test Workspace", slug: "test-workspace"},
+        document_title: "My Document Title",
+        document: %{slug: "my-doc"}
+      }
+
+      {:ok, context} = PrepareContext.execute(assigns)
+
+      assert context.document_title == "My Document Title"
+
+      # Should also be in document_info for URL building
+      assert context.document_info == %{
+               document_title: "My Document Title",
+               document_url: "/app/workspaces/test-workspace/documents/my-doc"
+             }
+    end
+
+    test "still supports legacy page_title field (backward compatibility)" do
+      assigns = %{
+        current_workspace: %{name: "Test Workspace", slug: "test-workspace"},
+        page_title: "Legacy Page Title",
+        document: %{slug: "my-doc"}
+      }
+
+      {:ok, context} = PrepareContext.execute(assigns)
+
+      assert context.document_title == "Legacy Page Title"
+
+      assert context.document_info == %{
+               document_title: "Legacy Page Title",
+               document_url: "/app/workspaces/test-workspace/documents/my-doc"
+             }
+    end
+
+    test "prefers document_title over page_title when both present" do
+      assigns = %{
+        current_workspace: %{name: "Test Workspace"},
+        document_title: "New Title",
+        page_title: "Old Title"
+      }
+
+      {:ok, context} = PrepareContext.execute(assigns)
+
+      # Should prefer the new naming
+      assert context.document_title == "New Title"
     end
   end
 end
