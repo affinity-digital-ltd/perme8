@@ -34,7 +34,7 @@ defmodule Jarga.Agents.UseCases.PrepareContext do
       current_user: get_nested(assigns, [:current_user, :email]),
       current_workspace: get_nested(assigns, [:current_workspace, :name]),
       current_project: get_nested(assigns, [:current_project, :name]),
-      document_title: assigns[:document_title] || assigns[:page_title],
+      document_title: assigns[:document_title],
       document_content: extract_document_content(assigns),
       document_info: extract_document_info(assigns)
     }
@@ -152,7 +152,7 @@ defmodule Jarga.Agents.UseCases.PrepareContext do
     # Extract document metadata for source citations
     workspace_slug = get_nested(assigns, [:current_workspace, :slug])
     document_slug = get_nested(assigns, [:document, :slug])
-    document_title = assigns[:document_title] || assigns[:page_title]
+    document_title = assigns[:document_title]
 
     # Build the document URL if we have the necessary information
     document_url =

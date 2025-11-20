@@ -9,7 +9,7 @@ defmodule Jarga.Agents.UseCases.PrepareContextTest do
         current_user: %{email: "user@example.com"},
         current_workspace: %{name: "My Workspace", slug: "my-workspace"},
         current_project: %{name: "My Project"},
-        page_title: "Project Plan",
+        document_title: "Project Plan",
         document: %{slug: "project-plan"},
         note: %{note_content: %{"markdown" => "# Project Plan\n\nThis is the content"}}
       }
@@ -41,7 +41,7 @@ defmodule Jarga.Agents.UseCases.PrepareContextTest do
     test "handles missing document content" do
       assigns = %{
         current_workspace: %{name: "Workspace"},
-        page_title: "Page"
+        document_title: "Document"
       }
 
       assert {:ok, context} = PrepareContext.execute(assigns)
@@ -76,8 +76,8 @@ defmodule Jarga.Agents.UseCases.PrepareContextTest do
 
     test "handles missing document info when workspace slug is missing" do
       assigns = %{
-        page_title: "Page",
-        document: %{slug: "page"}
+        document_title: "Document",
+        document: %{slug: "document"}
         # workspace slug missing
       }
 
@@ -88,7 +88,7 @@ defmodule Jarga.Agents.UseCases.PrepareContextTest do
 
     test "handles missing document info when document slug is missing" do
       assigns = %{
-        page_title: "Page",
+        document_title: "Document",
         current_workspace: %{slug: "workspace"}
         # document slug missing
       }
@@ -102,7 +102,7 @@ defmodule Jarga.Agents.UseCases.PrepareContextTest do
       assigns = %{
         current_workspace: %{slug: "acme-corp"},
         document: %{slug: "roadmap-2024"},
-        page_title: "Roadmap 2024"
+        document_title: "Roadmap 2024"
       }
 
       assert {:ok, context} = PrepareContext.execute(assigns)
@@ -174,36 +174,6 @@ defmodule Jarga.Agents.UseCases.PrepareContextTest do
                document_title: "My Document Title",
                document_url: "/app/workspaces/test-workspace/documents/my-doc"
              }
-    end
-
-    test "still supports legacy page_title field (backward compatibility)" do
-      assigns = %{
-        current_workspace: %{name: "Test Workspace", slug: "test-workspace"},
-        page_title: "Legacy Page Title",
-        document: %{slug: "my-doc"}
-      }
-
-      {:ok, context} = PrepareContext.execute(assigns)
-
-      assert context.document_title == "Legacy Page Title"
-
-      assert context.document_info == %{
-               document_title: "Legacy Page Title",
-               document_url: "/app/workspaces/test-workspace/documents/my-doc"
-             }
-    end
-
-    test "prefers document_title over page_title when both present" do
-      assigns = %{
-        current_workspace: %{name: "Test Workspace"},
-        document_title: "New Title",
-        page_title: "Old Title"
-      }
-
-      {:ok, context} = PrepareContext.execute(assigns)
-
-      # Should prefer the new naming
-      assert context.document_title == "New Title"
     end
   end
 end
