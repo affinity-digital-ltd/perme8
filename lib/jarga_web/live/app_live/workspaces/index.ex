@@ -168,8 +168,8 @@ defmodule JargaWeb.AppLive.Workspaces.Index do
   end
 
   @impl true
-  def handle_info({:page_title_changed, _page_id, _title}, socket) do
-    # Page title changed - not relevant to workspace index view
+  def handle_info({:document_title_changed, _document_id, _title}, socket) do
+    # Document title changed - not relevant to workspace index view
     {:noreply, socket}
   end
 
