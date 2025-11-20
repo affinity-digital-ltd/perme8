@@ -36,6 +36,10 @@ import { UserColorAssignment } from '../../domain/policies/user-color-assignment
 import { agentResponseNode } from '../../infrastructure/milkdown/agent-response-node-schema'
 // Import task list click plugin for GFM checkbox toggling
 import { taskListClickPlugin } from '../../infrastructure/milkdown/task-list-click-plugin'
+// Import markdown input rules for auto-converting [text](url) and ![alt](url)
+import { markdownInputRulesPlugin } from '../../infrastructure/milkdown/markdown-input-rules-plugin'
+// Import link click plugin for Cmd/Ctrl+Click to open links
+import { linkClickPlugin } from '../../infrastructure/milkdown/link-click-plugin'
 
 /**
  * Configuration for initializing collaborative editor
@@ -116,12 +120,14 @@ export class InitializeCollaborativeEditor {
 
     // Step 5: Initialize Milkdown editor with standard plugins
     await milkdownAdapter.create([
-      nord,              // Theme
-      commonmark,        // CommonMark spec
-      gfm,               // GitHub Flavored Markdown
-      clipboard,         // Clipboard support
-      agentResponseNode, // Custom node for AI agent responses
-      taskListClickPlugin // GFM task list checkbox toggling
+      nord,                      // Theme
+      commonmark,                // CommonMark spec
+      gfm,                       // GitHub Flavored Markdown  
+      clipboard,                 // Clipboard support
+      agentResponseNode,         // Custom node for AI agent responses
+      markdownInputRulesPlugin,  // Auto-convert [text](url) as you type
+      linkClickPlugin,           // Cmd/Ctrl+Click to open links in new tab
+      taskListClickPlugin        // GFM task list checkbox toggling - Last so it runs first
     ])
 
     // Step 6: Create collaboration adapter

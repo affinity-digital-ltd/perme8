@@ -36,11 +36,22 @@ const taskListClickKey = new PluginKey('taskListClick')
 function findTaskListItem(view: EditorView, event: MouseEvent) {
   const target = event.target as HTMLElement
 
+  // BUGFIX: Only handle clicks on the checkbox area, not on text content
   // Check if we clicked on or inside a task list item
   const taskListItem = target.closest('li[data-item-type="task"]')
   if (!taskListItem) {
     return null
   }
+
+  // Check if the click target is a paragraph (text content)
+  // This prevents text clicks from toggling the checkbox
+  if (target.tagName === 'P' || target.closest('p')) {
+    // Click was on text content, not the checkbox
+    return null
+  }
+
+  // If we reach here, click was on the li element itself (not on paragraph),
+  // which means it was on the checkbox area. Proceed with toggle.
 
   // Find the position of the clicked element in the document
   const pos = view.posAtDOM(taskListItem, 0)
@@ -90,7 +101,7 @@ export const taskListClickPlugin = $prose(() => {
          * @param event - DOM click event
          * @returns true if event was handled, false otherwise
          */
-        click(view: EditorView, event: MouseEvent): boolean {
+         click(view: EditorView, event: MouseEvent): boolean {
           // Only handle clicks on task list items
           const result = findTaskListItem(view, event)
           if (!result) {

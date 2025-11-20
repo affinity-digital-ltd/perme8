@@ -18,12 +18,12 @@ config :jarga, Jarga.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
 
-# We don't run a server during test. If one is required,
-# you can enable the server option below.
+# Start server for Wallaby E2E tests
+# Wallaby tests are excluded by default via :wallaby tag
 config :jarga, JargaWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   secret_key_base: "k/DpMQ7vB/8OirPNBlAhucs6RCPp5ZRK09Is1Sd7Jb+YThz21IeYYYpueAbJYNEd",
-  server: false
+  server: true
 
 # In test we don't send emails
 config :jarga, Jarga.Mailer, adapter: Swoosh.Adapters.Test
@@ -40,3 +40,35 @@ config :phoenix, :plug_init_mode, :runtime
 # Enable helpful, but potentially expensive runtime checks
 config :phoenix_live_view,
   enable_expensive_runtime_checks: true
+
+# Configure Wallaby for E2E browser tests
+config :wallaby,
+  driver: Wallaby.Chrome,
+  otp_app: :jarga,
+  screenshot_on_failure: true,
+  screenshot_dir: "tmp/screenshots",
+  max_wait_time: 10_000,
+  # Remove --headless flag when WALLABY_HEADED=true
+  chromedriver: [
+    headless: System.get_env("WALLABY_HEADED") != "true",
+    # Chrome args for CI stability
+    capabilities: %{
+      chromeOptions: %{
+        args: [
+          "--no-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+          "--window-size=1920,1080",
+          "--disable-extensions",
+          "--disable-setuid-sandbox",
+          "--disable-software-rasterizer",
+          "--disable-background-timer-throttling",
+          "--disable-backgrounding-occluded-windows",
+          "--disable-renderer-backgrounding"
+        ]
+      }
+    }
+  ]
+
+# Enable Ecto Sandbox for Wallaby tests
+config :jarga, :sandbox, Ecto.Adapters.SQL.Sandbox

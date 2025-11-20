@@ -52,6 +52,7 @@ defmodule JargaWeb.Router do
 
     live_session :app,
       on_mount: [
+        {JargaWeb.Live.Hooks.AllowEctoSandbox, :default},
         {JargaWeb.UserAuth, :require_authenticated},
         {JargaWeb.NotificationsLive.OnMount, :default}
       ] do
@@ -77,6 +78,7 @@ defmodule JargaWeb.Router do
 
     live_session :require_authenticated_user,
       on_mount: [
+        {JargaWeb.Live.Hooks.AllowEctoSandbox, :default},
         {JargaWeb.UserAuth, :require_authenticated},
         {JargaWeb.NotificationsLive.OnMount, :default}
       ] do
@@ -91,7 +93,10 @@ defmodule JargaWeb.Router do
     pipe_through [:browser]
 
     live_session :current_user,
-      on_mount: [{JargaWeb.UserAuth, :mount_current_scope}] do
+      on_mount: [
+        {JargaWeb.Live.Hooks.AllowEctoSandbox, :default},
+        {JargaWeb.UserAuth, :mount_current_scope}
+      ] do
       live "/users/register", UserLive.Registration, :new
       live "/users/log-in", UserLive.Login, :new
       live "/users/log-in/:token", UserLive.Confirmation, :new

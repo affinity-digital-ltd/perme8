@@ -9,7 +9,7 @@
 
 /* Ensure paragraphs have proper vertical spacing */
 #editor-container .ProseMirror p {
-  margin-bottom: 1em;
+  margin-bottom: 1rem;
 }
 
 /* Remove bottom margin from last paragraph to avoid extra space */
@@ -37,35 +37,57 @@
   flex: 1;
   min-height: 100%;
   height: 100%;
+  overflow: visible;
+  position: relative;
 }
 
 /* Remote Cursor and Selection Styles */
 .remote-cursor {
-  position: absolute;
-  border-left: 2px solid;
-  height: 1.2em;
-  margin-left: -1px;
+  position: relative;
+  display: inline-block;
+  width: 0;
+  height: 1.2rem;
   pointer-events: none;
   z-index: 10;
 }
 
+.remote-cursor::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0.125rem;
+  height: 100%;
+  background-color: inherit;
+  border-left: 0.125rem solid;
+  margin-left: -0.0625rem;
+}
+
 .remote-cursor-label {
   position: absolute;
-  top: -1.4em;
-  left: -1px;
+  top: -1.4rem;
+  left: -0.0625rem;
   font-size: 0.75rem;
   font-weight: 500;
   color: white;
-  padding: 2px 6px;
-  border-radius: 3px 3px 3px 0;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.1875rem 0.1875rem 0.1875rem 0;
   white-space: nowrap;
   pointer-events: none;
   line-height: 1.2;
+  z-index: 100;
+}
+
+/* Position label below cursor when near top of container */
+.remote-cursor-label.label-below {
+  top: auto;
+  bottom: -1.4rem;
+  border-radius: 0 0.1875rem 0.1875rem 0.1875rem;
 }
 
 .remote-selection {
   /* Background color is set inline with user's color */
-  border-radius: 2px;
+  border-radius: 0.125rem;
   pointer-events: none;
 }
 
@@ -98,7 +120,7 @@
   top: 0.125rem;
   width: 1.25rem;
   height: 1.25rem;
-  border: 2px solid #888;
+  border: 0.125rem solid #888;
   border-radius: 0.25rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -133,7 +155,7 @@
   width: 0.35rem;
   height: 0.65rem;
   border: solid white;
-  border-width: 0 2px 2px 0;
+  border-width: 0 0.125rem 0.125rem 0;
   transform: rotate(45deg);
   pointer-events: none;
   z-index: 1;
@@ -161,11 +183,22 @@
 /* Agent Mention Styles */
 .mention-active {
   background-color: rgba(94, 129, 172, 0.2);
-  border-radius: 3px;
-  padding: 2px 4px;
+  border-radius: 0.1875rem;
+  padding: 0.125rem 0.25rem;
   font-weight: 500;
 }
 
 [data-theme="dark"] .mention-active {
   background-color: rgba(94, 129, 172, 0.3);
+}
+
+/* Link Navigation Mode - Cursor Changes for Cmd/Ctrl+Click */
+/* When Cmd (Mac) or Ctrl (Windows/Linux) is pressed, show pointer cursor on links */
+.link-navigation-mode a[href] {
+  cursor: pointer !important;
+}
+
+/* Default cursor for links in editor is text (for editing) */
+#editor-container .ProseMirror a[href] {
+  cursor: text;
 }

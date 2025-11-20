@@ -122,6 +122,32 @@ export function createAwarenessPlugin(awareness: Awareness, userId: string): Plu
           label.className = 'remote-cursor-label'
           label.textContent = awarenessState.userName || `User ${awarenessState.userId.substring(0, 6)}`
           label.style.backgroundColor = userColor
+          
+          // Position label based on cursor position
+          // Use requestAnimationFrame to ensure DOM is ready
+          requestAnimationFrame(() => {
+            try {
+              const editorContainer = document.getElementById('editor-container')
+              if (!editorContainer) return
+              
+              const cursorRect = cursor.getBoundingClientRect()
+              const containerRect = editorContainer.getBoundingClientRect()
+              
+              // Calculate position relative to container
+              const relativeTop = cursorRect.top - containerRect.top
+              
+              // If cursor is within 40px of top of container, position label below
+              if (relativeTop < 40) {
+                label.classList.add('label-below')
+              } else {
+                label.classList.remove('label-below')
+              }
+            } catch (error) {
+              // Fallback: if error, keep default (above) position
+              console.warn('Error positioning cursor label:', error)
+            }
+          })
+          
           cursor.appendChild(label)
 
           return cursor
