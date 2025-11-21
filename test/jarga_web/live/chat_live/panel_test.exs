@@ -1765,5 +1765,33 @@ defmodule JargaWeb.ChatLive.PanelTest do
       # Default placeholder
       assert html =~ "Ask about this document..."
     end
+
+    test "ignores stream chunks when not in streaming state", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/app")
+
+      # Panel starts in non-streaming state
+      # Send a chunk directly - should be ignored since not streaming
+      send(view.pid, {:chunk, "IGNORED_CHUNK_CONTENT"})
+      Process.sleep(50)
+
+      # The chunk should NOT appear (not in streaming mode)
+      html = render(view)
+      refute html =~ "IGNORED_CHUNK_CONTENT"
+    end
+
+    test "ignores done message when not in streaming state", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+      {:ok, view, _html} = live(conn, ~p"/app")
+
+      # Panel starts in non-streaming state
+      # Send done directly - should be ignored since not streaming
+      send(view.pid, {:done, "IGNORED_DONE_RESPONSE"})
+      Process.sleep(50)
+
+      # Should NOT show the done response (not in streaming mode)
+      html = render(view)
+      refute html =~ "IGNORED_DONE_RESPONSE"
+    end
   end
 end

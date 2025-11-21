@@ -184,12 +184,15 @@ defmodule JargaWeb.ChatLive.Panel do
   end
 
   # Handles streaming message updates sent via send_update from parent
+  # Ignores chunks/done if streaming was cancelled
   defp handle_streaming_updates(socket, assigns) do
+    streaming = socket.assigns.streaming
+
     cond do
-      Map.has_key?(assigns, :chunk) ->
+      Map.has_key?(assigns, :chunk) and streaming ->
         handle_chunk(socket, assigns.chunk)
 
-      Map.has_key?(assigns, :done) ->
+      Map.has_key?(assigns, :done) and streaming ->
         handle_done(socket, assigns.done)
 
       Map.has_key?(assigns, :error) ->
