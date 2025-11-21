@@ -177,6 +177,7 @@ defmodule JargaWeb.ChatLive.Panel do
       socket
       |> assign(:current_session_id, db_session.id)
       |> assign(:messages, ui_messages)
+      |> push_event("scroll_to_bottom", %{})
     else
       _ -> socket
     end
@@ -388,7 +389,8 @@ defmodule JargaWeb.ChatLive.Panel do
        |> assign(:current_session_id, session.id)
        |> assign(:messages, ui_messages)
        |> assign(:view_mode, :chat)
-       |> push_event("save_session", %{session_id: session.id})}
+       |> push_event("save_session", %{session_id: session.id})
+       |> push_event("scroll_to_bottom", %{})}
     else
       _error ->
         {:noreply, socket}

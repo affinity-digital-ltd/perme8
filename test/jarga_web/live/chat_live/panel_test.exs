@@ -295,6 +295,49 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert html =~ ~r/id="chat-messages"/
     end
 
+    test "scroll_to_bottom event is pushed when loading a conversation from history", %{
+      conn: conn,
+      user: user
+    } do
+      import Jarga.AgentsFixtures
+
+      conn = log_in_user(conn, user)
+
+      # Create a session with messages
+      workspace = workspace_fixture(user)
+
+      session =
+        chat_session_fixture(%{user: user, workspace: workspace, title: "Test conversation"})
+
+      chat_message_fixture(%{chat_session_id: session.id, role: "user", content: "Hello"})
+      chat_message_fixture(%{chat_session_id: session.id, role: "assistant", content: "Hi there"})
+
+      {:ok, view, _html} = live(conn, ~p"/app")
+
+      # Go to history view
+      view
+      |> element("button[phx-click='show_conversations']")
+      |> render_click()
+
+      # Click to load the session - this should trigger scroll_to_bottom
+      view
+      |> element("[phx-click='load_session'][phx-value-session-id='#{session.id}']")
+      |> render_click()
+
+      # Verify scroll_to_bottom was pushed
+      assert_push_event(view, "scroll_to_bottom", %{})
+    end
+
+    test "chat panel has scroll container for messages", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+
+      {:ok, _view, html} = live(conn, ~p"/app")
+
+      # Verify chat-messages container exists with overflow-y-auto for scrolling
+      # The scroll_to_bottom event is pushed client-side when sessions are loaded
+      assert html =~ ~r/id="chat-messages"[^>]*overflow-y-auto/
+    end
+
     test "chat panel header stays fixed while messages scroll", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
