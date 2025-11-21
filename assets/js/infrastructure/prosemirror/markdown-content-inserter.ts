@@ -18,9 +18,9 @@ export class MarkdownContentInserter implements IMarkdownContentInserter {
   ) {}
 
   insertMarkdown(markdown: string): void {
-    // Parse markdown as inline content to avoid creating new paragraphs
-    const nodes = this.parser.parseInline(markdown)
-    if (!nodes || nodes.length === 0) {
+    // Parse markdown as full document to preserve all blocks (headings, paragraphs, lists, etc.)
+    const parsedDoc = this.parser.parse(markdown)
+    if (!parsedDoc || !parsedDoc.content || parsedDoc.content.length === 0) {
       console.warn('[MarkdownContentInserter] Failed to parse markdown')
       return
     }
@@ -34,10 +34,11 @@ export class MarkdownContentInserter implements IMarkdownContentInserter {
       tr.delete(selection.from, selection.to)
     }
 
-    // Insert parsed nodes at the cursor position
+    // Insert all parsed block nodes at the cursor position
     let insertPos = selection.from
 
-    nodes.forEach((node: ProseMirrorNode) => {
+    // parsedDoc.content is a Fragment, iterate over all block nodes
+    parsedDoc.content.forEach((node: ProseMirrorNode) => {
       tr.insert(insertPos, node)
       insertPos += node.nodeSize
     })

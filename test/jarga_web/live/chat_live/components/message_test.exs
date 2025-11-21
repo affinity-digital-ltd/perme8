@@ -141,5 +141,39 @@ defmodule JargaWeb.ChatLive.Components.MessageTest do
       # But should show streaming indicator
       assert html =~ "animate-pulse"
     end
+
+    test "insert link includes full content in phx-value-content" do
+      # The actual fix is in the JS markdown-content-inserter.ts
+      # which now uses parse() instead of parseInline() to preserve all blocks
+      multiline_content = """
+      # Heading
+
+      This is a paragraph with **bold** text.
+
+      - Item 1
+      - Item 2
+      """
+
+      message = %{
+        id: "msg-123",
+        role: "assistant",
+        content: multiline_content,
+        timestamp: DateTime.utc_now()
+      }
+
+      html =
+        render_component(&Message.message/1,
+          message: message,
+          show_insert: true,
+          panel_target: nil
+        )
+
+      # Should have insert link with phx-value-content
+      assert html =~ "insert"
+      assert html =~ "phx-value-content="
+      # Content should include multiline elements (HTML escapes newlines)
+      assert html =~ "# Heading"
+      assert html =~ "Item 1"
+    end
   end
 end

@@ -61,11 +61,18 @@ describe('MarkdownContentInserter', () => {
       const markdown = '# Heading'
       const mockNode = { nodeSize: 10 } as ProseMirrorNode
 
-      vi.mocked(mockParser.parseInline).mockReturnValue([mockNode])
+      // Mock parse to return doc with content array that has forEach
+      const mockContent = [mockNode]
+      vi.mocked(mockParser.parse).mockReturnValue({
+        content: {
+          length: mockContent.length,
+          forEach: (fn: (node: ProseMirrorNode) => void) => mockContent.forEach(fn)
+        }
+      } as any)
 
       inserter.insertMarkdown(markdown)
 
-      expect(mockParser.parseInline).toHaveBeenCalledWith(markdown)
+      expect(mockParser.parse).toHaveBeenCalledWith(markdown)
       expect(mockView.state!.tr.insert).toHaveBeenCalledWith(5, mockNode)
       expect(mockDispatch).toHaveBeenCalled()
       expect(mockFocus).toHaveBeenCalled()
@@ -76,7 +83,13 @@ describe('MarkdownContentInserter', () => {
       const mockNode1 = { nodeSize: 10 } as ProseMirrorNode
       const mockNode2 = { nodeSize: 15 } as ProseMirrorNode
 
-      vi.mocked(mockParser.parseInline).mockReturnValue([mockNode1, mockNode2])
+      const mockContent = [mockNode1, mockNode2]
+      vi.mocked(mockParser.parse).mockReturnValue({
+        content: {
+          length: mockContent.length,
+          forEach: (fn: (node: ProseMirrorNode) => void) => mockContent.forEach(fn)
+        }
+      } as any)
 
       inserter.insertMarkdown(markdown)
 
@@ -103,7 +116,13 @@ describe('MarkdownContentInserter', () => {
         tr: mockView.state!.tr
       } as any
 
-      vi.mocked(mockParser.parseInline).mockReturnValue([mockNode])
+      const mockContent = [mockNode]
+      vi.mocked(mockParser.parse).mockReturnValue({
+        content: {
+          length: mockContent.length,
+          forEach: (fn: (node: ProseMirrorNode) => void) => mockContent.forEach(fn)
+        }
+      } as any)
 
       inserter.insertMarkdown(markdown)
 
@@ -111,9 +130,11 @@ describe('MarkdownContentInserter', () => {
       expect(mockView.state!.tr.insert).toHaveBeenCalledWith(5, mockNode)
     })
 
-    test('does nothing when parser returns empty array', () => {
+    test('does nothing when parser returns empty content', () => {
       const markdown = 'invalid'
-      vi.mocked(mockParser.parseInline).mockReturnValue([])
+      vi.mocked(mockParser.parse).mockReturnValue({
+        content: { length: 0, forEach: () => {} }
+      } as any)
 
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
@@ -132,13 +153,44 @@ describe('MarkdownContentInserter', () => {
       const markdown = '# Heading'
       const mockNode = { nodeSize: 10 } as ProseMirrorNode
 
-      vi.mocked(mockParser.parseInline).mockReturnValue([mockNode])
+      const mockContent = [mockNode]
+      vi.mocked(mockParser.parse).mockReturnValue({
+        content: {
+          length: mockContent.length,
+          forEach: (fn: (node: ProseMirrorNode) => void) => mockContent.forEach(fn)
+        }
+      } as any)
 
       inserter.insertMarkdown(markdown)
 
       // Should resolve position after insertion (5 + 10 = 15)
       expect(mockView.state!.tr.doc.resolve).toHaveBeenCalled()
       expect(Selection.near).toHaveBeenCalled()
+    })
+
+    test('uses parse instead of parseInline for full document insertion', () => {
+      // This test ensures we use parse() to get ALL blocks, not just the first one
+      const multilineMarkdown = '# Heading\n\nParagraph 1\n\n- Item 1\n- Item 2'
+
+      // Mock parse to return a doc with content that has forEach
+      const mockNodes = [
+        { nodeSize: 10 },
+        { nodeSize: 15 },
+        { nodeSize: 20 }
+      ]
+      vi.mocked(mockParser.parse).mockReturnValue({
+        content: {
+          length: mockNodes.length,
+          forEach: (fn: (node: ProseMirrorNode) => void) => mockNodes.forEach(fn as any)
+        }
+      } as any)
+
+      inserter.insertMarkdown(multilineMarkdown)
+
+      // Should call parse, not parseInline
+      expect(mockParser.parse).toHaveBeenCalledWith(multilineMarkdown)
+      // parseInline should NOT be called - we need full document parsing
+      expect(mockParser.parseInline).not.toHaveBeenCalled()
     })
   })
 })
