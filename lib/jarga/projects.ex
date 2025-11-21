@@ -14,12 +14,12 @@ defmodule Jarga.Projects do
   use Boundary,
     top_level?: true,
     deps: [Jarga.Accounts, Jarga.Workspaces, Jarga.Repo],
-    exports: [{Project, []}]
+    exports: [{Domain.Entities.Project, []}]
 
   alias Jarga.Repo
-  alias Jarga.Accounts.User
-  alias Jarga.Projects.Queries
-  alias Jarga.Projects.UseCases.{CreateProject, DeleteProject, UpdateProject}
+  alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Projects.Infrastructure.Queries.Queries
+  alias Jarga.Projects.Application.UseCases.{CreateProject, DeleteProject, UpdateProject}
 
   @doc """
   Returns the list of projects for a given workspace.

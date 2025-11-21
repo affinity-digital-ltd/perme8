@@ -6,16 +6,19 @@ defmodule Jarga.Notifications do
   Supports multiple notification types (workspace invitations, etc.) with extensible data.
   """
 
+  # Core context - cannot depend on JargaWeb (interface layer)
+  # Exports: Domain entities + Infrastructure.Subscribers (for integration tests)
   use Boundary,
     top_level?: true,
     deps: [Jarga.Accounts, Jarga.Workspaces, Jarga.Repo],
     exports: [
-      # Exported for test setup (integration tests need to start the subscriber)
-      Infrastructure.WorkspaceInvitationSubscriber
+      {Notification, []},
+      # Exported for @integration tests that need to start PubSub subscribers
+      {Infrastructure.Subscribers.WorkspaceInvitationSubscriber, []}
     ]
 
   alias Jarga.Notifications.Application.UseCases
-  alias Jarga.Notifications.Infrastructure.NotificationRepository
+  alias Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
 
   @doc """
   Gets a notification by ID for a specific user.

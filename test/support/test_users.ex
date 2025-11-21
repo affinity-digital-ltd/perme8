@@ -29,7 +29,7 @@ defmodule Jarga.TestUsers do
     exports: []
 
   alias Jarga.Accounts
-  alias Jarga.Accounts.User
+  alias Jarga.Accounts.Domain.Entities.User
   alias Jarga.Repo
 
   @test_users %{

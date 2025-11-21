@@ -8,7 +8,7 @@ defmodule Jarga.ProjectsTest do
   import Jarga.ProjectsFixtures
 
   defmodule MockNotifier do
-    @behaviour Jarga.Projects.Services.NotificationService
+    @behaviour Jarga.Projects.Application.Services.NotificationService
 
     def notify_project_created(_project), do: :ok
     def notify_project_deleted(_project, _workspace_id), do: :ok

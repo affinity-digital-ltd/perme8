@@ -11,7 +11,8 @@ defmodule Jarga.Notifications.Application.UseCases.AcceptWorkspaceInvitation do
 
   alias Jarga.Repo
   alias Jarga.Workspaces
-  alias Jarga.Notifications.Infrastructure.{NotificationRepository, PubSubNotifier}
+  alias Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
+  alias Jarga.Notifications.Infrastructure.Notifiers.PubSubNotifier
 
   @doc """
   Accepts a workspace invitation.

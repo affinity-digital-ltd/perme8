@@ -5,7 +5,7 @@ defmodule Jarga.AgentsTest do
   import Jarga.WorkspacesFixtures
 
   alias Jarga.Agents
-  alias Jarga.Agents.Infrastructure.{Agent, WorkspaceAgentJoin}
+  alias Jarga.Agents.Domain.Entities.{Agent, WorkspaceAgentJoin}
   alias Jarga.Repo
 
   describe "list_user_agents/1" do

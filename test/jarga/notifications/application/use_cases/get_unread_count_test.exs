@@ -2,7 +2,7 @@ defmodule Jarga.Notifications.Application.UseCases.GetUnreadCountTest do
   use Jarga.DataCase, async: true
 
   alias Jarga.Notifications.Application.UseCases.GetUnreadCount
-  alias Jarga.Notifications.Infrastructure.NotificationRepository
+  alias Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
   import Jarga.AccountsFixtures
   import Jarga.NotificationsFixtures
 

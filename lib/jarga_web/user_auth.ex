@@ -9,7 +9,8 @@ defmodule JargaWeb.UserAuth do
   import Phoenix.Controller
 
   alias Jarga.Accounts
-  alias Jarga.Accounts.Scope
+  alias Jarga.Accounts.Domain.Scope
+  alias Jarga.Accounts.Domain.Entities.User
 
   # Make the remember me cookie valid for 14 days. This should match
   # the session validity setting in UserToken.
@@ -262,7 +263,7 @@ defmodule JargaWeb.UserAuth do
 
   @doc "Returns the path to redirect to after log in."
   # the user was already logged in, redirect to app
-  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %Scope{user: %Accounts.User{}}}}) do
+  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %Scope{user: %User{}}}}) do
     ~p"/app"
   end
 

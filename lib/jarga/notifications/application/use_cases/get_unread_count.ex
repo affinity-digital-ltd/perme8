@@ -3,7 +3,7 @@ defmodule Jarga.Notifications.Application.UseCases.GetUnreadCount do
   Gets the count of unread notifications for a user.
   """
 
-  alias Jarga.Notifications.Infrastructure.NotificationRepository
+  alias Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
 
   @doc """
   Returns the number of unread notifications for a user.

@@ -14,6 +14,6 @@ Ecto.Adapters.SQL.Sandbox.mode(Jarga.Repo, :manual)
 # This is because we need proper database sandbox setup first
 
 # Define mocks for testing
-Mox.defmock(Jarga.Agents.Infrastructure.Services.LlmClientMock,
+Mox.defmock(Jarga.Agents.Application.Services.LlmClientMock,
   for: Jarga.Agents.Infrastructure.Services.Behaviours.LlmClientBehaviour
 )

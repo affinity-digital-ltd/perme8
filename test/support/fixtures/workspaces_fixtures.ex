@@ -37,7 +37,7 @@ defmodule Jarga.WorkspacesFixtures do
   def add_workspace_member_fixture(workspace_id, user, role) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-    Jarga.Repo.insert!(%Jarga.Workspaces.WorkspaceMember{
+    Jarga.Repo.insert!(%Jarga.Workspaces.Domain.Entities.WorkspaceMember{
       workspace_id: workspace_id,
       user_id: user.id,
       email: user.email,

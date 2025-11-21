@@ -6,7 +6,7 @@ defmodule JargaWeb.Live.PermissionsHelper do
   in LiveView templates to conditionally show/hide UI elements based on user permissions.
   """
 
-  alias Jarga.Workspaces.Policies.PermissionsPolicy
+  alias Jarga.Workspaces.Application.Policies.PermissionsPolicy
 
   @doc """
   Checks if a workspace member can edit the workspace.

@@ -10,7 +10,8 @@ defmodule Jarga.AccountsFixtures do
   import Ecto.Query
 
   alias Jarga.Accounts
-  alias Jarga.Accounts.Scope
+  alias Jarga.Accounts.Domain.Scope
+  alias Jarga.Accounts.Domain.Entities.UserToken
 
   def unique_user_email, do: "user#{System.unique_integer([:positive])}@example.com"
   def valid_user_password, do: "hello world!"
@@ -71,7 +72,7 @@ defmodule Jarga.AccountsFixtures do
 
   def override_token_authenticated_at(token, authenticated_at) when is_binary(token) do
     Jarga.Repo.update_all(
-      from(t in Accounts.UserToken,
+      from(t in UserToken,
         where: t.token == ^token
       ),
       set: [authenticated_at: authenticated_at]
@@ -79,7 +80,7 @@ defmodule Jarga.AccountsFixtures do
   end
 
   def generate_user_magic_link_token(user) do
-    {encoded_token, user_token} = Accounts.UserToken.build_email_token(user, "login")
+    {encoded_token, user_token} = UserToken.build_email_token(user, "login")
     Jarga.Repo.insert!(user_token)
     {encoded_token, user_token.token}
   end
@@ -88,14 +89,14 @@ defmodule Jarga.AccountsFixtures do
     dt = DateTime.add(DateTime.utc_now(:second), amount_to_add, unit)
 
     Jarga.Repo.update_all(
-      from(ut in Accounts.UserToken, where: ut.token == ^token),
+      from(ut in UserToken, where: ut.token == ^token),
       set: [inserted_at: dt, authenticated_at: dt]
     )
   end
 
   def expire_user_login_token(user_id) do
     Jarga.Repo.update_all(
-      from(t in Accounts.UserToken,
+      from(t in UserToken,
         where: t.user_id == ^user_id and t.context == "login",
         update: [set: [inserted_at: fragment("inserted_at - INTERVAL '20 minutes'")]]
       ),

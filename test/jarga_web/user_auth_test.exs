@@ -3,7 +3,7 @@ defmodule JargaWeb.UserAuthTest do
 
   alias Phoenix.LiveView
   alias Jarga.Accounts
-  alias Jarga.Accounts.Scope
+  alias Jarga.Accounts.Domain.Scope
   alias JargaWeb.UserAuth
 
   import Jarga.AccountsFixtures

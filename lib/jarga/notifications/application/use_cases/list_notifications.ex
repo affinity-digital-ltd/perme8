@@ -3,7 +3,7 @@ defmodule Jarga.Notifications.Application.UseCases.ListNotifications do
   Lists all notifications for a user.
   """
 
-  alias Jarga.Notifications.Infrastructure.NotificationRepository
+  alias Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
 
   @doc """
   Lists notifications for a user, ordered by most recent.

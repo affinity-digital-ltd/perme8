@@ -13,8 +13,8 @@ defmodule Jarga.AgentsFixtures do
   import Jarga.WorkspacesFixtures
 
   alias Jarga.Repo
-  alias Jarga.Agents.ChatSession
-  alias Jarga.Agents.ChatMessage
+  alias Jarga.Agents.Domain.Entities.ChatSession
+  alias Jarga.Agents.Domain.Entities.ChatMessage
 
   @doc """
   Generate a user agent.

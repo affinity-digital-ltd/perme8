@@ -8,6 +8,7 @@ defmodule JargaWeb.AppLive.Workspaces.Edit do
   import JargaWeb.ChatLive.MessageHandlers
 
   alias Jarga.Workspaces
+  alias Jarga.Workspaces.Domain.Entities.Workspace
   alias JargaWeb.Layouts
 
   @impl true
@@ -77,7 +78,7 @@ defmodule JargaWeb.AppLive.Workspaces.Edit do
 
     # This will raise if user is not a member
     workspace = Workspaces.get_workspace_by_slug!(user, workspace_slug)
-    changeset = Workspaces.Workspace.changeset(workspace, %{})
+    changeset = Workspace.changeset(workspace, %{})
 
     {:ok,
      socket

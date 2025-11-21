@@ -9,13 +9,15 @@ defmodule Jarga.Accounts do
   use Boundary,
     top_level?: true,
     deps: [Jarga.Repo, Jarga.Mailer],
-    exports: [{User, []}, {Scope, []}]
+    exports: [{Domain.Entities.User, []}, {Domain.Scope, []}]
 
   import Ecto.Query, warn: false
   alias Jarga.Repo
 
-  alias Jarga.Accounts.{Queries, User, UserToken, UserNotifier}
-  alias Jarga.Accounts.UseCases
+  alias Jarga.Accounts.Domain.Entities.{User, UserToken}
+  alias Jarga.Accounts.Infrastructure.Queries.Queries
+  alias Jarga.Accounts.Infrastructure.Notifiers.UserNotifier
+  alias Jarga.Accounts.Application.UseCases
 
   ## Database getters
 

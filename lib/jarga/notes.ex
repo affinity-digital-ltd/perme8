@@ -12,12 +12,13 @@ defmodule Jarga.Notes do
   use Boundary,
     top_level?: true,
     deps: [Jarga.Accounts, Jarga.Workspaces, Jarga.Projects, Jarga.Repo],
-    exports: [{Note, []}]
+    exports: [{Domain.Entities.Note, []}]
 
   alias Jarga.Repo
-  alias Jarga.Accounts.User
-  alias Jarga.Notes.{Note, Queries}
-  alias Jarga.Notes.Infrastructure.AuthorizationRepository
+  alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Notes.Domain.Entities.Note
+  alias Jarga.Notes.Infrastructure.Queries.Queries
+  alias Jarga.Notes.Infrastructure.Repositories.AuthorizationRepository
 
   @doc """
   Gets a single note by ID.

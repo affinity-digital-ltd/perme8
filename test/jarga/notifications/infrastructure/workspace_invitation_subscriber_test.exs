@@ -5,7 +5,7 @@ defmodule Jarga.Notifications.Infrastructure.WorkspaceInvitationSubscriberTest d
 
   alias Ecto.Adapters.SQL.Sandbox
   alias Jarga.Notifications
-  alias Jarga.Notifications.Infrastructure.WorkspaceInvitationSubscriber
+  alias Jarga.Notifications.Infrastructure.Subscribers.WorkspaceInvitationSubscriber
   alias Jarga.Repo
 
   describe "WorkspaceInvitationSubscriber" do

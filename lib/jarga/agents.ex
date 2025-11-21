@@ -27,35 +27,21 @@ defmodule Jarga.Agents do
       {:error, %Ecto.Changeset{}} = Agents.create_user_agent(%{invalid: "data"})
   """
 
+  # Core context - cannot depend on JargaWeb (interface layer)
+  # Exports: ONLY domain entities (Agent, ChatSession, ChatMessage)
+  # All use cases and infrastructure modules are PRIVATE - accessed only via public API functions below
   use Boundary,
     top_level?: true,
     deps: [Jarga.Accounts, Jarga.Workspaces, Jarga.Projects, Jarga.Repo],
     exports: [
-      Infrastructure.Services.LlmClient,
-      UseCases.PrepareContext,
-      UseCases.AgentQuery,
-      UseCases.CreateSession,
-      UseCases.SaveMessage,
-      UseCases.DeleteMessage,
-      UseCases.LoadSession,
-      UseCases.ListSessions,
-      UseCases.DeleteSession,
-      UseCases.ListUserAgents,
-      UseCases.DeleteUserAgent,
-      UseCases.CreateUserAgent,
-      UseCases.UpdateUserAgent,
-      UseCases.CloneSharedAgent,
-      UseCases.ListWorkspaceAvailableAgents,
-      UseCases.ListViewableAgents,
-      UseCases.ValidateAgentParams,
-      UseCases.SyncAgentWorkspaces,
-      ChatSession,
-      ChatMessage
+      {Domain.Entities.Agent, []},
+      {Domain.Entities.ChatSession, []},
+      {Domain.Entities.ChatMessage, []}
     ]
 
-  alias Jarga.Agents.Infrastructure.Services.LlmClient
+  alias Jarga.Agents.Application.Services.LlmClient
 
-  alias Jarga.Agents.UseCases.{
+  alias Jarga.Agents.Application.UseCases.{
     PrepareContext,
     AgentQuery,
     CreateSession,
@@ -66,7 +52,7 @@ defmodule Jarga.Agents do
     DeleteSession
   }
 
-  alias Jarga.Agents.UseCases.{
+  alias Jarga.Agents.Application.UseCases.{
     ListUserAgents,
     CreateUserAgent,
     UpdateUserAgent,
@@ -388,7 +374,7 @@ defmodule Jarga.Agents do
       ["workspace-id-1", "workspace-id-2"]
   """
   def get_agent_workspace_ids(agent_id) do
-    alias Jarga.Agents.Infrastructure.WorkspaceAgentRepository
+    alias Jarga.Agents.Infrastructure.Repositories.WorkspaceAgentRepository
     WorkspaceAgentRepository.get_agent_workspace_ids(agent_id)
   end
 

@@ -23,7 +23,7 @@ defmodule JargaWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
-  alias Jarga.Accounts.Scope
+  alias Jarga.Accounts.Domain.Scope
 
   using do
     quote do

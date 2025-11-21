@@ -3,7 +3,7 @@ defmodule Jarga.Notifications.Application.UseCases.MarkAllAsRead do
   Marks all notifications as read for a user.
   """
 
-  alias Jarga.Notifications.Infrastructure.NotificationRepository
+  alias Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
 
   @doc """
   Marks all unread notifications as read for a user.

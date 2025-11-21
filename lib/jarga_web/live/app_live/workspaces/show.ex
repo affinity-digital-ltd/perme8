@@ -9,7 +9,7 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
   import JargaWeb.ChatLive.MessageHandlers
 
   alias Jarga.{Workspaces, Projects, Documents, Agents}
-  alias Jarga.Projects.Project
+  alias Jarga.Projects.Domain.Entities.Project
   alias JargaWeb.Layouts
 
   @impl true

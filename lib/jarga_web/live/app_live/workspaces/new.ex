@@ -8,7 +8,7 @@ defmodule JargaWeb.AppLive.Workspaces.New do
   import JargaWeb.ChatLive.MessageHandlers
 
   alias Jarga.Workspaces
-  alias Jarga.Workspaces.Workspace
+  alias Jarga.Workspaces.Domain.Entities.Workspace
   alias JargaWeb.Layouts
 
   @impl true

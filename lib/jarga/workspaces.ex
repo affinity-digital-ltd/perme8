@@ -14,25 +14,26 @@ defmodule Jarga.Workspaces do
   use Boundary,
     top_level?: true,
     deps: [Jarga.Accounts, Jarga.Repo, Jarga.Mailer],
-    exports: [{Workspace, []}, {Policies.PermissionsPolicy, []}]
+    exports: [{Domain.Entities.Workspace, []}, {Application.Policies.PermissionsPolicy, []}]
 
   import Ecto.Query, warn: false
 
   alias Jarga.Repo
-  alias Jarga.Accounts.User
-  alias Jarga.Workspaces.{Workspace, WorkspaceMember, Queries}
+  alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Workspaces.Domain.Entities.{Workspace, WorkspaceMember}
+  alias Jarga.Workspaces.Infrastructure.Queries.Queries
   alias Jarga.Workspaces.Domain.SlugGenerator
-  alias Jarga.Workspaces.Infrastructure.MembershipRepository
+  alias Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository
 
-  alias Jarga.Workspaces.UseCases.{
+  alias Jarga.Workspaces.Application.UseCases.{
     InviteMember,
     ChangeMemberRole,
     RemoveMember,
     CreateNotificationsForPendingInvitations
   }
 
-  alias Jarga.Workspaces.Services.EmailAndPubSubNotifier
-  alias Jarga.Workspaces.Policies.PermissionsPolicy
+  alias Jarga.Workspaces.Infrastructure.Notifiers.EmailAndPubSubNotifier
+  alias Jarga.Workspaces.Application.Policies.PermissionsPolicy
 
   @doc """
   Returns the list of workspaces for a given user.

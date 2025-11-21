@@ -2,7 +2,7 @@ defmodule Jarga.Notifications.Application.UseCases.ListNotificationsTest do
   use Jarga.DataCase, async: true
 
   alias Jarga.Notifications.Application.UseCases.ListNotifications
-  alias Jarga.Notifications.Infrastructure.NotificationRepository
+  alias Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
   import Jarga.AccountsFixtures
   import Jarga.NotificationsFixtures
 

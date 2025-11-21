@@ -3,7 +3,7 @@ defmodule Jarga.Notifications.Application.UseCases.ListUnreadNotifications do
   Lists unread notifications for a user.
   """
 
-  alias Jarga.Notifications.Infrastructure.NotificationRepository
+  alias Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
 
   @doc """
   Lists unread notifications for a user, ordered by most recent.

@@ -13,13 +13,14 @@ defmodule Jarga.Documents do
   use Boundary,
     top_level?: true,
     deps: [Jarga.Accounts, Jarga.Workspaces, Jarga.Projects, Jarga.Notes, Jarga.Repo],
-    exports: [{Document, []}]
+    exports: [{Domain.Entities.Document, []}]
 
   alias Jarga.Repo
-  alias Jarga.Accounts.User
+  alias Jarga.Accounts.Domain.Entities.User
   alias Jarga.Notes
-  alias Jarga.Documents.{Document, Queries}
-  alias Jarga.Documents.UseCases
+  alias Jarga.Documents.Domain.Entities.Document
+  alias Jarga.Documents.Infrastructure.Queries.Queries
+  alias Jarga.Documents.Application.UseCases
 
   @doc """
   Gets a single document for a user.

@@ -3,7 +3,8 @@ defmodule Jarga.Notifications.Application.UseCases.CreateWorkspaceInvitationNoti
   Creates a workspace invitation notification for a user.
   """
 
-  alias Jarga.Notifications.Infrastructure.{NotificationRepository, PubSubNotifier}
+  alias Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
+  alias Jarga.Notifications.Infrastructure.Notifiers.PubSubNotifier
 
   @doc """
   Creates a workspace invitation notification.

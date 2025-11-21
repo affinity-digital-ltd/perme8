@@ -57,7 +57,13 @@
         ".credo/checks/no_repo_in_services.ex",
         ".credo/checks/no_cross_context_policy_access.ex",
         ".credo/checks/no_cross_context_schema_access.ex",
-        ".credo/checks/missing_queries_module.ex"
+        ".credo/checks/missing_queries_module.ex",
+        # Folder structure enforcement checks
+        ".credo/checks/entities_in_domain_layer.ex",
+        ".credo/checks/use_cases_in_application_layer.ex",
+        ".credo/checks/policies_in_application_layer.ex",
+        ".credo/checks/services_in_correct_layer.ex",
+        ".credo/checks/infrastructure_organization.ex"
       ],
       #
       # If you want to enforce a style guide and need a more traditional linting
@@ -204,7 +210,21 @@
           # Detect cross-context Schema access (should use context public API)
           {Jarga.Credo.Check.Architecture.NoCrossContextSchemaAccess, []},
           # Detect contexts missing Queries modules (pattern consistency)
-          {Jarga.Credo.Check.Architecture.MissingQueriesModule, []},
+          # Disabled: Queries modules are optional based on context needs
+          # {Jarga.Credo.Check.Architecture.MissingQueriesModule, []},
+          #
+          ## Folder Structure Enforcement
+          #
+          # Detect entities (Ecto schemas) not in domain/entities/ subdirectory
+          {Jarga.Credo.Check.Architecture.EntitiesInDomainLayer, []},
+          # Detect use cases not in application/use_cases/ subdirectory
+          {Jarga.Credo.Check.Architecture.UseCasesInApplicationLayer, []},
+          # Detect policies not in application/policies/ subdirectory
+          {Jarga.Credo.Check.Architecture.PoliciesInApplicationLayer, []},
+          # Detect services/notifiers in wrong layers
+          {Jarga.Credo.Check.Architecture.ServicesInCorrectLayer, []},
+          # Detect infrastructure files not properly organized
+          {Jarga.Credo.Check.Architecture.InfrastructureOrganization, []},
 
           #
           ## Custom Testing Checks (TDD Enforcement)

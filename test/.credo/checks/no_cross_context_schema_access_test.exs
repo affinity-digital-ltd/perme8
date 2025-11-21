@@ -8,7 +8,7 @@ defmodule Jarga.Credo.Check.Architecture.NoCrossContextSchemaAccessTest do
     source = """
     defmodule Jarga.Pages do
       alias Jarga.Repo
-      alias Jarga.Notes.Note
+      alias Jarga.Notes.Domain.Entities.Note
 
       def get_page_note(note_id) do
         Repo.get!(Note, note_id)
@@ -73,7 +73,7 @@ defmodule Jarga.Credo.Check.Architecture.NoCrossContextSchemaAccessTest do
     source = """
     defmodule JargaWeb.PageLive do
       alias Jarga.Repo
-      alias Jarga.Notes.Note
+      alias Jarga.Notes.Domain.Entities.Note
 
       def mount(_params, _session, socket) do
         Repo.get!(Note, 1)
@@ -89,7 +89,7 @@ defmodule Jarga.Credo.Check.Architecture.NoCrossContextSchemaAccessTest do
     source = """
     defmodule Jarga.Pages.Infrastructure.ComponentRepository do
       alias Jarga.Repo
-      alias Jarga.Notes.Note
+      alias Jarga.Notes.Domain.Entities.Note
 
       def get_note_component(note_id) do
         Repo.get!(Note, note_id)

@@ -55,7 +55,7 @@ defmodule Jarga.DataCase do
   end
 
   defp enable_pubsub_subscribers do
-    alias Jarga.Notifications.Infrastructure.WorkspaceInvitationSubscriber
+    alias Jarga.Notifications.Infrastructure.Subscribers.WorkspaceInvitationSubscriber
 
     # Enable PubSub in test environment
     original_value = Application.get_env(:jarga, :enable_pubsub_in_test, false)

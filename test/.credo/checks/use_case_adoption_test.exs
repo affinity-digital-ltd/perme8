@@ -123,7 +123,7 @@ defmodule Jarga.Credo.Check.Architecture.UseCaseAdoptionTest do
     test "allows contexts with use case delegations" do
       source = """
       defmodule Jarga.Projects do
-        alias Jarga.Projects.UseCases.CreateProject
+        alias Jarga.Projects.Application.UseCases.CreateProject
 
         def create_project(user, workspace_id, attrs) do
           CreateProject.execute(%{
