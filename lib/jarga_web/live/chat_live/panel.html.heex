@@ -22,8 +22,8 @@
     </label>
   </div>
 
-  <%!-- Drawer side (chat panel) --%>
-  <div class="drawer-side">
+  <%!-- Drawer side (chat panel) - overflow-hidden so drawer doesn't scroll --%>
+  <div class="drawer-side h-screen overflow-hidden">
     <label
       for={"chat-drawer-#{@id}"}
       aria-label="close chat"
@@ -31,68 +31,68 @@
     >
     </label>
 
-    <%!-- Chat panel content --%>
-    <div class="bg-base-200 min-h-full w-96 p-0 flex flex-col overflow-hidden">
-      <%!-- Header --%>
-      <div class="navbar bg-base-200 border-b border-base-300">
-        <%= if @view_mode == :chat do %>
-          <div class="flex-1">
-            <button
-              type="button"
-              phx-click="new_conversation"
-              phx-target={@myself}
-              class="btn btn-ghost btn-sm"
-              disabled={Enum.empty?(@messages)}
-            >
-              <.icon name="hero-plus" class="w-4 h-4" /> New
-            </button>
-            <button
-              type="button"
-              phx-click="show_conversations"
-              phx-target={@myself}
-              class="btn btn-ghost btn-sm"
-            >
-              <.icon name="hero-queue-list" class="w-4 h-4" /> History
-            </button>
-          </div>
-          <div class="flex-none">
-            <label
-              for={"chat-drawer-#{@id}"}
-              class="btn btn-ghost btn-circle btn-sm cursor-pointer"
-              aria-label="Close chat"
-            >
-              <.icon name="hero-x-mark" class="w-5 h-5" />
-            </label>
-          </div>
-        <% else %>
-          <div class="flex-1">
-            <button
-              type="button"
-              phx-click="show_chat"
-              phx-target={@myself}
-              class="btn btn-ghost btn-sm"
-            >
-              <.icon name="hero-arrow-left" class="w-4 h-4" /> Back
-            </button>
-          </div>
-          <div class="flex-none">
-            <h2 class="text-lg font-semibold">Conversations</h2>
-          </div>
-          <div class="flex-1 flex justify-end">
-            <label
-              for={"chat-drawer-#{@id}"}
-              class="btn btn-ghost btn-circle btn-sm cursor-pointer"
-              aria-label="Close chat"
-            >
-              <.icon name="hero-x-mark" class="w-5 h-5" />
-            </label>
-          </div>
-        <% end %>
-      </div>
-
-      <%= if @view_mode == :chat do %>
-        <%!-- Agent Selector --%>
-        <%= if !Enum.empty?(@workspace_agents) do %>
+    <%!-- Chat panel content - h-full with flex so only messages scroll --%>
+    <div class="bg-base-200 h-full w-96 p-0 flex flex-col">
+      <%!-- Header section (navbar + agent selector) - flex-shrink-0 prevents shrinking --%>
+      <div id="chat-panel-header" class="flex-shrink-0 bg-base-200">
+        <%!-- Header --%>
+        <div class="navbar bg-base-200 border-b border-base-300">
+          <%= if @view_mode == :chat do %>
+            <div class="flex-1">
+              <button
+                type="button"
+                phx-click="new_conversation"
+                phx-target={@myself}
+                class="btn btn-ghost btn-sm"
+                disabled={Enum.empty?(@messages)}
+              >
+                <.icon name="hero-plus" class="w-4 h-4" /> New
+              </button>
+              <button
+                type="button"
+                phx-click="show_conversations"
+                phx-target={@myself}
+                class="btn btn-ghost btn-sm"
+              >
+                <.icon name="hero-queue-list" class="w-4 h-4" /> History
+              </button>
+            </div>
+            <div class="flex-none">
+              <label
+                for={"chat-drawer-#{@id}"}
+                class="btn btn-ghost btn-circle btn-sm cursor-pointer"
+                aria-label="Close chat"
+              >
+                <.icon name="hero-x-mark" class="w-5 h-5" />
+              </label>
+            </div>
+          <% else %>
+            <div class="flex-1">
+              <button
+                type="button"
+                phx-click="show_chat"
+                phx-target={@myself}
+                class="btn btn-ghost btn-sm"
+              >
+                <.icon name="hero-arrow-left" class="w-4 h-4" /> Back
+              </button>
+            </div>
+            <div class="flex-none">
+              <h2 class="text-lg font-semibold">Conversations</h2>
+            </div>
+            <div class="flex-1 flex justify-end">
+              <label
+                for={"chat-drawer-#{@id}"}
+                class="btn btn-ghost btn-circle btn-sm cursor-pointer"
+                aria-label="Close chat"
+              >
+                <.icon name="hero-x-mark" class="w-5 h-5" />
+              </label>
+            </div>
+          <% end %>
+        </div>
+        <%!-- Agent Selector (inside sticky header) --%>
+        <%= if @view_mode == :chat && !Enum.empty?(@workspace_agents) do %>
           <div class="p-3 bg-base-200 border-b border-base-300">
             <label for="agent-selector" class="label">
               <span class="label-text text-xs font-medium">Select Agent</span>
@@ -112,6 +112,9 @@
             </form>
           </div>
         <% end %>
+      </div>
+
+      <%= if @view_mode == :chat do %>
         <%!-- Messages area --%>
         <div
           id="chat-messages"

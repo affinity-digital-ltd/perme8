@@ -295,6 +295,26 @@ defmodule JargaWeb.ChatLive.PanelTest do
       assert html =~ ~r/id="chat-messages"/
     end
 
+    test "chat panel header stays fixed while messages scroll", %{conn: conn, user: user} do
+      conn = log_in_user(conn, user)
+
+      {:ok, _view, html} = live(conn, ~p"/app")
+
+      # For sticky header to work in drawer:
+      # 1. drawer-side must NOT scroll (overflow-hidden, fixed height)
+      # 2. chat panel content must have fixed height and flex layout
+      # 3. Only messages area should scroll (overflow-y-auto)
+
+      # drawer-side should have overflow-hidden to prevent it from scrolling
+      assert html =~ ~r/drawer-side[^>]*overflow-hidden/
+
+      # chat panel content container should have h-full/h-screen for fixed height
+      assert html =~ ~r/bg-base-200[^>]*h-full[^>]*flex flex-col/
+
+      # Messages area should be the only scroll container
+      assert html =~ ~r/id="chat-messages"[^>]*class="[^"]*overflow-y-auto[^"]*"/
+    end
+
     test "drawer has phx-update=ignore to prevent server updates", %{conn: conn, user: user} do
       conn = log_in_user(conn, user)
 
