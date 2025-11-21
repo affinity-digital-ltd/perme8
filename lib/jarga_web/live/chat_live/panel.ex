@@ -211,15 +211,20 @@ defmodule JargaWeb.ChatLive.Panel do
     {:ok, document_context} = Agents.prepare_chat_context(socket.assigns)
 
     # Save assistant message to database if we have a session
-    if socket.assigns.current_session_id do
-      Agents.save_message(%{
-        chat_session_id: socket.assigns.current_session_id,
-        role: "assistant",
-        content: content
-      })
-    end
+    saved_msg =
+      if socket.assigns.current_session_id do
+        {:ok, msg} =
+          Agents.save_message(%{
+            chat_session_id: socket.assigns.current_session_id,
+            role: "assistant",
+            content: content
+          })
+
+        msg
+      end
 
     assistant_message = %{
+      id: saved_msg && saved_msg.id,
       role: "assistant",
       content: content,
       timestamp: DateTime.utc_now(),
@@ -413,6 +418,26 @@ defmodule JargaWeb.ChatLive.Panel do
     end
   end
 
+  @impl true
+  def handle_event("delete_message", %{"message-id" => message_id}, socket) do
+    user_id = get_nested(socket.assigns, [:current_user, :id])
+
+    case Agents.delete_message(message_id, user_id) do
+      {:ok, _} ->
+        # Remove message from UI
+        updated_messages =
+          Enum.reject(socket.assigns.messages, fn msg ->
+            Map.get(msg, :id) == message_id
+          end)
+
+        {:noreply, assign(socket, :messages, updated_messages)}
+
+      {:error, :not_found} ->
+        send(self(), {:put_flash, :error, "Message not found"})
+        {:noreply, socket}
+    end
+  end
+
   # Private helper functions
 
   defp verify_session_ownership(session, current_user_id) do
@@ -426,6 +451,7 @@ defmodule JargaWeb.ChatLive.Panel do
   defp convert_messages_to_ui_format(messages) do
     Enum.map(messages, fn msg ->
       %{
+        id: msg.id,
         role: msg.role,
         content: msg.content,
         timestamp: msg.inserted_at
@@ -548,7 +574,7 @@ defmodule JargaWeb.ChatLive.Panel do
     socket = ensure_session(socket, message_text)
 
     # Save user message to database
-    {:ok, _saved_user_msg} =
+    {:ok, saved_user_msg} =
       Agents.save_message(%{
         chat_session_id: socket.assigns.current_session_id,
         role: "user",
@@ -557,6 +583,7 @@ defmodule JargaWeb.ChatLive.Panel do
 
     # Add user message to UI
     user_message = %{
+      id: saved_user_msg.id,
       role: "user",
       content: message_text,
       timestamp: DateTime.utc_now()

@@ -33,19 +33,34 @@ defmodule JargaWeb.ChatLive.Components.Message do
         <% end %>
       </div>
 
-      <%= if should_show_insert_link?(assigns) do %>
-        <div class="chat-footer text-xs opacity-70">
-          <span
-            phx-click="insert_into_note"
-            phx-target={@panel_target}
-            phx-value-content={@message.content}
-            class="link cursor-pointer"
-            role="button"
-            tabindex="0"
-            title="Insert this text into the current note"
-          >
-            insert
-          </span>
+      <%= if should_show_footer?(assigns) do %>
+        <div class="chat-footer text-xs opacity-70 flex gap-2">
+          <%= if should_show_insert_link?(assigns) do %>
+            <span
+              phx-click="insert_into_note"
+              phx-target={@panel_target}
+              phx-value-content={@message.content}
+              class="link cursor-pointer"
+              role="button"
+              tabindex="0"
+              title="Insert this text into the current note"
+            >
+              insert
+            </span>
+          <% end %>
+          <%= if should_show_delete_link?(assigns) do %>
+            <span
+              phx-click="delete_message"
+              phx-target={@panel_target}
+              phx-value-message-id={@message.id}
+              class="link cursor-pointer text-error"
+              role="button"
+              tabindex="0"
+              title="Delete this message"
+            >
+              delete
+            </span>
+          <% end %>
         </div>
       <% end %>
     </div>
@@ -72,11 +87,22 @@ defmodule JargaWeb.ChatLive.Components.Message do
 
   defp render_content(%{content: content}), do: content
 
+  # Only show footer if there's something to show
+  defp should_show_footer?(assigns) do
+    !Map.get(assigns.message, :streaming, false) &&
+      (should_show_insert_link?(assigns) || should_show_delete_link?(assigns))
+  end
+
   # Only show insert link for assistant messages that aren't streaming
   defp should_show_insert_link?(assigns) do
     assigns[:show_insert] == true &&
       assigns.message.role == "assistant" &&
       !Map.get(assigns.message, :streaming, false)
+  end
+
+  # Show delete link for messages with IDs when panel_target is set
+  defp should_show_delete_link?(assigns) do
+    Map.get(assigns.message, :id) != nil && assigns[:panel_target] != nil
   end
 
   defp format_timestamp(timestamp) do

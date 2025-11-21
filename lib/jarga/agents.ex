@@ -36,6 +36,7 @@ defmodule Jarga.Agents do
       UseCases.AgentQuery,
       UseCases.CreateSession,
       UseCases.SaveMessage,
+      UseCases.DeleteMessage,
       UseCases.LoadSession,
       UseCases.ListSessions,
       UseCases.DeleteSession,
@@ -59,6 +60,7 @@ defmodule Jarga.Agents do
     AgentQuery,
     CreateSession,
     SaveMessage,
+    DeleteMessage,
     LoadSession,
     ListSessions,
     DeleteSession
@@ -162,6 +164,20 @@ defmodule Jarga.Agents do
 
   """
   defdelegate save_message(attrs), to: SaveMessage, as: :execute
+
+  @doc """
+  Deletes a chat message by ID, verifying user ownership through the session.
+
+  ## Examples
+
+      iex> delete_message(message_id, user_id)
+      {:ok, %ChatMessage{}}
+
+      iex> delete_message(invalid_id, user_id)
+      {:error, :not_found}
+
+  """
+  defdelegate delete_message(message_id, user_id), to: DeleteMessage, as: :execute
 
   @doc """
   Loads a chat session with its messages.
