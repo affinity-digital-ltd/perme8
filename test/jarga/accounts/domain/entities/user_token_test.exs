@@ -2,6 +2,7 @@ defmodule Jarga.Accounts.UserTokenTest do
   use Jarga.DataCase, async: true
 
   alias Jarga.Accounts.Domain.Entities.UserToken
+  alias Jarga.Accounts.Infrastructure.Queries.Queries
 
   import Jarga.AccountsFixtures
 
@@ -53,7 +54,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       {token, user_token} = UserToken.build_session_token(user)
       Repo.insert!(user_token)
 
-      {:ok, query} = UserToken.verify_session_token_query(token)
+      {:ok, query} = Queries.verify_session_token_query(token)
       result = Repo.one(query)
 
       assert result != nil
@@ -69,7 +70,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       {token, user_token} = UserToken.build_session_token(user_with_auth)
       Repo.insert!(user_token)
 
-      {:ok, query} = UserToken.verify_session_token_query(token)
+      {:ok, query} = Queries.verify_session_token_query(token)
       {returned_user, _inserted_at} = Repo.one(query)
 
       assert returned_user.authenticated_at == authenticated_at
@@ -83,7 +84,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       # Set token to 15 days ago (past 14 day expiry)
       offset_user_token(user_token.token, -15, :day)
 
-      {:ok, query} = UserToken.verify_session_token_query(token)
+      {:ok, query} = Queries.verify_session_token_query(token)
       assert Repo.one(query) == nil
     end
 
@@ -92,7 +93,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       {_encoded_token, raw_token} = generate_user_magic_link_token(user)
 
       # Try to verify as session token (but it's a login token)
-      {:ok, query} = UserToken.verify_session_token_query(raw_token)
+      {:ok, query} = Queries.verify_session_token_query(raw_token)
       assert Repo.one(query) == nil
     end
 
@@ -101,7 +102,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       {token, user_token} = UserToken.build_session_token(user)
       Repo.insert!(user_token)
 
-      {:ok, query} = UserToken.verify_session_token_query(token)
+      {:ok, query} = Queries.verify_session_token_query(token)
       {_user, inserted_at} = Repo.one(query)
 
       assert inserted_at != nil
@@ -171,7 +172,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       {encoded_token, user_token} = UserToken.build_email_token(user, "login")
       Repo.insert!(user_token)
 
-      {:ok, query} = UserToken.verify_magic_link_token_query(encoded_token)
+      {:ok, query} = Queries.verify_magic_link_token_query(encoded_token)
       result = Repo.one(query)
 
       assert result != nil
@@ -187,7 +188,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       # Set token to 20 minutes ago (past 15 minute expiry)
       offset_user_token(user_token.token, -20, :minute)
 
-      {:ok, query} = UserToken.verify_magic_link_token_query(encoded_token)
+      {:ok, query} = Queries.verify_magic_link_token_query(encoded_token)
       assert Repo.one(query) == nil
     end
 
@@ -199,13 +200,13 @@ defmodule Jarga.Accounts.UserTokenTest do
       # Change user's email
       Repo.update!(Ecto.Changeset.change(user, email: "new@example.com"))
 
-      {:ok, query} = UserToken.verify_magic_link_token_query(encoded_token)
+      {:ok, query} = Queries.verify_magic_link_token_query(encoded_token)
       assert Repo.one(query) == nil
     end
 
     test "returns error for invalid token encoding" do
-      assert UserToken.verify_magic_link_token_query("invalid-token") == :error
-      assert UserToken.verify_magic_link_token_query("") == :error
+      assert Queries.verify_magic_link_token_query("invalid-token") == :error
+      assert Queries.verify_magic_link_token_query("") == :error
     end
 
     test "does not return token with wrong context" do
@@ -214,7 +215,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       Repo.insert!(user_token)
 
       # Try to verify as magic link (but it's a change email token)
-      {:ok, query} = UserToken.verify_magic_link_token_query(encoded_token)
+      {:ok, query} = Queries.verify_magic_link_token_query(encoded_token)
       assert Repo.one(query) == nil
     end
 
@@ -223,7 +224,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       {encoded_token, user_token} = UserToken.build_email_token(user, "login")
       user_token = Repo.insert!(user_token)
 
-      {:ok, query} = UserToken.verify_magic_link_token_query(encoded_token)
+      {:ok, query} = Queries.verify_magic_link_token_query(encoded_token)
       {returned_user, returned_token} = Repo.one(query)
 
       assert returned_user.id == user.id
@@ -238,7 +239,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       {encoded_token, user_token} = UserToken.build_email_token(user, context)
       user_token = Repo.insert!(user_token)
 
-      {:ok, query} = UserToken.verify_change_email_token_query(encoded_token, context)
+      {:ok, query} = Queries.verify_change_email_token_query(encoded_token, context)
       result = Repo.one(query)
 
       assert result != nil
@@ -254,7 +255,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       # Set token to 8 days ago (past 7 day expiry)
       offset_user_token(user_token.token, -8, :day)
 
-      {:ok, query} = UserToken.verify_change_email_token_query(encoded_token, context)
+      {:ok, query} = Queries.verify_change_email_token_query(encoded_token, context)
       assert Repo.one(query) == nil
     end
 
@@ -265,13 +266,13 @@ defmodule Jarga.Accounts.UserTokenTest do
 
       # Try to verify with different context
       {:ok, query} =
-        UserToken.verify_change_email_token_query(encoded_token, "change:email2@example.com")
+        Queries.verify_change_email_token_query(encoded_token, "change:email2@example.com")
 
       assert Repo.one(query) == nil
     end
 
     test "returns error for invalid token encoding" do
-      assert UserToken.verify_change_email_token_query("invalid", "change:new@example.com") ==
+      assert Queries.verify_change_email_token_query("invalid", "change:new@example.com") ==
                :error
     end
 
@@ -282,7 +283,7 @@ defmodule Jarga.Accounts.UserTokenTest do
 
       # Should not match the function clause for non-change: contexts
       assert_raise FunctionClauseError, fn ->
-        UserToken.verify_change_email_token_query(encoded_token, "login")
+        Queries.verify_change_email_token_query(encoded_token, "login")
       end
     end
 
@@ -295,7 +296,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       # Set token to 3 days ago (within 7 day expiry)
       offset_user_token(user_token.token, -3, :day)
 
-      {:ok, query} = UserToken.verify_change_email_token_query(encoded_token, context)
+      {:ok, query} = Queries.verify_change_email_token_query(encoded_token, context)
       assert Repo.one(query) != nil
     end
   end

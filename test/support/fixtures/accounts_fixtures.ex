@@ -10,6 +10,7 @@ defmodule Jarga.AccountsFixtures do
   import Ecto.Query
 
   alias Jarga.Accounts
+  alias Jarga.Accounts.Application.Services.PasswordService
   alias Jarga.Accounts.Domain.Scope
   alias Jarga.Accounts.Domain.Entities.UserToken
 
@@ -26,12 +27,21 @@ defmodule Jarga.AccountsFixtures do
   end
 
   def unconfirmed_user_fixture(attrs \\ %{}) do
+    user_attrs = valid_user_attributes(attrs)
+    password = Map.get(user_attrs, :password, valid_user_password())
+
+    # Register without password first
     {:ok, user} =
-      attrs
-      |> valid_user_attributes()
+      user_attrs
+      |> Map.delete(:password)
       |> Accounts.register_user()
 
+    # Then directly set hashed_password in database using PasswordService
+    hashed_password = PasswordService.hash_password(password)
+
     user
+    |> Ecto.Changeset.change(hashed_password: hashed_password)
+    |> Jarga.Repo.update!()
   end
 
   def user_fixture(attrs \\ %{}) do
@@ -58,10 +68,11 @@ defmodule Jarga.AccountsFixtures do
   end
 
   def set_password(user) do
-    {:ok, {user, _expired_tokens}} =
-      Accounts.update_user_password(user, %{password: valid_user_password()})
+    hashed_password = PasswordService.hash_password(valid_user_password())
 
     user
+    |> Ecto.Changeset.change(hashed_password: hashed_password)
+    |> Jarga.Repo.update!()
   end
 
   def extract_user_token(fun) do

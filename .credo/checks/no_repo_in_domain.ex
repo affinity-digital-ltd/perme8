@@ -233,7 +233,7 @@ defmodule Jarga.Credo.Check.Architecture.NoRepoInDomain do
   end
 
   # Allow unique_constraint (declarative), but flag unsafe_validate_unique
-  defp suspicious_repo_call?(args) do
+  defp suspicious_repo_call?(_args) do
     # If args contain :unsafe_validate_unique, it's suspicious
     # We can't perfectly detect the function name here, but this is a heuristic
     # The traverse for function calls will catch most cases

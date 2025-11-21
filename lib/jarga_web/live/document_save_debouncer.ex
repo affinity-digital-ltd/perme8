@@ -12,11 +12,6 @@ defmodule JargaWeb.DocumentSaveDebouncer do
 
   require Logger
 
-  # Configurable debounce time via environment variable
-  # Defaults to 2 seconds (2000ms)
-  # Can be overridden with DOCUMENT_SAVE_DEBOUNCE_MS environment variable (e.g., "1" for tests)
-  @debounce_time String.to_integer(System.get_env("DOCUMENT_SAVE_DEBOUNCE_MS", "2000"))
-
   ## Client API
 
   @doc """
@@ -67,11 +62,17 @@ defmodule JargaWeb.DocumentSaveDebouncer do
 
   @impl true
   def init(document_id) do
+    # Configurable debounce time via application config
+    # Defaults to 2 seconds (2000ms)
+    # Can be overridden in config files (e.g., 1ms for tests)
+    debounce_time = Application.get_env(:jarga, :document_save_debounce_ms, 2000)
+
     {:ok,
      %{
        document_id: document_id,
        pending_save: nil,
-       timer_ref: nil
+       timer_ref: nil,
+       debounce_time: debounce_time
      }}
   end
 
@@ -91,7 +92,7 @@ defmodule JargaWeb.DocumentSaveDebouncer do
     }
 
     # Schedule a new save
-    timer_ref = Process.send_after(self(), :execute_save, @debounce_time)
+    timer_ref = Process.send_after(self(), :execute_save, state.debounce_time)
 
     {:noreply, %{state | pending_save: pending_save, timer_ref: timer_ref}}
   end

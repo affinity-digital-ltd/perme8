@@ -1,6 +1,22 @@
 defmodule Jarga.Accounts.Domain.Entities.User do
   @moduledoc """
   Schema for user accounts.
+
+  This module defines the User entity with validation logic only.
+  Password hashing is handled by the infrastructure layer (PasswordService).
+  Password verification (read-only operation) remains in this module.
+
+  ## Responsibilities
+
+  - Data structure definition
+  - Validation rules (format, length, required fields)
+  - Password verification (Bcrypt read-only operations)
+
+  ## NOT Responsible For
+
+  - Password hashing (handled by PasswordService in infrastructure layer)
+  - Database uniqueness checks (handled at database level via unique_constraint)
+  - External API calls or I/O operations
   """
 
   use Ecto.Schema
@@ -56,7 +72,6 @@ defmodule Jarga.Accounts.Domain.Entities.User do
 
     if Keyword.get(opts, :validate_unique, true) do
       changeset
-      |> unsafe_validate_unique(:email, Jarga.Repo)
       |> unique_constraint(:email)
       |> validate_email_changed()
     else
@@ -82,16 +97,11 @@ defmodule Jarga.Accounts.Domain.Entities.User do
 
   ## Options
 
-    * `:hash_password` - Hashes the password so it can be stored securely
-      in the database and ensures the password field is cleared to prevent
-      leaks in the logs. If password hashing is not needed and clearing the
-      password field is not desired (like when using this changeset for
-      validations on a LiveView form), this option can be set to `false`.
-      Defaults to `true`.
-
     * `:validate_unique` - Set to false if you don't want to validate the
       uniqueness of the email, useful when displaying live validations.
       Defaults to `true`.
+      
+  Note: Password hashing is handled by the infrastructure layer, not in this changeset.
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
@@ -100,7 +110,7 @@ defmodule Jarga.Accounts.Domain.Entities.User do
     |> put_change(:date_created, NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second))
     |> put_change(:status, "active")
     |> validate_email(opts)
-    |> validate_password(opts)
+    |> validate_password_format(opts)
   end
 
   @doc """
@@ -109,54 +119,29 @@ defmodule Jarga.Accounts.Domain.Entities.User do
   It is important to validate the length of the password, as long passwords may
   be very expensive to hash for certain algorithms.
 
-  ## Options
-
-    * `:hash_password` - Hashes the password so it can be stored securely
-      in the database and ensures the password field is cleared to prevent
-      leaks in the logs. If password hashing is not needed and clearing the
-      password field is not desired (like when using this changeset for
-      validations on a LiveView form), this option can be set to `false`.
-      Defaults to `true`.
+  Note: Password hashing is handled by the infrastructure layer, not in this changeset.
   """
   def password_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:password])
     |> validate_required([:password])
     |> validate_confirmation(:password, message: "does not match password")
-    |> validate_password(opts)
+    |> validate_password_format(opts)
   end
 
-  defp validate_password(changeset, opts) do
+  # Password format validation only - NO hashing
+  # Password hashing is handled by the infrastructure layer (PasswordService)
+  defp validate_password_format(changeset, _opts) do
     password = get_change(changeset, :password)
 
-    changeset =
-      if password do
-        changeset
-        |> validate_length(:password, min: 12, max: 72)
-
-        # Examples of additional password validation:
-        # |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
-        # |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
-        # |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/, message: "at least one digit or punctuation character")
-      else
-        changeset
-      end
-
-    changeset |> maybe_hash_password(opts)
-  end
-
-  defp maybe_hash_password(changeset, opts) do
-    hash_password? = Keyword.get(opts, :hash_password, true)
-    password = get_change(changeset, :password)
-
-    if hash_password? && password && changeset.valid? do
+    if password do
       changeset
-      # If using Bcrypt, then further validate it is at most 72 bytes long
-      |> validate_length(:password, max: 72, count: :bytes)
-      # Hashing could be done with `Ecto.Changeset.prepare_changes/2`, but that
-      # would keep the database transaction open longer and hurt performance.
-      |> put_change(:hashed_password, Bcrypt.hash_pwd_salt(password))
-      |> delete_change(:password)
+      |> validate_length(:password, min: 12, max: 72)
+
+      # Examples of additional password validation:
+      # |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
+      # |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
+      # |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/, message: "at least one digit or punctuation character")
     else
       changeset
     end

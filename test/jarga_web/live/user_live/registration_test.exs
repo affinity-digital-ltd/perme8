@@ -58,7 +58,12 @@ defmodule JargaWeb.UserLive.RegistrationTest do
       result =
         lv
         |> form("#registration_form",
-          user: %{"email" => user.email}
+          user: %{
+            "email" => user.email,
+            "first_name" => "Test",
+            "last_name" => "User",
+            "password" => "valid password 123"
+          }
         )
         |> render_submit()
 

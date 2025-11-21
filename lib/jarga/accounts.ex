@@ -1,6 +1,31 @@
 defmodule Jarga.Accounts do
   @moduledoc """
-  The Accounts context.
+  Public API for account management operations.
+
+  This context module serves as a thin facade over the Accounts bounded context,
+  delegating complex operations to use cases in the application layer while
+  providing simple data access for reads.
+
+  ## Architecture
+
+  - **Simple reads** → Direct database queries via Repo
+  - **Complex operations** → Delegated to use cases in `Application.UseCases`
+  - **Business rules** → Encapsulated in domain policies
+
+  ## Key Use Cases
+
+  - `UseCases.RegisterUser` - User registration with password hashing
+  - `UseCases.LoginByMagicLink` - Passwordless login via magic link
+  - `UseCases.UpdateUserPassword` - Password updates with token expiry
+  - `UseCases.UpdateUserEmail` - Email change with verification
+  - `UseCases.GenerateSessionToken` - Session token generation
+  - `UseCases.DeliverLoginInstructions` - Magic link email delivery
+  - `UseCases.DeliverUserUpdateEmailInstructions` - Email change verification
+
+  ## Domain Policies
+
+  - `AuthenticationPolicy` - Authentication business rules (sudo mode)
+  - `TokenPolicy` - Token expiration and validity rules
   """
 
   # Core context - cannot depend on JargaWeb (interface layer)
@@ -9,45 +34,31 @@ defmodule Jarga.Accounts do
   use Boundary,
     top_level?: true,
     deps: [Jarga.Repo, Jarga.Mailer],
-    exports: [{Domain.Entities.User, []}, {Domain.Scope, []}]
+    exports: [
+      {Domain.Entities.User, []},
+      {Domain.Scope, []},
+      {Application.Services.PasswordService, []}
+    ]
 
   import Ecto.Query, warn: false
   alias Jarga.Repo
 
   alias Jarga.Accounts.Domain.Entities.{User, UserToken}
+  alias Jarga.Accounts.Domain.Policies.AuthenticationPolicy
   alias Jarga.Accounts.Infrastructure.Queries.Queries
-  alias Jarga.Accounts.Infrastructure.Notifiers.UserNotifier
   alias Jarga.Accounts.Application.UseCases
 
   ## Database getters
 
   @doc """
-  Gets a user by email.
-
-  ## Examples
-
-      iex> get_user_by_email("foo@example.com")
-      %User{}
-
-      iex> get_user_by_email("unknown@example.com")
-      nil
-
+  Gets a user by email. Returns `nil` if not found.
   """
   def get_user_by_email(email) when is_binary(email) do
     Repo.get_by(User, email: email)
   end
 
   @doc """
-  Gets a user by email (case-insensitive).
-
-  ## Examples
-
-      iex> get_user_by_email_case_insensitive("Foo@Example.COM")
-      %User{email: "foo@example.com"}
-
-      iex> get_user_by_email_case_insensitive("unknown@example.com")
-      nil
-
+  Gets a user by email (case-insensitive). Returns `nil` if not found.
   """
   def get_user_by_email_case_insensitive(email) when is_binary(email) do
     email
@@ -59,18 +70,7 @@ defmodule Jarga.Accounts do
   Gets a user by email and password.
 
   Returns the user only if the password is valid AND the email is confirmed.
-
-  ## Examples
-
-      iex> get_user_by_email_and_password("foo@example.com", "correct_password")
-      %User{}
-
-      iex> get_user_by_email_and_password("foo@example.com", "invalid_password")
-      nil
-
-      iex> get_user_by_email_and_password("unconfirmed@example.com", "correct_password")
-      nil
-
+  Returns `nil` otherwise.
   """
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
@@ -84,39 +84,20 @@ defmodule Jarga.Accounts do
   end
 
   @doc """
-  Gets a single user.
-
-  Raises `Ecto.NoResultsError` if the User does not exist.
-
-  ## Examples
-
-      iex> get_user!(123)
-      %User{}
-
-      iex> get_user!(456)
-      ** (Ecto.NoResultsError)
-
+  Gets a single user. Raises `Ecto.NoResultsError` if not found.
   """
   def get_user!(id), do: Repo.get!(User, id)
 
   ## User registration
 
   @doc """
-  Registers a user.
+  Registers a user with the given attributes.
 
-  ## Examples
-
-      iex> register_user(%{field: value})
-      {:ok, %User{}}
-
-      iex> register_user(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  Delegates to `UseCases.RegisterUser` which handles password hashing
+  and user creation in a transaction.
   """
   def register_user(attrs) do
-    %User{}
-    |> User.registration_changeset(attrs)
-    |> Repo.insert()
+    UseCases.RegisterUser.execute(%{attrs: attrs})
   end
 
   ## Settings
@@ -126,25 +107,15 @@ defmodule Jarga.Accounts do
 
   The user is in sudo mode when the last authentication was done no further
   than 20 minutes ago. The limit can be given as second argument in minutes.
-  """
-  def sudo_mode?(user, minutes \\ -20)
 
-  def sudo_mode?(%User{authenticated_at: ts}, minutes) when is_struct(ts, DateTime) do
-    DateTime.after?(ts, DateTime.utc_now() |> DateTime.add(minutes, :minute))
+  Delegates to `AuthenticationPolicy.sudo_mode?/2`.
+  """
+  def sudo_mode?(user, minutes \\ -20) do
+    AuthenticationPolicy.sudo_mode?(user, minutes)
   end
 
-  def sudo_mode?(_user, _minutes), do: false
-
   @doc """
-  Returns an `%Ecto.Changeset{}` for changing the user email.
-
-  See `Jarga.Accounts.User.email_changeset/3` for a list of supported options.
-
-  ## Examples
-
-      iex> change_user_email(user)
-      %Ecto.Changeset{data: %User{}}
-
+  Returns a changeset for changing the user email.
   """
   def change_user_email(user, attrs \\ %{}, opts \\ []) do
     User.email_changeset(user, attrs, opts)
@@ -153,7 +124,8 @@ defmodule Jarga.Accounts do
   @doc """
   Updates the user email using the given token.
 
-  If the token matches, the user email is updated and the token is deleted.
+  Delegates to `UseCases.UpdateUserEmail` which verifies the token,
+  updates the email, and deletes the token in a transaction.
   """
   def update_user_email(user, token) do
     UseCases.UpdateUserEmail.execute(%{
@@ -163,15 +135,7 @@ defmodule Jarga.Accounts do
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for changing the user password.
-
-  See `Jarga.Accounts.User.password_changeset/3` for a list of supported options.
-
-  ## Examples
-
-      iex> change_user_password(user)
-      %Ecto.Changeset{data: %User{}}
-
+  Returns a changeset for changing the user password.
   """
   def change_user_password(user, attrs \\ %{}, opts \\ []) do
     User.password_changeset(user, attrs, opts)
@@ -180,49 +144,41 @@ defmodule Jarga.Accounts do
   @doc """
   Updates the user password.
 
-  Returns a tuple with the updated user, as well as a list of expired tokens.
+  Delegates to `UseCases.UpdateUserPassword` which hashes the password,
+  updates the user, and expires all existing tokens in a transaction.
 
-  ## Examples
-
-      iex> update_user_password(user, %{password: ...})
-      {:ok, {%User{}, [...]}}
-
-      iex> update_user_password(user, %{password: "too short"})
-      {:error, %Ecto.Changeset{}}
-
+  Returns `{:ok, {user, expired_tokens}}` or `{:error, changeset}`.
   """
   def update_user_password(user, attrs) do
-    user
-    |> User.password_changeset(attrs)
-    |> update_user_and_delete_all_tokens()
+    UseCases.UpdateUserPassword.execute(%{user: user, attrs: attrs})
   end
 
   ## Session
 
   @doc """
-  Generates a session token.
+  Generates a session token for the user.
+
+  Delegates to `UseCases.GenerateSessionToken`.
   """
   def generate_user_session_token(user) do
-    {token, user_token} = UserToken.build_session_token(user)
-    Repo.insert!(user_token)
-    token
+    UseCases.GenerateSessionToken.execute(%{user: user})
   end
 
   @doc """
-  Gets the user with the given signed token.
+  Gets the user by session token.
 
-  If the token is valid `{user, token_inserted_at}` is returned, otherwise `nil` is returned.
+  Returns `{user, token_inserted_at}` if valid, `nil` otherwise.
   """
   def get_user_by_session_token(token) do
-    {:ok, query} = UserToken.verify_session_token_query(token)
+    {:ok, query} = Queries.verify_session_token_query(token)
     Repo.one(query)
   end
 
   @doc """
-  Gets the user with the given magic link token.
+  Gets the user by magic link token. Returns `nil` if invalid.
   """
   def get_user_by_magic_link_token(token) do
-    with {:ok, query} <- UserToken.verify_magic_link_token_query(token),
+    with {:ok, query} <- Queries.verify_magic_link_token_query(token),
          {user, _token} <- Repo.one(query) do
       user
     else
@@ -231,95 +187,50 @@ defmodule Jarga.Accounts do
   end
 
   @doc """
-  Logs the user in by magic link.
+  Logs the user in by magic link token.
 
-  There are three cases to consider:
+  Delegates to `UseCases.LoginByMagicLink` which handles three cases:
+  1. Confirmed user → login and expire token
+  2. Unconfirmed user without password → confirm, login, expire all tokens
+  3. Unconfirmed user with password → confirm, login, expire token
 
-  1. The user has already confirmed their email. They are logged in
-     and the magic link is expired.
-
-  2. The user has not confirmed their email and no password is set.
-     In this case, the user gets confirmed, logged in, and all tokens -
-     including session ones - are expired. In theory, no other tokens
-     exist but we delete all of them for best security practices.
-
-  3. The user has not confirmed their email but a password is set.
-     Since we're using password-based registration, we auto-confirm the user
-     when they click the magic link sent to their email.
+  Returns `{:ok, {user, expired_tokens}}` or `{:error, reason}`.
   """
   def login_user_by_magic_link(token) do
-    with {:ok, query} <- UserToken.verify_magic_link_token_query(token),
-         result when not is_nil(result) <- Repo.one(query) do
-      handle_magic_link_result(result)
-    else
-      nil -> {:error, :not_found}
-      :error -> {:error, :invalid_token}
-    end
+    UseCases.LoginByMagicLink.execute(%{token: token})
   end
 
-  # Auto-confirm users with passwords when they click the magic link
-  defp handle_magic_link_result({%User{confirmed_at: nil, hashed_password: hash} = user, token})
-       when not is_nil(hash) do
-    # For password-based registration, we confirm the user when they click the magic link
-    # This is safe because they have proven ownership of the email
-    case User.confirm_changeset(user) |> Repo.update() do
-      {:ok, confirmed_user} ->
-        # Delete the magic link token after confirmation
-        Repo.delete!(token)
+  @doc """
+  Delivers email update instructions to the user.
 
-        {:ok, {confirmed_user, []}}
-
-      error ->
-        error
-    end
-  end
-
-  defp handle_magic_link_result({%User{confirmed_at: nil} = user, _token}) do
-    case user
-         |> User.confirm_changeset()
-         |> update_user_and_delete_all_tokens() do
-      {:ok, {confirmed_user, expired_tokens}} ->
-        {:ok, {confirmed_user, expired_tokens}}
-
-      error ->
-        error
-    end
-  end
-
-  defp handle_magic_link_result({user, token}) do
-    Repo.delete!(token)
-    {:ok, {user, []}}
-  end
-
-  @doc ~S"""
-  Delivers the update email instructions to the given user.
-
-  ## Examples
-
-      iex> deliver_user_update_email_instructions(user, current_email, &url(~p"/users/settings/confirm-email/#{&1}"))
-      {:ok, %{to: ..., body: ...}}
-
+  Delegates to `UseCases.DeliverUserUpdateEmailInstructions` which generates
+  a change email token and sends verification email.
   """
   def deliver_user_update_email_instructions(%User{} = user, current_email, update_email_url_fun)
       when is_function(update_email_url_fun, 1) do
-    {encoded_token, user_token} = UserToken.build_email_token(user, "change:#{current_email}")
-
-    Repo.insert!(user_token)
-    UserNotifier.deliver_update_email_instructions(user, update_email_url_fun.(encoded_token))
+    UseCases.DeliverUserUpdateEmailInstructions.execute(%{
+      user: user,
+      current_email: current_email,
+      url_fun: update_email_url_fun
+    })
   end
 
   @doc """
-  Delivers the magic link login instructions to the given user.
+  Delivers magic link login instructions to the user.
+
+  Delegates to `UseCases.DeliverLoginInstructions` which generates
+  a login token and sends magic link email.
   """
   def deliver_login_instructions(%User{} = user, magic_link_url_fun)
       when is_function(magic_link_url_fun, 1) do
-    {encoded_token, user_token} = UserToken.build_email_token(user, "login")
-    Repo.insert!(user_token)
-    UserNotifier.deliver_login_instructions(user, magic_link_url_fun.(encoded_token))
+    UseCases.DeliverLoginInstructions.execute(%{
+      user: user,
+      url_fun: magic_link_url_fun
+    })
   end
 
   @doc """
-  Deletes the signed token with the given context.
+  Deletes the session token.
   """
   def delete_user_session_token(token) do
     Repo.delete_all(Queries.tokens_by_token_and_context(token, "session"))
@@ -327,32 +238,10 @@ defmodule Jarga.Accounts do
   end
 
   @doc """
-  Gets a user token by user_id.
-
-  This is primarily for testing purposes.
-
-  ## Examples
-
-      iex> get_user_token_by_user_id(user.id)
-      %UserToken{}
-
+  Gets a user token by user_id (primarily for testing).
   """
   def get_user_token_by_user_id(user_id) do
     Repo.get_by!(UserToken, user_id: user_id)
-  end
-
-  ## Token helper
-
-  defp update_user_and_delete_all_tokens(changeset) do
-    Repo.transact(fn ->
-      with {:ok, user} <- Repo.update(changeset) do
-        tokens_to_expire = Repo.all_by(UserToken, user_id: user.id)
-
-        Repo.delete_all(Queries.tokens_by_ids(Enum.map(tokens_to_expire, & &1.id)))
-
-        {:ok, {user, tokens_to_expire}}
-      end
-    end)
   end
 
   ## User preferences

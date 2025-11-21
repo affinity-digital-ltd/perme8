@@ -3,6 +3,9 @@ import Config
 # Set environment to test
 config :jarga, :env, :test
 
+# Fast document save debouncing for tests (1ms)
+config :jarga, :document_save_debounce_ms, 1
+
 # Only in tests, remove the complexity from the password hashing algorithm
 config :bcrypt_elixir, :log_rounds, 1
 

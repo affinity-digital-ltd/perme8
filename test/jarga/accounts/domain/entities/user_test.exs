@@ -46,11 +46,30 @@ defmodule Jarga.Accounts.UserTest do
     test "validates email uniqueness when validate_unique is true" do
       _user = user_fixture(%{email: "test@example.com"})
 
+      # Create a complete registration changeset first, then apply email change
+      base_user = %User{
+        first_name: "Test",
+        last_name: "User",
+        date_created: NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second),
+        status: "active"
+      }
+
       changeset =
-        User.email_changeset(%User{}, %{email: "test@example.com"}, validate_unique: true)
+        User.email_changeset(base_user, %{email: "test@example.com"}, validate_unique: true)
 
       {:error, changeset} = Repo.insert(changeset)
       assert "has already been taken" in errors_on(changeset).email
+    end
+
+    test "adds unique_constraint to changeset when validate_unique is true" do
+      changeset =
+        User.email_changeset(%User{}, %{email: "test@example.com"}, validate_unique: true)
+
+      assert changeset.valid?
+      # Verify unique_constraint is present in changeset
+      assert Enum.any?(changeset.constraints, fn constraint ->
+               constraint.type == :unique && constraint.field == :email
+             end)
     end
 
     test "skips uniqueness validation when validate_unique is false" do
@@ -154,7 +173,7 @@ defmodule Jarga.Accounts.UserTest do
       assert "should be at most 72 character(s)" in errors_on(changeset).password
     end
 
-    test "hashes password when hash_password is true" do
+    test "does NOT hash password - hashing is infrastructure concern" do
       attrs = %{
         first_name: "Test",
         last_name: "User",
@@ -162,40 +181,61 @@ defmodule Jarga.Accounts.UserTest do
         password: "hello world 123!"
       }
 
-      changeset = User.registration_changeset(%User{}, attrs, hash_password: true)
-
-      assert changeset.valid?
-      assert Ecto.Changeset.get_change(changeset, :hashed_password)
-      refute Ecto.Changeset.get_change(changeset, :password)
-    end
-
-    test "does not hash password when hash_password is false" do
-      attrs = %{
-        first_name: "Test",
-        last_name: "User",
-        email: "test@example.com",
-        password: "hello world 123!"
-      }
-
-      changeset = User.registration_changeset(%User{}, attrs, hash_password: false)
+      changeset = User.registration_changeset(%User{}, attrs)
 
       assert changeset.valid?
       refute Ecto.Changeset.get_change(changeset, :hashed_password)
+      # Password remains in changeset for infrastructure layer to hash
       assert Ecto.Changeset.get_change(changeset, :password) == "hello world 123!"
     end
 
-    test "does not hash invalid changeset" do
+    test "validates password format only - no hashing" do
       attrs = %{
         first_name: "Test",
         last_name: "User",
         email: "test@example.com",
-        password: "short"
+        password: "valid password 123"
       }
 
-      changeset = User.registration_changeset(%User{}, attrs, hash_password: true)
+      changeset = User.registration_changeset(%User{}, attrs)
 
-      refute changeset.valid?
+      assert changeset.valid?
+      # Password validation passes but hashing doesn't occur
       refute Ecto.Changeset.get_change(changeset, :hashed_password)
+    end
+
+    test "adds unique_constraint for email when validate_unique is true (default)" do
+      attrs = %{
+        first_name: "Test",
+        last_name: "User",
+        email: "test@example.com",
+        password: "valid password 123"
+      }
+
+      changeset = User.registration_changeset(%User{}, attrs)
+
+      assert changeset.valid?
+      # Verify unique_constraint is present in changeset
+      assert Enum.any?(changeset.constraints, fn constraint ->
+               constraint.type == :unique && constraint.field == :email
+             end)
+    end
+
+    test "skips unique_constraint for email when validate_unique is false" do
+      attrs = %{
+        first_name: "Test",
+        last_name: "User",
+        email: "test@example.com",
+        password: "valid password 123"
+      }
+
+      changeset = User.registration_changeset(%User{}, attrs, validate_unique: false)
+
+      assert changeset.valid?
+      # Verify unique_constraint is NOT present in changeset
+      refute Enum.any?(changeset.constraints, fn constraint ->
+               constraint.type == :unique && constraint.field == :email
+             end)
     end
   end
 
@@ -225,29 +265,16 @@ defmodule Jarga.Accounts.UserTest do
       assert "does not match password" in errors_on(changeset).password_confirmation
     end
 
-    test "hashes password when valid and hash_password is true" do
+    test "does NOT hash password - hashing is infrastructure concern" do
       changeset =
         User.password_changeset(
           %User{},
-          %{password: "hello world 123!", password_confirmation: "hello world 123!"},
-          hash_password: true
-        )
-
-      assert changeset.valid?
-      assert Ecto.Changeset.get_change(changeset, :hashed_password)
-      refute Ecto.Changeset.get_change(changeset, :password)
-    end
-
-    test "does not hash password when hash_password is false" do
-      changeset =
-        User.password_changeset(
-          %User{},
-          %{password: "hello world 123!"},
-          hash_password: false
+          %{password: "hello world 123!", password_confirmation: "hello world 123!"}
         )
 
       assert changeset.valid?
       refute Ecto.Changeset.get_change(changeset, :hashed_password)
+      # Password remains in changeset for infrastructure layer to hash
       assert Ecto.Changeset.get_change(changeset, :password) == "hello world 123!"
     end
   end

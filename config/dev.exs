@@ -1,5 +1,8 @@
 import Config
 
+# Document save debouncing (2 seconds)
+config :jarga, :document_save_debounce_ms, 2000
+
 # Load .env file for development
 if File.exists?(".env") do
   File.read!(".env")

@@ -1,10 +1,11 @@
 defmodule Jarga.Accounts.QueriesTest do
   use Jarga.DataCase, async: true
 
+  import Ecto.Query
+  import Jarga.AccountsFixtures
+
   alias Jarga.Accounts.Infrastructure.Queries.Queries
   alias Jarga.Accounts.Domain.Entities.{User, UserToken}
-
-  import Jarga.AccountsFixtures
 
   describe "base/0" do
     test "returns the User queryable" do
@@ -226,6 +227,179 @@ defmodule Jarga.Accounts.QueriesTest do
       _contexts = Enum.map(tokens, & &1.context)
       # Should have tokens from fixture creation
       assert length(tokens) >= 1
+    end
+  end
+
+  describe "verify_session_token_query/1" do
+    test "returns valid query for session token within validity period" do
+      user = user_fixture()
+      # Create a session token explicitly
+      {_encoded, token_record} = UserToken.build_session_token(user)
+      Repo.insert!(token_record)
+
+      {:ok, query} = Queries.verify_session_token_query(token_record.token)
+
+      assert {returned_user, _inserted_at} = Repo.one(query)
+      assert returned_user.id == user.id
+    end
+
+    test "query includes authenticated_at in user struct" do
+      user = user_fixture()
+      # Create a session token explicitly
+      {_encoded, token_record} = UserToken.build_session_token(user)
+      Repo.insert!(token_record)
+
+      {:ok, query} = Queries.verify_session_token_query(token_record.token)
+
+      assert {returned_user, _inserted_at} = Repo.one(query)
+      assert returned_user.authenticated_at != nil
+    end
+
+    test "query returns nil for expired session token" do
+      user = user_fixture()
+
+      # Create an expired session token (older than 14 days)
+      {_encoded, token_record} = UserToken.build_session_token(user)
+      # Insert the token first
+      inserted_token = Repo.insert!(token_record)
+      # Update the inserted_at to make it expired
+      Repo.update_all(from(t in UserToken, where: t.id == ^inserted_token.id),
+        set: [inserted_at: DateTime.add(DateTime.utc_now(), -15, :day)]
+      )
+
+      {:ok, query} = Queries.verify_session_token_query(token_record.token)
+
+      assert Repo.one(query) == nil
+    end
+
+    test "query returns nil for non-existent token" do
+      fake_token = :crypto.strong_rand_bytes(32)
+
+      {:ok, query} = Queries.verify_session_token_query(fake_token)
+
+      assert Repo.one(query) == nil
+    end
+  end
+
+  describe "verify_magic_link_token_query/1" do
+    test "returns valid query for magic link token within validity period" do
+      user = user_fixture()
+      {encoded_token, _hashed_token} = generate_user_magic_link_token(user)
+
+      {:ok, query} = Queries.verify_magic_link_token_query(encoded_token)
+
+      assert {returned_user, token} = Repo.one(query)
+      assert returned_user.id == user.id
+      assert token.context == "login"
+    end
+
+    test "query verifies sent_to matches user email" do
+      user = user_fixture()
+      {encoded_token, _hashed_token} = generate_user_magic_link_token(user)
+
+      {:ok, query} = Queries.verify_magic_link_token_query(encoded_token)
+
+      assert {_user, token} = Repo.one(query)
+      assert token.sent_to == user.email
+    end
+
+    test "returns error for invalid base64 encoding" do
+      assert :error = Queries.verify_magic_link_token_query("invalid-token")
+    end
+
+    test "returns error for wrong token length" do
+      # Create token with wrong length (not 32 bytes)
+      short_token = :crypto.strong_rand_bytes(16)
+      encoded = Base.url_encode64(short_token, padding: false)
+
+      assert :error = Queries.verify_magic_link_token_query(encoded)
+    end
+
+    test "query returns nil for expired magic link token" do
+      user = user_fixture()
+
+      # Create an expired token (older than 15 minutes)
+      {encoded_token, user_token} = UserToken.build_email_token(user, "login")
+
+      # Insert the token first, then update its inserted_at to make it expired
+      inserted_token = Repo.insert!(user_token)
+
+      Repo.update_all(from(t in UserToken, where: t.id == ^inserted_token.id),
+        set: [inserted_at: DateTime.add(DateTime.utc_now(), -20, :minute)]
+      )
+
+      {:ok, query} = Queries.verify_magic_link_token_query(encoded_token)
+
+      assert Repo.one(query) == nil
+    end
+  end
+
+  describe "verify_change_email_token_query/2" do
+    test "returns valid query for change email token within validity period" do
+      user = user_fixture()
+      new_email = "new@example.com"
+      context = "change:#{user.email}"
+
+      # Build and insert the token manually
+      {encoded_token, user_token} = UserToken.build_email_token(user, context)
+      user_token = %{user_token | sent_to: new_email}
+      Repo.insert!(user_token)
+
+      {:ok, query} = Queries.verify_change_email_token_query(encoded_token, context)
+
+      assert %UserToken{} = token = Repo.one(query)
+      assert token.context == context
+      assert token.user_id == user.id
+    end
+
+    test "returns error for invalid base64 encoding" do
+      assert :error =
+               Queries.verify_change_email_token_query("invalid-token", "change:test@example.com")
+    end
+
+    test "returns error for wrong token length" do
+      short_token = :crypto.strong_rand_bytes(16)
+      encoded = Base.url_encode64(short_token, padding: false)
+
+      assert :error = Queries.verify_change_email_token_query(encoded, "change:test@example.com")
+    end
+
+    test "query returns nil for expired change email token" do
+      user = user_fixture()
+      new_email = "new@example.com"
+      context = "change:#{user.email}"
+
+      # Create an expired token (older than 7 days)
+      {encoded_token, user_token} = UserToken.build_email_token(user, context)
+      user_token = %{user_token | sent_to: new_email}
+
+      # Insert the token first, then update its inserted_at to make it expired
+      inserted_token = Repo.insert!(user_token)
+
+      Repo.update_all(from(t in UserToken, where: t.id == ^inserted_token.id),
+        set: [inserted_at: DateTime.add(DateTime.utc_now(), -8, :day)]
+      )
+
+      {:ok, query} = Queries.verify_change_email_token_query(encoded_token, context)
+
+      assert Repo.one(query) == nil
+    end
+
+    test "query matches exact context" do
+      user = user_fixture()
+      new_email = "new@example.com"
+      context = "change:#{user.email}"
+
+      # Build and insert the token
+      {encoded_token, user_token} = UserToken.build_email_token(user, context)
+      user_token = %{user_token | sent_to: new_email}
+      Repo.insert!(user_token)
+
+      # Try with wrong context
+      {:ok, query} =
+        Queries.verify_change_email_token_query(encoded_token, "change:wrong@example.com")
+
+      assert Repo.one(query) == nil
     end
   end
 end

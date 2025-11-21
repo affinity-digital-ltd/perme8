@@ -50,7 +50,7 @@ defmodule Jarga.Accounts.Application.UseCases.UpdateUserEmail do
     context = "change:#{user.email}"
 
     Repo.transact(fn ->
-      with {:ok, query} <- UserToken.verify_change_email_token_query(token, context),
+      with {:ok, query} <- Queries.verify_change_email_token_query(token, context),
            %UserToken{sent_to: email} <- UserTokenRepository.get_one(query),
            {:ok, user} <- Repo.update(User.email_changeset(user, %{email: email})),
            {_count, _result} <-

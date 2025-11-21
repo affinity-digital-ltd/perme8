@@ -133,4 +133,51 @@ defmodule Jarga.Accounts.UserNotifierTest do
       assert is_binary(email.text_body)
     end
   end
+
+  describe "configurable email settings" do
+    test "accepts custom from_email via opts" do
+      user = user_fixture()
+      url = "http://example.com/url"
+
+      {:ok, email} =
+        UserNotifier.deliver_login_instructions(user, url, from_email: "custom@example.com")
+
+      assert email.from == {"Jarga", "custom@example.com"}
+    end
+
+    test "accepts custom from_name via opts" do
+      user = user_fixture()
+      url = "http://example.com/url"
+
+      {:ok, email} = UserNotifier.deliver_login_instructions(user, url, from_name: "Custom Name")
+
+      assert email.from == {"Custom Name", "noreply@jarga.app"}
+    end
+
+    test "accepts both custom from_email and from_name via opts" do
+      user = user_fixture()
+      url = "http://example.com/url"
+
+      {:ok, email} =
+        UserNotifier.deliver_login_instructions(user, url,
+          from_email: "custom@example.com",
+          from_name: "Custom Name"
+        )
+
+      assert email.from == {"Custom Name", "custom@example.com"}
+    end
+
+    test "deliver_update_email_instructions accepts custom opts" do
+      user = user_fixture()
+      url = "http://example.com/url"
+
+      {:ok, email} =
+        UserNotifier.deliver_update_email_instructions(user, url,
+          from_email: "custom@example.com",
+          from_name: "Custom Name"
+        )
+
+      assert email.from == {"Custom Name", "custom@example.com"}
+    end
+  end
 end
