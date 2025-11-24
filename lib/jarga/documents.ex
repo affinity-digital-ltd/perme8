@@ -12,7 +12,14 @@ defmodule Jarga.Documents do
   # Internal modules (Queries, Policies) remain private
   use Boundary,
     top_level?: true,
-    deps: [Jarga.Accounts, Jarga.Workspaces, Jarga.Projects, Jarga.Notes, Jarga.Repo],
+    deps: [
+      Jarga.Accounts,
+      Jarga.Workspaces,
+      Jarga.Projects,
+      Jarga.Notes,
+      Jarga.Agents,
+      Jarga.Repo
+    ],
     exports: [{Domain.Entities.Document, []}]
 
   alias Jarga.Repo

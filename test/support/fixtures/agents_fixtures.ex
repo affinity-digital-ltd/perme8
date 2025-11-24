@@ -29,7 +29,8 @@ defmodule Jarga.AgentsFixtures do
       system_prompt: attrs[:system_prompt],
       model: attrs[:model],
       temperature: attrs[:temperature],
-      visibility: attrs[:visibility] || "PRIVATE"
+      visibility: attrs[:visibility] || "PRIVATE",
+      enabled: Map.get(attrs, :enabled, true)
     }
 
     {:ok, agent} = Jarga.Agents.create_user_agent(agent_params)
