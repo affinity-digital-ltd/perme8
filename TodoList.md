@@ -267,41 +267,41 @@ This feature enhances the existing `@j` mention system in Documents to support i
 
 ## Quality Assurance
 
-### QA Phase 1: Test Validation ⏳
+### QA Phase 1: Test Validation ✓
 **Assigned to**: test-validator agent
-- [ ] TDD process validated across all layers
+- [x] TDD process validated across all layers
   - Domain layer tests written first (backend + frontend)
   - Application layer tests with proper mocks
   - Infrastructure tests using real integrations
   - Interface tests validating LiveView events
-- [ ] Test quality verified
+- [x] Test quality verified
   - Tests cover happy path and error cases
   - Tests are independent and repeatable
   - Mocks used appropriately at boundaries
   - Integration tests validate critical flows
-- [ ] Test speed validated
+- [x] Test speed validated
   - Domain tests run in milliseconds
   - Application tests run in sub-second
   - Full test suite completes in reasonable time
 
-### QA Phase 2: Code Review ⏸
+### QA Phase 2: Code Review ✓
 **Assigned to**: code-reviewer agent
-- [ ] No boundary violations
+- [x] No boundary violations
   - Documents calls Agents public API only
   - No direct access to internal Agents modules
   - Frontend follows Clean Architecture layers
-- [ ] SOLID principles compliance
+- [x] SOLID principles compliance
   - Single Responsibility: Each module has one reason to change
   - Dependency Inversion: Depends on abstractions
   - Interface Segregation: Minimal, focused interfaces
-- [ ] Security review passed
+- [x] Security review passed
   - Agent lookup respects workspace visibility rules
   - Only workspace-available agents can be invoked
   - User authorization checked before query execution
-- [ ] PubSub and transactions
+- [x] PubSub and transactions
   - No broadcasts inside transactions
   - Side effects happen after transaction commits
-- [ ] Performance considerations
+- [x] Performance considerations
   - Streaming responses don't block UI
   - Document content truncated to reasonable size
   - Query timeouts configured appropriately
@@ -329,28 +329,28 @@ This feature enhances the existing `@j` mention system in Documents to support i
 ## Success Criteria
 
 ### Feature Requirements (from PRD)
-- [ ] User can invoke a workspace agent from within document editor using `@j agent_name Question` syntax
-- [ ] Agent receives full document content as context
-- [ ] Agent response appears inline where command was typed
-- [ ] Loading state visible while agent processes request
-- [ ] Agent uses its custom system_prompt combined with document context (not generic default prompt)
+- [x] User can invoke a workspace agent from within document editor using `@j agent_name Question` syntax
+- [x] Agent receives full document content as context
+- [x] Agent response appears inline where command was typed
+- [x] Loading state visible while agent processes request
+- [x] Agent uses its custom system_prompt combined with document context (not generic default prompt)
 
 ### Acceptance Criteria (from PRD)
 **Given** a user is editing a document in a workspace with at least one enabled agent
 **When** they type `@j [agent_name] [question]` and press Enter
 **Then:**
-- [ ] Command text disappears from editor
-- [ ] Loading indicator ("Agent thinking..." + spinner) appears at that location
-- [ ] System extracts full document content
-- [ ] System identifies agent by name from workspace agents list
-- [ ] Agent receives both its custom system_prompt and document context
-- [ ] Agent's response streams back character-by-character
-- [ ] Loading indicator replaced by streaming response
-- [ ] Final response remains in document as editable content
+- [x] Command text disappears from editor (implemented via ProseMirror plugin)
+- [x] Loading indicator ("Agent thinking..." + spinner) appears at that location (uses existing renderer)
+- [x] System extracts full document content (ExecuteAgentQuery use case)
+- [x] System identifies agent by name from workspace agents list (case-insensitive lookup)
+- [x] Agent receives both its custom system_prompt and document context (AgentQuery extended)
+- [x] Agent's response streams back character-by-character (existing streaming infrastructure)
+- [x] Loading indicator replaced by streaming response (existing renderer)
+- [x] Final response remains in document as editable content (ProseMirror integration)
 
 **Given** a user has an agent query in progress
 **When** they cancel the query
 **Then:**
-- [ ] Streaming stops
-- [ ] Partial response (if any) remains in document
-- [ ] User can continue editing
+- [x] Streaming stops (existing cancellation support)
+- [x] Partial response (if any) remains in document (existing behavior)
+- [x] User can continue editing (ProseMirror state management)
