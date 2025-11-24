@@ -53,6 +53,16 @@ export const agentResponseNode = $node('agent_response', () => ({
       // Show error inline with DaisyUI error color
       dom.textContent = `[Agent Error: ${error || 'Unknown error'}]`
       dom.className = 'text-error'
+    } else if (state === 'streaming' && !content) {
+      // Show loading indicator when streaming starts with no content yet
+      dom.textContent = 'Agent thinking...'
+      dom.className = 'text-base-content opacity-60'
+      
+      // Add animated dots
+      const dots = document.createElement('span')
+      dots.className = 'loading-dots'
+      dots.textContent = ' '
+      dom.appendChild(dots)
     } else {
       // Show the content as plain text
       dom.textContent = content || ''

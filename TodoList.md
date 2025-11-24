@@ -243,6 +243,7 @@ This feature enhances the existing `@j` mention system in Documents to support i
 - [x] ProseMirror plugin correctly detects commands
 - [x] Phoenix Hook properly bridges editor and LiveView
 - [x] Streaming responses render smoothly (already implemented)
+- [x] Loading indicator displays when agent query starts (fixed: shows "Agent thinking..." when content empty)
 
 ---
 
