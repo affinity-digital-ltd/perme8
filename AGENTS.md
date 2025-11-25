@@ -6,7 +6,7 @@ This file provides guidance to OpenCode when working with Elixir and Phoenix cod
 
 ### Feature Implementation Protocol
 
-When implementing a new feature, follow this orchestrated workflow:
+When implementing a new feature, follow this orchestrated workflow using **Behavior-Driven Development (BDD)** as the default approach:
 
 ### Planning Phases
 
@@ -39,20 +39,20 @@ When implementing a new feature, follow this orchestrated workflow:
 
 **Note:** You can skip this phase if requirements are already clear and well-defined. Go directly to Planning Phase 2 for simple, well-understood features.
 
-#### Planning Phase 2: Technical Planning (Use `@architect` subagent)
+#### Planning Phase 2: Technical Planning (Use `@architect` subagent) - OPTIONAL
 
 **When to delegate:**
 
-- User requests a new feature
-- Feature spans multiple layers or contexts
-- Implementation requires TDD planning
+- User requests a complex feature that spans multiple layers or contexts
+- Feature is large enough to benefit from upfront planning
+- You want a structured implementation plan
 
 **What the architect does:**
 
 - Reads architectural documentation
-- Creates comprehensive TDD implementation plan
+- Creates comprehensive BDD/TDD implementation plan
 - Identifies affected boundaries
-- Plans RED-GREEN-REFACTOR cycles for each layer
+- Plans BDD implementation steps and supporting unit tests
 - **Creates TodoList.md file** with all checkboxes for tracking
 
 **Invocation:**
@@ -63,7 +63,7 @@ When implementing a new feature, follow this orchestrated workflow:
 
 **Output:**
 
-- Detailed implementation plan with test-first steps for all layers
+- Detailed implementation plan with BDD feature scenarios and TDD unit test planning
 - **IMPORTANT**: Main Agent MUST save the implementation plan to `jargav3/docs/features/[feature-name]-implementation-plan.md`
 - **TodoList.md file** in project root with all checkboxes organized by phase
 
@@ -79,244 +79,175 @@ The architect creates a `TodoList.md` file that serves as the **single source of
 
 - Contains ALL implementation checkboxes from the detailed plan
 - References PRD and Implementation Plan at the top with full file paths
-- Organized by Implementation Phases (1-4) and QA Phases (1-3)
+- Organized by Implementation Steps (1-3) and QA Phases (1-2)
 - Uses status indicators: ⏸ (Not Started), ⏳ (In Progress), ✓ (Complete)
 - Implementation agents check off items as they complete them
 - Main Agent updates phase status between agent runs
 
-### Implementation Phases (From Architect's Plan)
+**Note:** You can skip this phase and go directly to BDD Step 1 for simple, well-understood features.
 
-The architect creates a plan with 4 implementation phases. Each phase is executed by the appropriate TDD subagent:
+### BDD Implementation Workflow
 
-#### Implementation Phase 1: Backend Domain + Application (Use `@phoenix-tdd` subagent)
+The BDD workflow creates a feature file first, then implements the feature to make it pass. This provides executable documentation and verifies full-stack integration.
+
+#### Implementation Step 1: Create Feature File (RED)
 
 **When to delegate:**
 
-- Implementing Phase 1 from architect's plan
-- Pure business logic and use case orchestration
-- No database or UI yet
+- After requirements are gathered (PRD created)
+- Before implementing the feature
+- When you want executable specifications
 
-**What phoenix-tdd does:**
+**What fullstack-bdd does in Step 1:**
 
-- Reads TodoList.md to understand Phase 1 scope
-- Reads the PRD and Implementation Plan referenced in TodoList.md for full context
-- Strictly follows RED-GREEN-REFACTOR cycle
-- Implements Domain Layer (pure functions, no I/O)
-- Implements Application Layer (use cases with mocked dependencies)
-- **Checks off items in TodoList.md** as they're completed
-- Completes ALL checkboxes in Phase 1
-- Does NOT ask "should I continue?" - completes full phase autonomously
-- Validates with `mix test` and `mix boundary`
-- Updates Phase 1 status to ✓ when complete
+- Reads the PRD (or requirements from user)
+- Creates `.feature` file in `test/features/` with Gherkin scenarios
+- Writes step definitions in `test/features/step_definitions/`
+- Step definitions contain full-stack test logic (HTTP → HTML)
+- Runs tests to verify they FAIL (RED state)
+- Documents expected behavior in business language
 
 **Invocation:**
 
 ```
-"Use the @phoenix-tdd subagent to implement Phase 1 (Backend Domain + Application) from the plan"
+"Use the @fullstack-bdd subagent to create feature file and step definitions from the PRD"
 ```
 
-**Output:** Phase 1 complete. Domain and application layers fully tested. TodoList.md updated with all checkboxes ticked.
+**Output:**
+
+- `.feature` file with Gherkin scenarios (Given/When/Then)
+- Step definitions implementing full-stack test logic
+- Tests run and FAIL (expected - feature not implemented yet)
+- Clear specification of what needs to be built
+
+**Example Feature File Created:**
+
+```gherkin
+Feature: Document Visibility Management
+  As a document owner
+  I want to control document visibility
+  So that I can share documents with my team or keep them private
+
+  Background:
+    Given a workspace exists with name "Product Team" and slug "product-team"
+    And the following users exist:
+      | Email              | Role   |
+      | alice@example.com  | Owner  |
+      | bob@example.com    | Member |
+
+  Scenario: Owner makes document public
+    Given I am logged in as "alice@example.com"
+    And a document "Product Roadmap" exists owned by "alice@example.com"
+    When I make the document public
+    Then the document visibility should be "public"
+    And "bob@example.com" should be able to view the document
+
+  Scenario: Member cannot change document visibility
+    Given I am logged in as "bob@example.com"
+    And a document "Product Roadmap" exists owned by "alice@example.com"
+    When I attempt to make the document public
+    Then I should receive a forbidden error
+```
 
 ---
 
-#### Implementation Phase 2: Backend Infrastructure + Interface (Use `@phoenix-tdd` subagent again)
+#### Implementation Step 2: Implement Feature via TDD (RED, GREEN)
 
-**When to delegate:**
+**After feature file is created (Step 1), implement the feature using TDD agents:**
 
-- Implementing Phase 2 from architect's plan
-- Database, LiveView, Channels, APIs
-- Requires Phase 1 to be complete
+**For Backend Implementation:**
 
-**What phoenix-tdd does:**
+```
+"Use the @phoenix-tdd subagent to implement backend for document visibility feature"
+```
 
-- Reads TodoList.md to understand Phase 2 scope
-- Implements Infrastructure Layer (schemas, migrations, queries)
-- Implements Interface Layer (LiveViews, controllers, channels, templates)
-- **Checks off items in TodoList.md** as they're completed
-- Completes ALL checkboxes in Phase 2
-- Does NOT ask "should I continue?" - completes full phase autonomously
-- Runs migrations, validates with `mix test` and `mix boundary`
-- Updates Phase 2 status to ✓ when complete
+Phoenix-tdd implements:
+
+- Domain logic (pure functions, visibility rules)
+- Application layer (use cases with authorization)
+- Infrastructure (database, queries)
+- Interface (LiveView, controllers)
+
+Each component follows RED-GREEN-REFACTOR cycle at unit level.
+
+**For Frontend Implementation (if needed):**
+
+```
+"Use the @typescript-tdd subagent to implement frontend for document visibility UI"
+```
+
+Typescript-tdd implements:
+
+- Domain logic (client-side validation)
+- Application layer (visibility update use cases)
+- Infrastructure (API calls, storage)
+- Presentation (LiveView hooks, UI updates)
+
+Each component follows RED-GREEN-REFACTOR cycle at unit level.
+
+**During Step 2:**
+
+- Unit tests pass (GREEN at unit level)
+- Feature tests may still fail (RED at integration level)
+- This is expected - implementation is incremental
+
+**Main Agent Action During Implementation:**
+
+Run pre-commit checks periodically to catch issues early:
+
+```bash
+mix precommit
+```
+
+Fix any issues:
+
+- If formatter changes code: Review and commit changes
+- If Credo reports warnings: Fix issues
+- If Dialyzer reports type errors: Fix type specs
+- If tests fail: Debug and fix failing tests
+- If boundary violations: Refactor to fix violations
+
+---
+
+#### Implementation Step 3: Feature Tests Pass (GREEN)
+
+**When all units are implemented:**
+
+```
+"Use the @fullstack-bdd subagent to verify feature tests pass"
+```
+
+**What fullstack-bdd does in Step 3:**
+
+- Runs all feature scenarios
+- Verifies full-stack integration (HTTP → HTML)
+- All scenarios pass (GREEN state)
+- Feature is complete and verified end-to-end
 
 **Invocation:**
 
 ```
-"Use the @phoenix-tdd subagent to implement Phase 2 (Backend Infrastructure + Interface) from the plan"
+"Use the @fullstack-bdd subagent to run feature tests and verify they pass"
 ```
 
-**Output:** Phase 2 complete. Full backend implementation with passing tests. TodoList.md updated.
+**Output:**
+
+- All feature scenarios pass
+- Full-stack integration verified
+- Executable documentation of feature behavior
 
 ---
 
-**Main Agent Action After Phase 2:**
+### BDD Testing Principles
 
-Before proceeding to Phase 3, Main Agent MUST:
+The fullstack-bdd agent follows strict principles:
 
-1. **Run Pre-commit Checks:**
-
-   ```bash
-   mix precommit
-   ```
-
-2. **Fix Any Issues:**
-   - If formatter changes code: Review and commit changes
-   - If Credo reports warnings: Fix or add `# credo:disable-for-this-file` if justified
-   - If Dialyzer reports type errors: Fix type specs
-   - If tests fail: Debug and fix failing tests
-   - If boundary violations: Refactor to fix violations
-
-3. **Verify Clean State:**
-   - All pre-commit checks passing
-   - `mix test` passing
-   - `mix boundary` clean
-   - Code formatted and linted
-
-4. **Update TodoList.md:**
-   - Add checkpoint: `- [x] Phase 2 pre-commit checks passing`
-
-**Only after all issues are resolved, proceed to Phase 3.**
-
----
-
-#### Implementation Phase 3: Frontend Domain + Application (Use `@typescript-tdd` subagent)
-
-**When to delegate:**
-
-- Implementing Phase 3 from architect's plan
-- Client-side business logic and use cases
-- No browser APIs or LiveView hooks yet
-
-**What typescript-tdd does:**
-
-- Reads TodoList.md to understand Phase 3 scope
-- Strictly follows RED-GREEN-REFACTOR cycle
-- Implements Domain Layer (pure TypeScript functions, no side effects)
-- Implements Application Layer (use cases with mocked dependencies)
-- **Checks off items in TodoList.md** as they're completed
-- Completes ALL checkboxes in Phase 3
-- Does NOT ask "should I continue?" - completes full phase autonomously
-- Uses Vitest, validates with `npm test`
-- Updates Phase 3 status to ✓ when complete
-
-**Invocation:**
-
-```
-"Use the @typescript-tdd subagent to implement Phase 3 (Frontend Domain + Application) from the plan"
-```
-
-**Output:** Phase 3 complete. Frontend domain and application layers fully tested. TodoList.md updated.
-
----
-
-#### Implementation Phase 4: Frontend Infrastructure + Presentation (Use `@typescript-tdd` subagent again)
-
-**When to delegate:**
-
-- Implementing Phase 4 from architect's plan
-- Browser APIs, LiveView hooks, Channel clients, DOM interactions
-- Requires Phase 3 to be complete
-
-**What typescript-tdd does:**
-
-- Reads TodoList.md to understand Phase 4 scope
-- Implements Infrastructure Layer (localStorage, fetch, Channel clients)
-- Implements Presentation Layer (LiveView hooks, DOM manipulation)
-- **Checks off items in TodoList.md** as they're completed
-- Completes ALL checkboxes in Phase 4
-- Does NOT ask "should I continue?" - completes full phase autonomously
-- Uses Vitest, validates with `npm test`
-- Updates Phase 4 status to ✓ when complete
-
-**Invocation:**
-
-```
-"Use the @typescript-tdd subagent to implement Phase 4 (Frontend Infrastructure + Presentation) from the plan"
-```
-
-**Output:** Phase 4 complete. Full frontend implementation with passing tests. TodoList.md updated.
-
----
-
-**Main Agent Action After Phase 4:**
-
-Before proceeding to QA phases, Main Agent MUST:
-
-1. **Run Pre-commit Checks:**
-
-   ```bash
-   mix precommit
-   ```
-
-2. **Fix Any Issues:**
-   - If formatter changes code: Review and commit changes
-   - If Credo reports warnings: Fix issues
-   - If Dialyzer reports type errors: Fix type specs
-   - If tests fail: Debug and fix failing tests
-   - If boundary violations: Refactor to fix violations
-   - If TypeScript errors: Fix type issues in frontend code
-
-3. **Run Frontend Tests:**
-
-   ```bash
-   npm test
-   ```
-
-   - Fix any failing frontend tests
-   - Ensure TypeScript compilation successful
-
-4. **Verify Clean State:**
-   - All pre-commit checks passing
-   - `mix test` passing (full backend suite)
-   - `npm test` passing (full frontend suite)
-   - `mix boundary` clean
-   - All code formatted and linted
-
-5. **Update TodoList.md:**
-   - Add checkpoint: `- [x] Phase 4 pre-commit checks passing`
-   - Add checkpoint: `- [x] All implementation phases complete and validated`
-
-**Only after all issues are resolved, proceed to QA Phase 1.**
-
----
-
-### TodoList.md Workflow
-
-**The TodoList.md file is the central coordination mechanism for all agents.**
-
-**How it works:**
-
-1. **architect agent** creates TodoList.md with all checkboxes organized by phase
-2. **Main Agent** reads TodoList.md between phases to track progress
-3. **Implementation agents** (phoenix-tdd, typescript-tdd):
-   - Read their assigned phase section at start
-   - Check off `- [ ]` → `- [x]` as they complete each item
-   - Update phase header status when done (⏸ → ⏳ → ✓)
-4. **Main Agent Pre-commit Checkpoints** (after Phase 2 and Phase 4):
-   - Runs `mix precommit` to catch issues early
-   - Fixes formatting, linting, type errors, tests, and boundaries
-   - Checks off pre-commit checkpoint items in TodoList.md
-   - Ensures clean state before proceeding to next phase
-5. **QA agents** (test-validator, code-reviewer):
-   - Read their QA phase section
-   - Check off validation items as they complete them
-   - Update their phase status when done
-6. **Main Agent** coordinates handoffs between agents using TodoList.md status
-
-**Status Indicators:**
-
-- ⏸ Not Started - Phase hasn't begun
-- ⏳ In Progress - Agent is currently working on this phase
-- ✓ Complete - All checkboxes in phase are ticked
-
-**Benefits:**
-
-- Single source of truth for progress tracking
-- Clear visibility into what's done and what's remaining
-- Agents know exactly what to implement without asking
-- **Pre-commit checkpoints catch issues early** (after Phase 2 and 4)
-- Clean, validated code before proceeding to next phase
-- Easy to resume if interrupted
-- Main Agent can see overall feature progress at a glance
+1. **Full-Stack Testing** - Always test HTTP → HTML, never backend-only
+2. **Real Database** - Use Ecto Sandbox, not mocked repositories
+3. **Mock 3rd Parties** - Mock external APIs (LLMs, payments, etc.)
+4. **LiveViewTest First** - Use Phoenix.LiveViewTest, only Wallaby for `@javascript`
+5. **Business Language** - Write tests in Gherkin (Given/When/Then)
+6. **Executable Docs** - Tests document feature behavior
 
 ---
 
@@ -386,17 +317,25 @@ Planning Phases:
     ↓
 Planning Phase 1 (Optional): [prd] → Gathers requirements
     ↓
-Planning Phase 2: [architect] → Creates TDD plan with checkboxes for 4 implementation phases
+Planning Phase 2 (Optional): [architect] → Creates TDD plan
     ↓
-Implementation Phases:
+BDD Implementation:
     ↓
-    [phoenix-tdd] → Phase 1: Backend Domain + Application
+Step 1: [fullstack-bdd] → Create .feature file from PRD (RED)
+    - Write Gherkin scenarios describing user behavior
+    - Write step definitions (tests will FAIL - this is expected)
+    - Feature tests are RED (failing) because feature isn't implemented
     ↓
-    [phoenix-tdd] → Phase 2: Backend Infrastructure + Interface
+Step 2: [Implement via TDD] → Implement feature units via TDD (RED, GREEN)
+    - Use phoenix-tdd for backend (Phases 1-2)
+    - Use typescript-tdd for frontend (Phases 3-4)
+    - Each unit follows RED-GREEN-REFACTOR
+    - Unit tests pass, but feature tests may still be RED
     ↓
-    [typescript-tdd] → Phase 3: Frontend Domain + Application
-    ↓
-    [typescript-tdd] → Phase 4: Frontend Infrastructure + Presentation
+Step 3: [fullstack-bdd] → Feature tests pass (GREEN)
+    - All unit implementations complete
+    - Feature scenarios now pass end-to-end
+    - Full-stack integration verified
     ↓
 Quality Assurance Phases:
     ↓
@@ -422,13 +361,14 @@ User: "Add real-time notification feature"
 
 Planning Phases:
   Planning Phase 1 (Optional): prd → Gather detailed requirements
-  Planning Phase 2: architect → Plan implementation with checkboxes for 4 implementation phases
+  Planning Phase 2 (Optional): architect → Plan implementation
 
-Implementation Phases:
-  Phase 1: phoenix-tdd → Backend domain + application layers
-  Phase 2: phoenix-tdd → Backend infrastructure + interface layers
-  Phase 3: typescript-tdd → Frontend domain + application layers
-  Phase 4: typescript-tdd → Frontend infrastructure + presentation layers
+BDD Implementation:
+  Step 1: fullstack-bdd → Create .feature file from PRD (RED)
+  Step 2: Implement via TDD (RED, GREEN)
+    - phoenix-tdd → Backend implementation (domain, application, infrastructure, interface)
+    - typescript-tdd → Frontend implementation (domain, application, infrastructure, presentation)
+  Step 3: fullstack-bdd → Feature tests pass (GREEN)
 
 Quality Assurance Phases:
   QA Phase 1: test-validator → Validate all tests
@@ -437,9 +377,10 @@ Quality Assurance Phases:
 
 **Key Points:**
 
-- Each implementation phase is **autonomous** - agents complete their full phase
-- Agents **DO NOT** ask "should I continue?" - checkboxes define scope
-- Each phase has **clear completion criteria** - all checkboxes ticked, tests passing
+- **Feature file first** - Always start with executable specifications
+- **Full-stack integration** - Feature tests verify complete user workflows
+- **Unit tests support** - TDD agents implement units with their own tests
+- **End-to-end verification** - Feature tests confirm everything works together
 
 **When main Agent should handle directly:**
 
@@ -455,6 +396,12 @@ Quality Assurance Phases:
 2. **NEVER skip code-reviewer** - Catches boundary violations
 3. **ALWAYS run in sequence** - Each phase depends on previous
 4. **NEVER write implementation before tests** - Non-negotiable
+5. **Feature file first** - Write .feature before implementation
+6. **Full-stack tests** - Always verify HTTP → HTML
+7. **Real database** - Use Ecto Sandbox, not mocks
+8. **Business language** - Gherkin scenarios readable by non-developers
+
+---
 
 ### Subagent Reference
 
@@ -464,6 +411,7 @@ Available subagents in `.opencode/agent/`:
 - **architect** - Feature planning and TDD design
 - **phoenix-tdd** - Phoenix backend and LiveView implementation with TDD
 - **typescript-tdd** - TypeScript implementation with TDD (hooks, clients, standalone code)
+- **fullstack-bdd** - Full-stack BDD testing with Cucumber (feature files and step definitions)
 - **test-validator** - Test quality and TDD process validation
 - **code-reviewer** - Architectural and security review
 
@@ -509,81 +457,69 @@ This ensures all subagents work with **current, official documentation** rather 
 ```
 User: "Add user profile avatar upload"
 
-Main agent: "I'll orchestrate this feature through our TDD workflow:
+Main agent: "I'll orchestrate this feature through our BDD workflow:
 
 Planning Phases:
 
   Planning Phase 1 (Optional): First, let me use the prd subagent to gather requirements...
     [Delegates to prd - can skip if requirements are clear]
 
-  Planning Phase 2: The architect subagent will create a comprehensive plan...
+  Planning Phase 2 (Optional): The architect subagent will create a comprehensive plan...
     [Delegates to architect]
     Output:
     - Detailed implementation plan
-    - TodoList.md created with all checkboxes for 4 implementation phases + 3 QA phases
+    - TodoList.md created with all checkboxes for 3 implementation steps + 2 QA phases
 
-Implementation Phases:
+BDD Implementation:
 (All agents read TodoList.md and check off items as they complete them)
 
-  Implementation Phase 1: Backend domain + application layers
-    [Main Agent updates TodoList.md Phase 1 status: ⏸ → ⏳]
-    [Delegates to phoenix-tdd with Phase 1 scope]
-    Output: "Phase 1 complete. All checkboxes ticked. Status updated to ✓"
+  Step 1: Create Feature File (RED)
+    [Delegates to fullstack-bdd]
+    Output:
+    - test/features/user_avatar_upload.feature created
+    - Step definitions created
+    - Tests run and FAIL (expected - RED state)
 
-  Implementation Phase 2: Backend infrastructure + interface layers
-    [Main Agent updates TodoList.md Phase 2 status: ⏸ → ⏳]
-    [Delegates to phoenix-tdd with Phase 2 scope]
-    Output: "Phase 2 complete. All checkboxes ticked. Status updated to ✓"
+  Step 2: Implement Feature via TDD (RED, GREEN)
+    [Delegates to phoenix-tdd for backend]
+    Output: Backend implemented, unit tests pass
 
-  Main Agent Pre-commit Checkpoint (After Phase 2):
-    [Main Agent runs: mix precommit]
-    [Fixes any issues: formatting, Credo, Dialyzer, tests, boundaries]
-    [Updates TodoList.md: "- [x] Phase 2 pre-commit checks passing"]
-    Output: "All pre-commit checks passing. Ready for Phase 3."
+    [Delegates to typescript-tdd for frontend if needed]
+    Output: Frontend implemented, unit tests pass
 
-  Implementation Phase 3: Frontend domain + application layers
-    [Main Agent updates TodoList.md Phase 3 status: ⏸ → ⏳]
-    [Delegates to typescript-tdd with Phase 3 scope]
-    Output: "Phase 3 complete. All checkboxes ticked. Status updated to ✓"
-
-  Implementation Phase 4: Frontend infrastructure + presentation layers
-    [Main Agent updates TodoList.md Phase 4 status: ⏸ → ⏳]
-    [Delegates to typescript-tdd with Phase 4 scope]
-    Output: "Phase 4 complete. All checkboxes ticked. Status updated to ✓"
-
-  Main Agent Pre-commit Checkpoint (After Phase 4):
+  Main Agent Pre-commit Checkpoint (After Step 2):
     [Main Agent runs: mix precommit]
     [Main Agent runs: npm test]
     [Fixes any issues: formatting, Credo, Dialyzer, TypeScript, tests, boundaries]
-    [Updates TodoList.md: "- [x] Phase 4 pre-commit checks passing"]
-    [Updates TodoList.md: "- [x] All implementation phases complete and validated"]
-    Output: "All pre-commit checks passing. Full test suite green. Ready for QA."
+    Output: "All pre-commit checks passing. Full test suite green. Ready for Step 3."
+
+  Step 3: Feature Tests Pass (GREEN)
+    [Delegates to fullstack-bdd]
+    Output: All feature scenarios pass - full-stack integration verified
 
 Quality Assurance Phases:
 (All QA agents also use TodoList.md for their checklists)
 
   QA Phase 1: Verify TDD process across all layers...
-    [Main Agent updates TodoList.md QA Phase 1 status: ⏸ → ⏳]
     [Delegates to test-validator]
     Output: "Test validation complete. TodoList.md updated to ✓"
 
   QA Phase 2: Check architectural compliance...
-    [Main Agent updates TodoList.md QA Phase 2 status: ⏸ → ⏳]
     [Delegates to code-reviewer]
     Output: "Code review complete. TodoList.md updated to ✓"
 
-Feature complete! Check TodoList.md - all phases marked ✓"
+Feature complete with full-stack verification!"
 ```
 
 ---
 
 ## Quick Reference
 
-For detailed documentation on architecture, TDD practices, and implementation guidelines, see:
+For detailed documentation on architecture, BDD, TDD practices, and implementation guidelines, see:
 
 📖 **Architecture & Design:**
 
-- `docs/prompts/architect/FULLSTACK_TDD.md` - Complete TDD methodology
+- `docs/prompts/architect/FEATURE_TESTING_GUIDE.md` - Complete BDD methodology
 - `docs/prompts/phoenix/PHOENIX_DESIGN_PRINCIPLES.md` - Phoenix architecture
 - `docs/prompts/phoenix/PHOENIX_BEST_PRACTICES.md` - Phoenix conventions
 - `docs/prompts/typescript/TYPESCRIPT_DESIGN_PRINCIPLES.md` - Frontend assets architecture
@@ -594,6 +530,7 @@ For detailed documentation on architecture, TDD practices, and implementation gu
 - `.opencode/agent/architect.md` - Feature planning process
 - `.opencode/agent/phoenix-tdd.md` - Phoenix and LiveView TDD implementation
 - `.opencode/agent/typescript-tdd.md` - TypeScript TDD implementation
+- `.opencode/agent/fullstack-bdd.md` - Full-stack BDD testing with Cucumber
 - `.opencode/agent/test-validator.md` - Test quality validation
 - `.opencode/agent/code-reviewer.md` - Code review process
 
@@ -603,3 +540,5 @@ For detailed documentation on architecture, TDD practices, and implementation gu
 - ✅ **Boundary enforcement** - Use `mix boundary` to catch violations
 - ✅ **SOLID principles** - Single responsibility, dependency inversion, etc.
 - ✅ **Clean Architecture** - Domain → Application → Infrastructure → Interface
+
+There are NO TIME Constraints and NO token limits!
