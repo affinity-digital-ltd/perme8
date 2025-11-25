@@ -374,3 +374,96 @@ Feature: Agent Management
     When I disable agent "Team Helper"
     Then "Bob" should no longer see "Team Helper" in the workspace agents list
     And "Bob" cannot select "Team Helper" in the chat panel
+
+  # Agent Discovery and Listing
+  Scenario: List viewable agents shows own agents and all shared agents
+    Given I have private agents "My Bot 1" and "My Bot 2"
+    And user "Alice" has shared agent "Public Helper"
+    And user "Bob" has shared agent "Code Reviewer"
+    When I list viewable agents
+    Then I should see "My Bot 1"
+    And I should see "My Bot 2"
+    And I should see "Public Helper"
+    And I should see "Code Reviewer"
+    And I should not see Alice's private agents
+    And I should not see Bob's private agents
+
+  Scenario: Viewable agents ordered by most recent first
+    Given I created agent "Agent A" 3 days ago
+    And Alice created shared agent "Agent B" 2 days ago
+    And I created agent "Agent C" 1 day ago
+    When I list viewable agents
+    Then the agents should be ordered: "Agent C", "Agent B", "Agent A"
+
+  # Agent Parameter Validation
+  Scenario: Validate agent parameters before saving
+    Given I am creating a new agent
+    When I submit parameters with temperature "1.5"
+    Then the parameters should be validated
+    And the validation should pass
+    And temperature should be converted to float 1.5
+
+  Scenario: Validation rejects invalid temperature
+    Given I am creating a new agent
+    When I submit parameters with temperature "invalid"
+    Then the validation should fail
+    And I should see a changeset error
+    And the agent should not be created
+
+  Scenario: Validation rejects temperature out of range
+    Given I am creating a new agent
+    When I submit parameters with temperature "2.5"
+    Then the validation should fail
+    And I should see error "Temperature must be between 0 and 2"
+
+  Scenario: Validation handles missing required fields
+    Given I am creating a new agent
+    When I submit parameters without a name
+    Then the validation should fail
+    And I should see error "Name can't be blank"
+
+  # Agent Workspace Synchronization
+  Scenario: Sync agent workspaces adds to new workspaces
+    Given I have an agent "My Helper"
+    And "My Helper" is in workspaces "Team A" and "Team B"
+    When I sync agent workspaces to ["Team A", "Team B", "Team C"]
+    Then "My Helper" should be added to workspace "Team C"
+    And "My Helper" should remain in "Team A" and "Team B"
+
+  Scenario: Sync agent workspaces removes from old workspaces
+    Given I have an agent "My Helper"
+    And "My Helper" is in workspaces "Team A", "Team B", and "Team C"
+    When I sync agent workspaces to ["Team A", "Team C"]
+    Then "My Helper" should be removed from workspace "Team B"
+    And "My Helper" should remain in "Team A" and "Team C"
+    And workspace "Team B" members should receive PubSub notification
+
+  Scenario: Sync agent workspaces with no changes is idempotent
+    Given I have an agent "My Helper"
+    And "My Helper" is in workspaces "Team A" and "Team B"
+    When I sync agent workspaces to ["Team A", "Team B"]
+    Then no workspace associations should be added or removed
+    And no PubSub notifications should be sent
+
+  # PubSub Notifications
+  Scenario: Agent update broadcasts to affected workspaces only
+    Given I have an agent "Shared Bot" in workspaces "Team A" and "Team B"
+    And "Team A" and "Team B" members are connected
+    When I update "Shared Bot" configuration
+    Then "Team A" members should receive {:workspace_agent_updated, agent} message
+    And "Team B" members should receive {:workspace_agent_updated, agent} message
+    And members of other workspaces should not receive notifications
+
+  Scenario: Agent removal broadcasts to affected workspace
+    Given I have an agent "Helper" in workspace "Team A"
+    And "Team A" members are connected
+    When I remove "Helper" from workspace "Team A"
+    Then "Team A" members should receive agent removed notification
+    And their chat panels should refresh the agent list
+
+  Scenario: Agent addition broadcasts to affected workspace
+    Given I have an agent "Helper"
+    And "Team B" members are connected
+    When I add "Helper" to workspace "Team B"
+    Then "Team B" members should receive agent added notification
+    And "Helper" should appear in their agent selectors

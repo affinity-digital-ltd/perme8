@@ -820,3 +820,59 @@ Feature: Chat Panel
     When I try to interact with other UI elements
     Then the interface should remain responsive
     And I can navigate away if needed
+
+  # In-Document Agent Queries
+  Scenario: Execute agent query from document editor using @j command
+    Given I am editing a document in a workspace
+    And workspace has an agent named "code-helper"
+    When I type "@j code-helper How do I write a test?" in the editor
+    And I press Enter
+    Then the agent query should be executed
+    And the agent response should stream into the document
+    And the response should be inserted at the cursor position
+
+  Scenario: Agent query uses document content as context
+    Given I am editing a document with content "# Product Requirements\nFeature: User authentication"
+    And workspace has an agent named "analyzer"
+    When I execute "@j analyzer What features are described?"
+    Then the agent should receive the document content as context
+    And the response should reference "user authentication"
+
+  Scenario: Agent query with invalid command format
+    Given I am editing a document
+    When I type "@j" without an agent name or question
+    And I press Enter
+    Then I should see an error "Invalid command format. Use: @j agent_name Question"
+    And no agent query should be executed
+
+  Scenario: Agent query with non-existent agent
+    Given I am editing a document in a workspace
+    And the workspace has no agent named "fake-agent"
+    When I execute "@j fake-agent What is this?"
+    Then I should see an error "Agent not found in workspace"
+    And no query should be executed
+
+  Scenario: Agent query with disabled agent
+    Given I am editing a document in a workspace
+    And workspace has a disabled agent named "old-bot"
+    When I execute "@j old-bot Help me"
+    Then I should see an error "Agent is disabled"
+    And no query should be executed
+
+  Scenario: Cancel in-document agent query
+    Given I am editing a document
+    And I execute "@j analyzer Explain this document in detail"
+    And the agent starts streaming a response
+    When I trigger the cancel query action
+    Then the streaming should stop
+    And the partial response should remain in the document
+    And the query process should be terminated
+
+  Scenario: Multiple agent queries in same document
+    Given I am editing a document
+    When I execute "@j helper-1 First question"
+    And I wait for the response to complete
+    And I execute "@j helper-2 Second question"
+    Then both agent responses should be present in the document
+    And each response should be from the correct agent
+    And the responses should not interfere with each other
