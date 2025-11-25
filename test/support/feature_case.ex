@@ -8,7 +8,14 @@ defmodule JargaWeb.FeatureCase do
   # Test support module - top-level boundary for E2E test infrastructure
   use Boundary,
     top_level?: true,
-    deps: [Jarga.Repo, Jarga.Accounts, Jarga.Workspaces, Jarga.Documents, Jarga.TestUsers],
+    deps: [
+      Jarga.Repo,
+      Jarga.Accounts,
+      Jarga.Workspaces,
+      Jarga.Documents,
+      Jarga.Agents,
+      Jarga.TestUsers
+    ],
     exports: []
 
   use ExUnit.CaseTemplate
@@ -24,11 +31,13 @@ defmodule JargaWeb.FeatureCase do
       alias Jarga.Accounts
       alias Jarga.Workspaces
       alias Jarga.Documents
+      alias Jarga.Agents
 
       # Import fixtures for test data creation
       import Jarga.AccountsFixtures
       import Jarga.WorkspacesFixtures
       import Jarga.DocumentsFixtures
+      import Jarga.AgentsFixtures
     end
   end
 

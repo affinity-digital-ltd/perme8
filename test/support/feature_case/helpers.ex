@@ -415,4 +415,33 @@ defmodule JargaWeb.FeatureCase.Helpers do
       editor.dispatchEvent(event);
     """)
   end
+
+  @doc """
+  Presses Enter in the ProseMirror editor using a proper keydown event.
+
+  This ensures the Enter key is properly handled by ProseMirror plugins.
+  """
+  def press_enter_in_editor(session) do
+    session
+    |> execute_script("""
+      const pmEditor = document.querySelector('#editor-container .ProseMirror');
+      if (pmEditor) {
+        pmEditor.focus();
+        const event = new KeyboardEvent('keydown', {
+          key: 'Enter',
+          code: 'Enter',
+          keyCode: 13,
+          which: 13,
+          bubbles: true,
+          cancelable: true,
+          composed: true
+        });
+        pmEditor.dispatchEvent(event);
+      }
+    """)
+    |> then(fn session ->
+      Process.sleep(500)
+      session
+    end)
+  end
 end

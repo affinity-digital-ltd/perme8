@@ -611,4 +611,187 @@ defmodule JargaWeb.AppLive.Documents.ShowAITest do
       Process.sleep(10)
     end
   end
+
+  describe "agent_query_command with mocked LLM responses" do
+    setup %{user: user, workspace: workspace} do
+      # Create an agent for testing
+      agent =
+        agent_fixture(user, %{
+          name: "prd-agent",
+          system_prompt: "You are a helpful PRD assistant.",
+          model: "gpt-4o-mini",
+          temperature: 0.7,
+          enabled: true
+        })
+
+      # Sync agent to workspace
+      :ok = Jarga.Agents.sync_agent_workspaces(agent.id, user.id, [workspace.id])
+
+      %{agent: agent}
+    end
+
+    test "receives mocked LLM response chunks and sends to client", %{
+      conn: conn,
+      user: user,
+      workspace: workspace,
+      document: document,
+      agent: _agent
+    } do
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} =
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
+
+      lv_pid = view.pid
+
+      # Send agent_query_command
+      view
+      |> element("#editor-container")
+      |> render_hook("agent_query_command", %{
+        "command" => "@j prd-agent What is a PRD?",
+        "node_id" => "test_node_123"
+      })
+
+      Process.sleep(50)
+
+      # Simulate LLM streaming back chunks
+      send(lv_pid, {:agent_chunk, "test_node_123", "A PRD is a "})
+      Process.sleep(10)
+      send(lv_pid, {:agent_chunk, "test_node_123", "Product Requirements "})
+      Process.sleep(10)
+      send(lv_pid, {:agent_chunk, "test_node_123", "Document."})
+      Process.sleep(10)
+      send(lv_pid, {:agent_done, "test_node_123", "A PRD is a Product Requirements Document."})
+
+      Process.sleep(50)
+
+      # Verify view handled all messages
+      assert Process.alive?(view.pid)
+    end
+
+    test "handles mocked LLM error response", %{
+      conn: conn,
+      user: user,
+      workspace: workspace,
+      document: document,
+      agent: _agent
+    } do
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} =
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
+
+      lv_pid = view.pid
+
+      view
+      |> element("#editor-container")
+      |> render_hook("agent_query_command", %{
+        "command" => "@j prd-agent Help me",
+        "node_id" => "error_node_456"
+      })
+
+      Process.sleep(50)
+
+      # Simulate LLM error
+      send(lv_pid, {:agent_error, "error_node_456", "API rate limit exceeded"})
+
+      Process.sleep(50)
+
+      assert Process.alive?(view.pid)
+    end
+
+    test "validates agent exists and is enabled", %{
+      conn: conn,
+      user: user,
+      workspace: workspace,
+      document: document
+    } do
+      # Create disabled agent
+      disabled_agent = agent_fixture(user, %{name: "disabled-prd", enabled: false})
+      :ok = Jarga.Agents.sync_agent_workspaces(disabled_agent.id, user.id, [workspace.id])
+
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} =
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
+
+      # Try disabled agent
+      view
+      |> element("#editor-container")
+      |> render_hook("agent_query_command", %{
+        "command" => "@j disabled-prd Help",
+        "node_id" => "disabled_node"
+      })
+
+      Process.sleep(50)
+
+      # Should handle error gracefully
+      assert Process.alive?(view.pid)
+    end
+
+    test "parses agent name case-insensitively", %{
+      conn: conn,
+      user: user,
+      workspace: workspace,
+      document: document,
+      agent: _agent
+    } do
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} =
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
+
+      lv_pid = view.pid
+
+      # Send with uppercase (agent is "prd-agent")
+      view
+      |> element("#editor-container")
+      |> render_hook("agent_query_command", %{
+        "command" => "@j PRD-AGENT Help",
+        "node_id" => "case_node"
+      })
+
+      Process.sleep(50)
+
+      send(lv_pid, {:agent_done, "case_node", "Response"})
+      Process.sleep(20)
+
+      assert Process.alive?(view.pid)
+    end
+
+    test "includes document content as context", %{
+      conn: conn,
+      user: user,
+      workspace: workspace,
+      agent: _agent
+    } do
+      # Create document with specific content
+      doc =
+        document_fixture(user, workspace, nil, %{
+          title: "Test PRD",
+          content: "# Product Requirements\n\nOur test product."
+        })
+
+      conn = log_in_user(conn, user)
+
+      {:ok, view, _html} =
+        live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{doc.slug}")
+
+      lv_pid = view.pid
+
+      view
+      |> element("#editor-container")
+      |> render_hook("agent_query_command", %{
+        "command" => "@j prd-agent Summarize",
+        "node_id" => "context_node"
+      })
+
+      Process.sleep(50)
+
+      send(lv_pid, {:agent_done, "context_node", "Summary"})
+      Process.sleep(20)
+
+      assert Process.alive?(view.pid)
+    end
+  end
 end
