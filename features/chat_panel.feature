@@ -8,13 +8,33 @@ Feature: Chat Panel
     And I have at least one enabled agent available
 
   # Panel Display and Interaction
-  Scenario: Open and close chat panel
+  Scenario: Chat panel opens by default on desktop
     Given I am on any page with the admin layout
+    And I am viewing on a desktop viewport (≥1024px)
+    And I have not previously interacted with the chat panel
+    When the page loads
+    Then the chat panel should be open by default
+    And the chat toggle button should be hidden
+
+  Scenario: Chat panel closed by default on mobile
+    Given I am on any page with the admin layout
+    And I am viewing on a mobile viewport (<1024px)
+    And I have not previously interacted with the chat panel
+    When the page loads
+    Then the chat panel should be closed by default
+    And the chat toggle button should be visible
+
+  Scenario: Toggle chat panel open and closed
+    Given the chat panel is closed
     When I click the chat toggle button
     Then the chat panel should slide open from the right
     And the panel should display the chat interface
+    And the toggle button should be hidden
+    And my preference should be saved to localStorage
     When I click the close button
     Then the chat panel should slide closed
+    And the toggle button should become visible
+    And my preference should be saved to localStorage
 
   Scenario: Chat panel displays on all admin pages
     Given I am viewing the following pages in sequence:
@@ -37,7 +57,7 @@ Feature: Chat Panel
     And the resized width should be preserved across sessions
 
   Scenario: Empty chat shows welcome message
-    Given the chat panel is open
+    Given I am on desktop (panel open by default)
     And I have no messages in the current session
     Then I should see the welcome icon (chat bubble)
     And I should see "Ask me anything about this document"
@@ -377,12 +397,32 @@ Feature: Chat Panel
     When a new assistant message arrives
     Then the chat should auto-scroll to show the newest message
 
-  Scenario: Chat panel maintains collapsed state
-    Given the chat panel is open
+  Scenario: Chat panel restores user preference across page loads
+    Given I am on desktop
+    And the chat panel is open by default
     When I close the panel
     And I navigate to another page
-    Then the panel should remain closed
-    And opening it again should restore the previous state
+    Then the panel should remain closed (user preference)
+    When I open the panel again
+    And I navigate to another page
+    Then the panel should remain open (user preference)
+
+  Scenario: Chat panel auto-adjusts on resize without user interaction
+    Given I am on desktop with the panel open by default
+    And I have not manually toggled the panel
+    When I resize the browser to mobile viewport
+    Then the panel should automatically close
+    When I resize back to desktop viewport
+    Then the panel should automatically open
+
+  Scenario: Chat panel preserves user preference during resize
+    Given I am on desktop
+    And I manually close the chat panel
+    When I resize to mobile and back to desktop
+    Then the panel should remain closed (user preference)
+    Given I manually open the chat panel
+    When I resize to mobile and back to desktop
+    Then the panel should remain open (user preference)
 
   # Message Formatting
   Scenario: User messages display correctly
@@ -441,7 +481,14 @@ Feature: Chat Panel
   # Keyboard Shortcuts and Accessibility
   Scenario: Focus message input when panel opens
     Given the chat panel is closed
-    When I open the chat panel
+    When I click the toggle button to open the panel
+    Then the message input should receive focus after 150ms animation
+    And I can start typing immediately
+
+  Scenario: Message input receives focus on desktop initial load
+    Given I am on desktop
+    And I have not interacted with the chat panel before
+    When the page loads with the panel open by default
     Then the message input should receive focus
     And I can start typing immediately
 
@@ -461,6 +508,16 @@ Feature: Chat Panel
     Given the chat panel is open
     When I press Escape
     Then the chat panel should close
+    And my preference should be saved to localStorage
+
+  Scenario: Cmd/Ctrl+K toggles chat panel
+    Given the chat panel is closed
+    When I press Cmd+K (or Ctrl+K on Windows/Linux)
+    Then the chat panel should open
+    And my preference should be saved to localStorage
+    When I press Cmd+K again
+    Then the chat panel should close
+    And my preference should be saved to localStorage
 
   Scenario: ARIA labels for accessibility
     Given the chat panel is rendered
