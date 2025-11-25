@@ -3,6 +3,10 @@
 {:ok, _} = Application.ensure_all_started(:wallaby)
 Application.put_env(:wallaby, :base_url, JargaWeb.Endpoint.url())
 
+# Compile Cucumber features and step definitions
+# Cucumber will auto-discover features and steps based on config in test.exs
+Cucumber.compile_features!()
+
 # Exclude evaluation tests by default
 # To run evaluation tests: mix test --include evaluation
 # Capture log output to suppress expected error messages in tests
