@@ -47,9 +47,6 @@ defmodule JargaWeb.Features.MultipleCursorsTest do
       session_b
       |> click_in_editor()
 
-      # Give awareness time to sync between clients
-      Process.sleep(500)
-
       # User A types some text - this updates their cursor position
       session_a
       |> send_keys(["Hello from Alice"])
@@ -91,9 +88,6 @@ defmodule JargaWeb.Features.MultipleCursorsTest do
       session_b
       |> click_in_editor()
 
-      # Give awareness time to sync
-      Process.sleep(500)
-
       # User A starts typing
       session_a
       |> send_keys(["Line 1"])
@@ -105,9 +99,6 @@ defmodule JargaWeb.Features.MultipleCursorsTest do
       # User A continues typing - cursor should move
       session_a
       |> send_keys(["\nLine 2"])
-
-      # Give time for cursor update
-      Process.sleep(500)
 
       # Cursor should still be visible (position updated)
       session_b
@@ -142,9 +133,6 @@ defmodule JargaWeb.Features.MultipleCursorsTest do
       session_b
       |> click_in_editor()
 
-      # Give awareness time to sync
-      Process.sleep(500)
-
       # User A types to establish cursor
       session_a
       |> send_keys(["I'm here"])
@@ -156,12 +144,9 @@ defmodule JargaWeb.Features.MultipleCursorsTest do
       # User A disconnects (close session)
       close_session(session_a)
 
-      # Wait for awareness cleanup (typically 3 seconds)
-      Process.sleep(3500)
-
-      # User B should no longer see User A's cursor
+      # User B should no longer see User A's cursor (awareness cleanup happens automatically)
       session_b
-      |> wait_for_cursor_to_disappear("Alice", 1000)
+      |> wait_for_cursor_to_disappear("Alice", 4000)
     end
 
     @tag :wallaby
@@ -190,9 +175,6 @@ defmodule JargaWeb.Features.MultipleCursorsTest do
       session_b
       |> click_in_editor()
 
-      # Give awareness time to sync
-      Process.sleep(500)
-
       # User A types
       session_a
       |> send_keys(["Alice is typing"])
@@ -200,9 +182,6 @@ defmodule JargaWeb.Features.MultipleCursorsTest do
       # User B types
       session_b
       |> send_keys(["Bob is also typing"])
-
-      # Wait for awareness sync
-      Process.sleep(1000)
 
       # User A should see User B's cursor
       session_a

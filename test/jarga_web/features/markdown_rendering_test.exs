@@ -37,8 +37,6 @@ defmodule JargaWeb.Features.MarkdownRenderingTest do
       session
       |> send_keys(["# Heading 1"])
 
-      Process.sleep(500)
-
       # Verify heading is rendered (not raw markdown)
       session
       |> assert_has(css("h1", text: "Heading 1", count: 1))
@@ -65,8 +63,6 @@ defmodule JargaWeb.Features.MarkdownRenderingTest do
       # Type bold markdown
       session
       |> send_keys(["**bold text**"])
-
-      Process.sleep(500)
 
       # Verify bold text is rendered
       # Milkdown renders bold as <strong> inside a paragraph
@@ -98,8 +94,6 @@ defmodule JargaWeb.Features.MarkdownRenderingTest do
       |> send_keys(["Item 2"])
       |> send_keys([:enter])
       |> send_keys(["Item 3"])
-
-      Process.sleep(500)
 
       # Verify list is rendered (scope to editor to avoid navigation/sidebar lists)
       session
@@ -138,8 +132,6 @@ defmodule JargaWeb.Features.MarkdownRenderingTest do
       |> send_keys([:enter])
       |> send_keys(["```"])
 
-      Process.sleep(800)
-
       # Verify code block is rendered
       # Milkdown renders code blocks as <pre><code> elements
       session
@@ -166,9 +158,6 @@ defmodule JargaWeb.Features.MarkdownRenderingTest do
       |> click_in_editor()
       # Type: "Check out [Google](https://google.com) for search"
       |> send_keys(["Check out [Google](https://google.com) for search"])
-
-      # Wait longer for markdown input rule to process and render link
-      Process.sleep(1500)
 
       # Verify link is rendered with correct text (scope to editor)
       session
@@ -233,9 +222,6 @@ defmodule JargaWeb.Features.MarkdownRenderingTest do
       # Type: "Check out ![Test Image](https://example.com/image.png) here"
       |> send_keys(["Check out ![Test Image](https://example.com/image.png) here"])
 
-      # Wait longer for markdown input rule to process and render image
-      Process.sleep(1500)
-
       # Verify image is rendered with correct attributes (scope to editor)
       session
       |> assert_has(css(".ProseMirror img[alt='Test Image']", count: 1))
@@ -280,8 +266,6 @@ defmodule JargaWeb.Features.MarkdownRenderingTest do
       |> send_keys(["- First item"])
       |> send_keys([:enter])
       |> send_keys(["Second item"])
-
-      Process.sleep(800)
 
       # Verify all elements rendered (scope to editor)
       # Note: Link rendering in Milkdown requires specific triggers that don't work

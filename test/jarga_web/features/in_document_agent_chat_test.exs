@@ -134,24 +134,18 @@ defmodule JargaWeb.Features.InDocumentAgentChatTest do
   defp wait_for_agent_response(session) do
     # Just wait a bit for the response to stream in
     # Mocked responses are fast (5ms per chunk), so 2 seconds is plenty
-    session
-    |> then(fn s ->
-      # Poll for content that's not "Agent thinking"
-      retry(
-        fn ->
-          content = get_editor_content(s)
+    # 40 retries * 50ms = 2 second timeout
+    retry(fn -> check_agent_response_complete(session) end, 40, 50)
+  end
 
-          unless content =~ "Agent thinking" do
-            s
-          else
-            :retry
-          end
-        end,
-        # 40 retries * 50ms = 2 second timeout
-        40,
-        50
-      )
-    end)
+  defp check_agent_response_complete(session) do
+    content = get_editor_content(session)
+
+    if content =~ "Agent thinking" do
+      :retry
+    else
+      session
+    end
   end
 
   # Simple retry helper

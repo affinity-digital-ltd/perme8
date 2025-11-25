@@ -48,9 +48,6 @@ defmodule JargaWeb.Features.DocumentCollaborationTest do
       session_b
       |> click_in_editor()
 
-      # Give time for initial awareness/Yjs sync
-      Process.sleep(500)
-
       # User A types "Hello"
       session_a
       |> send_keys(["Hello"])
@@ -62,9 +59,6 @@ defmodule JargaWeb.Features.DocumentCollaborationTest do
       # User B types " World"
       session_b
       |> send_keys([" World"])
-
-      # Wait for Yjs to sync the changes
-      Process.sleep(1000)
 
       # Verify both sessions have both contributions (order may vary due to CRDT)
       content_a = session_a |> get_editor_content()
@@ -106,17 +100,12 @@ defmodule JargaWeb.Features.DocumentCollaborationTest do
       session_b
       |> click_in_editor()
 
-      Process.sleep(500)
-
       # Both users type at the same time (simulating concurrent edits)
       session_a
       |> send_keys(["Alice's text"])
 
       session_b
       |> send_keys(["Bob's text"])
-
-      # Wait for convergence (Yjs CRDT should merge the changes)
-      Process.sleep(1000)
 
       # Both sessions should converge to have both users' contributions
       content_a = session_a |> get_editor_content()
@@ -145,10 +134,7 @@ defmodule JargaWeb.Features.DocumentCollaborationTest do
       |> open_document(workspace.slug, document.slug)
       |> type_in_editor("Persistent content")
 
-      # Wait for auto-save (document saves happen automatically)
-      Process.sleep(2000)
-
-      # Refresh the page
+      # Refresh the page (auto-save happens automatically before refresh)
       session
       |> refresh_page()
       |> wait_for_element(css(".milkdown", visible: true, count: 1))
@@ -171,18 +157,12 @@ defmodule JargaWeb.Features.DocumentCollaborationTest do
       |> open_document(workspace.slug, document.slug)
       |> type_in_editor("Early content from Alice")
 
-      # Wait for content to be saved
-      Process.sleep(2000)
-
       # User B joins later
       session_b = new_session()
 
       session_b
       |> log_in_user(user_b)
       |> open_document(workspace.slug, document.slug)
-
-      # Wait for editor to load and content to sync
-      Process.sleep(1000)
 
       # User B should see all existing content
       content_b = session_b |> get_editor_content()

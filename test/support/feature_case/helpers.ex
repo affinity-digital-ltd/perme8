@@ -10,17 +10,6 @@ defmodule JargaWeb.FeatureCase.Helpers do
   alias Wallaby.Element
 
   @doc """
-  Waits for a specific amount of time with a descriptive reason.
-
-  Use when you need an explicit delay for operations that don't have
-  better wait helpers available.
-  """
-  def wait_for(duration_ms, reason \\ "operation to complete") do
-    IO.puts("⏳ Waiting #{duration_ms}ms for #{reason}...")
-    Process.sleep(duration_ms)
-  end
-
-  @doc """
   Gets a persistent test user by key.
 
   Available test users: :alice, :bob, :charlie
@@ -45,10 +34,10 @@ defmodule JargaWeb.FeatureCase.Helpers do
 
     session
     |> visit("/users/log-in")
-    # Wait for LiveView to fully mount before interacting
+    # Wait for LiveView to fully mount and stabilize
     |> assert_has(css("#login_form_password"))
-    # Give LiveView a moment to stabilize after mount
     |> then(fn session ->
+      # Delay for LiveView to stabilize after mount and get DB access
       Process.sleep(500)
       session
     end)
@@ -73,7 +62,8 @@ defmodule JargaWeb.FeatureCase.Helpers do
     session
     |> visit("/app/workspaces/#{workspace_slug}/documents/#{document_slug}")
     |> take_screenshot(name: "after_navigate_to_document")
-    |> Wallaby.Browser.assert_has(css(".milkdown", visible: true, count: 1))
+    # Wait for Milkdown editor to load
+    |> assert_has(css(".milkdown", visible: true, count: 1))
   end
 
   @doc """
@@ -122,19 +112,32 @@ defmodule JargaWeb.FeatureCase.Helpers do
       }
     """)
     |> then(fn session ->
-      # Give ProseMirror selection plugin time to update awareness
-      Process.sleep(500)
+      # Brief wait for awareness to initialize
+      Process.sleep(200)
       session
     end)
   end
 
   @doc """
   Gets the text content from the Milkdown editor.
+
+  Filters out remote cursor labels to get only the actual document content.
   """
   def get_editor_content(session) do
-    session
-    |> find(css(".milkdown"))
-    |> Element.text()
+    text =
+      session
+      |> find(css(".milkdown"))
+      |> Element.text()
+
+    # Remove cursor labels which appear as "Name N." patterns
+    # Cursor labels follow the pattern "Firstname L." (name with one-letter last name)
+    text
+    |> String.split("\n")
+    |> Enum.reject(fn line ->
+      # Remove lines that are just cursor labels (e.g., "Bob B.", "Alice A.")
+      String.match?(line, ~r/^[A-Z][a-z]+ [A-Z]\.$/)
+    end)
+    |> Enum.join("\n")
   end
 
   @doc """
@@ -190,7 +193,8 @@ defmodule JargaWeb.FeatureCase.Helpers do
       """)
     end)
     |> then(fn session ->
-      Process.sleep(500)
+      # Brief wait for undo operation to complete
+      Process.sleep(300)
       session
     end)
   end
@@ -226,7 +230,8 @@ defmodule JargaWeb.FeatureCase.Helpers do
       """)
     end)
     |> then(fn session ->
-      Process.sleep(500)
+      # Brief wait for redo operation to complete
+      Process.sleep(300)
       session
     end)
   end
@@ -267,6 +272,30 @@ defmodule JargaWeb.FeatureCase.Helpers do
   def debug_screenshot(session, name \\ "debug") do
     session
     |> take_screenshot(name: name)
+  end
+
+  @doc """
+  Saves the current page HTML for debugging purposes.
+
+  HTML is saved to tmp/html/ directory.
+  """
+  def save_html(session, name \\ "debug") do
+    session
+    |> then(fn session ->
+      # Get HTML using page_source
+      html = Wallaby.Browser.page_source(session)
+
+      # Ensure tmp/html directory exists
+      File.mkdir_p!("tmp/html")
+
+      # Save HTML to file
+      file_path = "tmp/html/#{name}.html"
+      File.write!(file_path, html)
+
+      IO.puts("💾 Saved HTML to #{file_path}")
+
+      session
+    end)
   end
 
   @doc """

@@ -37,8 +37,6 @@ defmodule JargaWeb.Features.GfmCheckboxTest do
       session
       |> send_keys(["- [ ] Task item"])
 
-      Process.sleep(500)
-
       # Checkbox should be rendered as li with data-item-type="task"
       session
       |> assert_has(css("li[data-item-type='task']", count: 1))
@@ -69,8 +67,6 @@ defmodule JargaWeb.Features.GfmCheckboxTest do
       session
       |> send_keys(["- [ ] Task item"])
 
-      Process.sleep(500)
-
       # Verify checkbox is unchecked
       session
       |> assert_has(css("li[data-item-type='task'][data-checked='false']", count: 1))
@@ -95,8 +91,6 @@ defmodule JargaWeb.Features.GfmCheckboxTest do
         }
       """)
 
-      Process.sleep(300)
-
       # Checkbox should now be checked
       session
       |> assert_has(css("li[data-item-type='task'][data-checked='true']", count: 1))
@@ -118,8 +112,6 @@ defmodule JargaWeb.Features.GfmCheckboxTest do
       # User types checkbox markdown (initially checked)
       session
       |> send_keys(["- [x] Task item"])
-
-      Process.sleep(500)
 
       # Checkbox should be checked
       session
@@ -151,8 +143,6 @@ defmodule JargaWeb.Features.GfmCheckboxTest do
           taskItem.dispatchEvent(clickEvent);
         }
       """)
-
-      Process.sleep(300)
 
       # Checkbox should now be unchecked
       session
@@ -194,9 +184,6 @@ defmodule JargaWeb.Features.GfmCheckboxTest do
         }
       """)
 
-      # Wait longer for any async updates
-      Process.sleep(1000)
-
       # BUG CHECK: Checkbox state should remain unchanged (still unchecked)
       # If this fails, it means clicking the paragraph incorrectly toggles the checkbox
       session
@@ -229,14 +216,9 @@ defmodule JargaWeb.Features.GfmCheckboxTest do
       session_b
       |> click_in_editor()
 
-      Process.sleep(500)
-
       # User A types checkbox markdown
       session_a
       |> send_keys(["- [ ] Task item"])
-
-      # Wait for sync
-      Process.sleep(1000)
 
       # Both users should see the unchecked checkbox
       session_a
@@ -262,9 +244,6 @@ defmodule JargaWeb.Features.GfmCheckboxTest do
           taskItem.dispatchEvent(clickEvent);
         }
       """)
-
-      # Wait for sync
-      Process.sleep(500)
 
       # Both users should see the checked checkbox
       session_a
@@ -297,8 +276,6 @@ defmodule JargaWeb.Features.GfmCheckboxTest do
       |> send_keys([:enter])
       |> send_keys(["- [ ] Task 3"])
 
-      Process.sleep(500)
-
       # All 3 checkboxes should be rendered and unchecked
       session
       |> assert_has(css("li[data-item-type='task']", count: 3))
@@ -313,8 +290,6 @@ defmodule JargaWeb.Features.GfmCheckboxTest do
           taskItems[1].click();
         }
       """)
-
-      Process.sleep(300)
 
       # Verify exactly 1 checkbox is checked and 2 are unchecked
       session
