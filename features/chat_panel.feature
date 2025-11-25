@@ -876,3 +876,92 @@ Feature: Chat Panel
     Then both agent responses should be present in the document
     And each response should be from the correct agent
     And the responses should not interfere with each other
+
+  # Agent Response Rendering in Editor
+  Scenario: Agent response displays "Agent thinking..." while waiting
+    Given I am editing a document
+    When I execute "@j analyzer Analyze this document"
+    Then I should immediately see "Agent thinking..." in the editor
+    And the text should be displayed with opacity-60 style
+    And an animated loading dots indicator should be visible
+    And the thinking text should appear at the cursor position
+
+  Scenario: Agent thinking indicator has animated dots
+    Given I execute an agent query
+    When the "Agent thinking..." text appears
+    Then I should see animated dots
+    And the dots should have a loading-dots CSS class
+    And the animation should indicate ongoing processing
+
+  Scenario: Agent response streams character by character
+    Given I execute an agent query
+    And the agent starts responding
+    When the first chunk "Hello" arrives
+    Then "Hello" should appear in the editor
+    And a blinking cursor (▊) should be shown after "Hello"
+    When the next chunk " World" arrives
+    Then "Hello World" should be visible
+    And the blinking cursor should move to the end
+    And the cursor should have streaming-cursor CSS class
+
+  Scenario: Agent response node is atomic and non-editable during streaming
+    Given an agent is streaming a response "This is a test"
+    When I try to click inside the response text
+    Then the cursor should not enter the response node
+    And the response should behave as a single atomic unit
+    And I cannot edit individual characters while streaming
+    When the response completes
+    Then the content should be converted to editable markdown
+
+  Scenario: Agent response blinking cursor indicates streaming state
+    Given an agent is streaming a response
+    Then I should see a blinking cursor "▊" at the end of the text
+    And the cursor should have the streaming-cursor CSS class
+    And the cursor should blink to indicate activity
+    When the streaming completes
+    Then the blinking cursor should disappear
+    And the text should become fully editable
+
+  Scenario: Agent response converted to markdown after completion
+    Given an agent is streaming markdown content:
+      """
+      ## Solution
+      Use **dependency injection**
+      ```elixir
+      def hello, do: :world
+      ```
+      """
+    When the streaming completes
+    Then the atomic agent_response node should be replaced
+    And the content should be parsed as markdown
+    And I should see a rendered heading "Solution"
+    And "dependency injection" should be bold
+    And the code block should be syntax highlighted
+    And all content should be editable character by character
+
+  Scenario: Agent error displayed inline in editor
+    Given I execute an agent query
+    When the agent returns an error "API timeout"
+    Then I should see "[Agent Error: API timeout]" in the editor
+    And the error text should be styled with text-error class (red)
+    And the error should be inline with other content
+    And I can delete the error node and continue editing
+
+  Scenario: Agent response node attributes track state
+    Given an agent response node exists
+    Then the node should have data-node-id attribute
+    And the node should have data-state attribute (streaming|done|error)
+    And the node should have data-content attribute with current text
+    When streaming, the state should be "streaming"
+    When complete, the state should be "done"
+    When error occurs, the state should be "error"
+
+  Scenario: Completed agent response becomes regular editable text
+    Given an agent has completed a response "Use Clean Architecture"
+    And the response has been converted to markdown
+    When I click in the middle of "Clean"
+    Then my cursor should position between characters
+    And I can type to insert new characters
+    And I can delete characters with backspace
+    And I can select and copy text
+    And the content behaves like normal editor text
