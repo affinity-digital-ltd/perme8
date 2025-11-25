@@ -454,6 +454,71 @@ Feature: Chat Panel
     Then the code should be displayed in a code block
     And the code should have syntax highlighting for Elixir
 
+  Scenario: Markdown headings are rendered in assistant messages
+    Given I receive an assistant message with markdown:
+      """
+      # Main Heading
+      ## Subheading
+      ### Sub-subheading
+      """
+    Then I should see the headings rendered as <h1>, <h2>, and <h3> elements
+    And I should not see raw markdown syntax (#, ##, ###)
+
+  Scenario: Markdown emphasis is rendered in assistant messages
+    Given I receive an assistant message "This is **bold** and this is *italic* text"
+    Then "bold" should be rendered in bold (strong tag)
+    And "italic" should be rendered in italic (em tag)
+    And I should not see asterisks in the rendered message
+
+  Scenario: Markdown lists are rendered in assistant messages
+    Given I receive an assistant message with a list:
+      """
+      Steps to follow:
+      1. First step
+      2. Second step
+      - Bullet point A
+      - Bullet point B
+      """
+    Then I should see an ordered list with 2 items
+    And I should see an unordered list with 2 items
+    And list items should be properly formatted
+
+  Scenario: Markdown links are rendered as clickable links
+    Given I receive an assistant message "Check out [OpenAI](https://openai.com) for more info"
+    Then I should see a clickable link with text "OpenAI"
+    And the link should point to "https://openai.com"
+    And clicking the link should open in a new tab
+
+  Scenario: Markdown blockquotes are rendered with styling
+    Given I receive an assistant message with a blockquote:
+      """
+      > This is a quote
+      > from the documentation
+      """
+    Then the quote should be displayed in a blockquote element
+    And the blockquote should have distinctive styling
+
+  Scenario: Mixed markdown elements render correctly
+    Given I receive an assistant message with complex markdown:
+      """
+      ## Solution
+
+      Here's how to fix it:
+
+      1. **Install dependencies**: Run `npm install`
+      2. *Configure* the settings
+      3. Test with this code:
+
+      ```javascript
+      console.log('Hello');
+      ```
+
+      See [docs](https://example.com) for details.
+      """
+    Then all markdown elements should render correctly
+    And headings, lists, bold, italic, code blocks, and links should be visible
+    And no raw markdown syntax should be visible
+
   # Session Restoration
   Scenario: Restore session from localStorage
     Given I have session ID "abc-123" saved in localStorage
@@ -587,6 +652,64 @@ Feature: Chat Panel
     When I click "Insert into note" on the response
     Then "Use dependency injection" should be inserted at my cursor position
     And I can continue editing the note
+
+  Scenario: Insert markdown content preserves formatting in editor
+    Given I am editing a document with a note
+    And I receive an agent response with markdown:
+      """
+      ## Solution
+      Use **dependency injection** for better *testability*.
+      """
+    When I click "Insert into note" on the response
+    Then the markdown should be inserted as formatted text in the editor
+    And "Solution" should appear as a heading
+    And "dependency injection" should be bold
+    And "testability" should be italic
+    And the note editor should render the markdown formatting
+
+  Scenario: Insert code block into editor preserves syntax
+    Given I am editing a document with a note
+    And I receive an agent response with a code block:
+      """
+      ```elixir
+      def calculate(a, b), do: a + b
+      ```
+      """
+    When I click "Insert into note" on the response
+    Then the code block should be inserted into the editor
+    And the code should be displayed in a code block element
+    And the syntax highlighting should be preserved
+    And the code should be properly formatted
+
+  Scenario: Insert list into editor renders as list
+    Given I am editing a document with a note
+    And I receive an agent response with a list:
+      """
+      Steps:
+      1. First step
+      2. Second step
+      """
+    When I click "Insert into note" on the response
+    Then the list should be inserted as a formatted list in the editor
+    And I should see numbered list items
+    And the list should be editable as a native list element
+
+  Scenario: Insert mixed markdown content into editor
+    Given I am editing a document with a note
+    And I receive an agent response with complex markdown:
+      """
+      ### Quick Fix
+
+      Apply these changes:
+      - Update **config.exs**
+      - Run `mix deps.get`
+
+      See [documentation](https://example.com).
+      """
+    When I click "Insert into note" on the response
+    Then all markdown formatting should be preserved in the editor
+    And the heading, list, bold text, inline code, and link should render correctly
+    And I can edit the inserted content as formatted elements
 
   Scenario: Context switches when changing documents
     Given I am viewing "Document A" with chat panel open
