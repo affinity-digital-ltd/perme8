@@ -23,9 +23,9 @@ defmodule Jarga.Accounts.Application.UseCases.RegisterUser do
 
   import Ecto.Changeset, only: [get_change: 2, put_change: 3, delete_change: 2]
 
-  alias Jarga.Repo
-  alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Accounts.Infrastructure.Schemas.UserSchema
   alias Jarga.Accounts.Application.Services.PasswordService
+  alias Jarga.Accounts.Infrastructure.Repositories.UserRepository
 
   @doc """
   Executes the register user use case.
@@ -48,11 +48,11 @@ defmodule Jarga.Accounts.Application.UseCases.RegisterUser do
   def execute(params, opts \\ []) do
     %{attrs: attrs} = params
 
-    repo = Keyword.get(opts, :repo, Repo)
+    repo = Keyword.get(opts, :repo, Jarga.Repo)
     password_service = Keyword.get(opts, :password_service, PasswordService)
 
     # Validate attributes
-    changeset = User.registration_changeset(%User{}, attrs)
+    changeset = UserSchema.registration_changeset(%UserSchema{}, attrs)
 
     # If changeset is valid and has a password, hash it
     changeset_with_hashed_password =
@@ -68,6 +68,6 @@ defmodule Jarga.Accounts.Application.UseCases.RegisterUser do
       end
 
     # Insert user
-    repo.insert(changeset_with_hashed_password)
+    UserRepository.insert_changeset(changeset_with_hashed_password, repo)
   end
 end

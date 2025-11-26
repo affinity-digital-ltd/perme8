@@ -4,7 +4,9 @@ defmodule Jarga.AccountsTest do
   alias Jarga.Accounts
 
   import Jarga.AccountsFixtures
-  alias Jarga.Accounts.Domain.Entities.{User, UserToken}
+  alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Accounts.Infrastructure.Schemas.UserTokenSchema
+  alias Jarga.Accounts.Infrastructure.Schemas.UserSchema
 
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do
@@ -134,7 +136,7 @@ defmodule Jarga.AccountsTest do
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
-      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
+      assert user_token = Repo.get_by(UserTokenSchema, token: :crypto.hash(:sha256, token))
       assert user_token.user_id == user.id
       assert user_token.sent_to == user.email
       assert user_token.context == "change:current@example.com"
@@ -156,37 +158,37 @@ defmodule Jarga.AccountsTest do
 
     test "updates the email with a valid token", %{user: user, token: token, email: email} do
       assert {:ok, %{email: ^email}} = Accounts.update_user_email(user, token)
-      changed_user = Repo.get!(User, user.id)
+      changed_user = Repo.get!(UserSchema, user.id)
       assert changed_user.email != user.email
       assert changed_user.email == email
-      refute Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get_by(UserTokenSchema, user_id: user.id)
     end
 
     test "does not update email with invalid token", %{user: user} do
       assert Accounts.update_user_email(user, "oops") ==
                {:error, :transaction_aborted}
 
-      assert Repo.get!(User, user.id).email == user.email
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get!(UserSchema, user.id).email == user.email
+      assert Repo.get_by(UserTokenSchema, user_id: user.id)
     end
 
     test "does not update email if user email changed", %{user: user, token: token} do
       assert Accounts.update_user_email(%{user | email: "current@example.com"}, token) ==
                {:error, :transaction_aborted}
 
-      assert Repo.get!(User, user.id).email == user.email
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get!(UserSchema, user.id).email == user.email
+      assert Repo.get_by(UserTokenSchema, user_id: user.id)
     end
 
     test "does not update email if token expired", %{user: user, token: token} do
-      {count, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      {count, nil} = Repo.update_all(UserTokenSchema, set: [inserted_at: ~N[2020-01-01 00:00:00]])
       assert count >= 1
 
       assert Accounts.update_user_email(user, token) ==
                {:error, :transaction_aborted}
 
-      assert Repo.get!(User, user.id).email == user.email
-      assert Repo.get_by(UserToken, user_id: user.id)
+      assert Repo.get!(UserSchema, user.id).email == user.email
+      assert Repo.get_by(UserTokenSchema, user_id: user.id)
     end
   end
 
@@ -258,7 +260,7 @@ defmodule Jarga.AccountsTest do
           password: "new valid password"
         })
 
-      refute Repo.get_by(UserToken, user_id: user.id)
+      refute Repo.get_by(UserTokenSchema, user_id: user.id)
     end
   end
 
@@ -269,13 +271,13 @@ defmodule Jarga.AccountsTest do
 
     test "generates a token", %{user: user} do
       token = Accounts.generate_user_session_token(user)
-      assert user_token = Repo.get_by(UserToken, token: token)
+      assert user_token = Repo.get_by(UserTokenSchema, token: token)
       assert user_token.context == "session"
       assert user_token.authenticated_at != nil
 
       # Creating the same token for another user should fail
       assert_raise Ecto.ConstraintError, fn ->
-        Repo.insert!(%UserToken{
+        Repo.insert!(%UserTokenSchema{
           token: user_token.token,
           user_id: user_fixture().id,
           context: "session"
@@ -286,7 +288,7 @@ defmodule Jarga.AccountsTest do
     test "duplicates the authenticated_at of given user in new token", %{user: user} do
       user = %{user | authenticated_at: DateTime.add(DateTime.utc_now(:second), -3600)}
       token = Accounts.generate_user_session_token(user)
-      assert user_token = Repo.get_by(UserToken, token: token)
+      assert user_token = Repo.get_by(UserTokenSchema, token: token)
       assert user_token.authenticated_at == user.authenticated_at
       assert DateTime.compare(user_token.inserted_at, user.authenticated_at) == :gt
     end
@@ -312,7 +314,10 @@ defmodule Jarga.AccountsTest do
 
     test "does not return user for expired token", %{token: token} do
       dt = ~N[2020-01-01 00:00:00]
-      {count, nil} = Repo.update_all(UserToken, set: [inserted_at: dt, authenticated_at: dt])
+
+      {count, nil} =
+        Repo.update_all(UserTokenSchema, set: [inserted_at: dt, authenticated_at: dt])
+
       assert count >= 1
       refute Accounts.get_user_by_session_token(token)
     end
@@ -335,7 +340,7 @@ defmodule Jarga.AccountsTest do
     end
 
     test "does not return user for expired token", %{token: token} do
-      {count, nil} = Repo.update_all(UserToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
+      {count, nil} = Repo.update_all(UserTokenSchema, set: [inserted_at: ~N[2020-01-01 00:00:00]])
       assert count >= 1
       refute Accounts.get_user_by_magic_link_token(token)
     end
@@ -365,7 +370,7 @@ defmodule Jarga.AccountsTest do
 
     test "confirms unconfirmed user with password set" do
       user = unconfirmed_user_fixture()
-      {count, nil} = Repo.update_all(User, set: [hashed_password: "hashed"])
+      {count, nil} = Repo.update_all(UserSchema, set: [hashed_password: "hashed"])
       assert count >= 1
       {encoded_token, _hashed_token} = generate_user_magic_link_token(user)
 
@@ -508,7 +513,7 @@ defmodule Jarga.AccountsTest do
         end)
 
       {:ok, token} = Base.url_decode64(token, padding: false)
-      assert user_token = Repo.get_by(UserToken, token: :crypto.hash(:sha256, token))
+      assert user_token = Repo.get_by(UserTokenSchema, token: :crypto.hash(:sha256, token))
       assert user_token.user_id == user.id
       assert user_token.sent_to == user.email
       assert user_token.context == "login"

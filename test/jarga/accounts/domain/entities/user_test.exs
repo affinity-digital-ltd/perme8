@@ -2,43 +2,44 @@ defmodule Jarga.Accounts.UserTest do
   use Jarga.DataCase, async: true
 
   alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Accounts.Infrastructure.Schemas.UserSchema
 
   import Jarga.AccountsFixtures
 
   describe "email_changeset/3" do
     test "requires email to be present" do
-      changeset = User.email_changeset(%User{}, %{})
+      changeset = UserSchema.email_changeset(%UserSchema{}, %{})
       assert "can't be blank" in errors_on(changeset).email
     end
 
     test "validates email format" do
-      changeset = User.email_changeset(%User{}, %{email: "invalid"})
+      changeset = UserSchema.email_changeset(%UserSchema{}, %{email: "invalid"})
       assert "must have the @ sign and no spaces" in errors_on(changeset).email
     end
 
     test "rejects email with spaces" do
-      changeset = User.email_changeset(%User{}, %{email: "user name@example.com"})
+      changeset = UserSchema.email_changeset(%UserSchema{}, %{email: "user name@example.com"})
       assert "must have the @ sign and no spaces" in errors_on(changeset).email
     end
 
     test "rejects email with commas" do
-      changeset = User.email_changeset(%User{}, %{email: "user,name@example.com"})
+      changeset = UserSchema.email_changeset(%UserSchema{}, %{email: "user,name@example.com"})
       assert "must have the @ sign and no spaces" in errors_on(changeset).email
     end
 
     test "rejects email with semicolons" do
-      changeset = User.email_changeset(%User{}, %{email: "user;name@example.com"})
+      changeset = UserSchema.email_changeset(%UserSchema{}, %{email: "user;name@example.com"})
       assert "must have the @ sign and no spaces" in errors_on(changeset).email
     end
 
     test "validates email length" do
       long_email = String.duplicate("a", 150) <> "@example.com"
-      changeset = User.email_changeset(%User{}, %{email: long_email})
+      changeset = UserSchema.email_changeset(%UserSchema{}, %{email: long_email})
       assert "should be at most 160 character(s)" in errors_on(changeset).email
     end
 
     test "converts email to lowercase" do
-      changeset = User.email_changeset(%User{}, %{email: "TEST@EXAMPLE.COM"})
+      changeset = UserSchema.email_changeset(%UserSchema{}, %{email: "TEST@EXAMPLE.COM"})
       assert changeset.valid?
       assert Ecto.Changeset.get_change(changeset, :email) == "test@example.com"
     end
@@ -55,7 +56,7 @@ defmodule Jarga.Accounts.UserTest do
       }
 
       changeset =
-        User.email_changeset(base_user, %{email: "test@example.com"}, validate_unique: true)
+        UserSchema.email_changeset(base_user, %{email: "test@example.com"}, validate_unique: true)
 
       {:error, changeset} = Repo.insert(changeset)
       assert "has already been taken" in errors_on(changeset).email
@@ -63,7 +64,9 @@ defmodule Jarga.Accounts.UserTest do
 
     test "adds unique_constraint to changeset when validate_unique is true" do
       changeset =
-        User.email_changeset(%User{}, %{email: "test@example.com"}, validate_unique: true)
+        UserSchema.email_changeset(%UserSchema{}, %{email: "test@example.com"},
+          validate_unique: true
+        )
 
       assert changeset.valid?
       # Verify unique_constraint is present in changeset
@@ -76,7 +79,9 @@ defmodule Jarga.Accounts.UserTest do
       user_fixture(%{email: "test@example.com"})
 
       changeset =
-        User.email_changeset(%User{}, %{email: "test@example.com"}, validate_unique: false)
+        UserSchema.email_changeset(%UserSchema{}, %{email: "test@example.com"},
+          validate_unique: false
+        )
 
       assert changeset.valid?
       refute Keyword.has_key?(changeset.errors, :email)
@@ -86,7 +91,7 @@ defmodule Jarga.Accounts.UserTest do
       user = user_fixture(%{email: "original@example.com"})
 
       changeset =
-        User.email_changeset(user, %{email: "original@example.com"}, validate_unique: true)
+        UserSchema.email_changeset(user, %{email: "original@example.com"}, validate_unique: true)
 
       assert "did not change" in errors_on(changeset).email
     end
@@ -95,7 +100,7 @@ defmodule Jarga.Accounts.UserTest do
       user = user_fixture(%{email: "original@example.com"})
 
       changeset =
-        User.email_changeset(user, %{email: "new@example.com"}, validate_unique: true)
+        UserSchema.email_changeset(user, %{email: "new@example.com"}, validate_unique: true)
 
       assert changeset.valid?
     end
@@ -103,7 +108,7 @@ defmodule Jarga.Accounts.UserTest do
 
   describe "registration_changeset/3" do
     test "requires first_name, last_name, and email" do
-      changeset = User.registration_changeset(%User{}, %{})
+      changeset = UserSchema.registration_changeset(%UserSchema{}, %{})
 
       assert "can't be blank" in errors_on(changeset).first_name
       assert "can't be blank" in errors_on(changeset).last_name
@@ -118,7 +123,7 @@ defmodule Jarga.Accounts.UserTest do
         password: "hello world 123!"
       }
 
-      changeset = User.registration_changeset(%User{}, attrs)
+      changeset = UserSchema.registration_changeset(%UserSchema{}, attrs)
       date_created = Ecto.Changeset.get_change(changeset, :date_created)
 
       assert date_created != nil
@@ -133,7 +138,7 @@ defmodule Jarga.Accounts.UserTest do
         password: "hello world 123!"
       }
 
-      changeset = User.registration_changeset(%User{}, attrs)
+      changeset = UserSchema.registration_changeset(%UserSchema{}, attrs)
       assert Ecto.Changeset.get_change(changeset, :status) == "active"
     end
 
@@ -145,7 +150,7 @@ defmodule Jarga.Accounts.UserTest do
         password: "hello world 123!"
       }
 
-      changeset = User.registration_changeset(%User{}, attrs)
+      changeset = UserSchema.registration_changeset(%UserSchema{}, attrs)
       assert "must have the @ sign and no spaces" in errors_on(changeset).email
     end
 
@@ -157,7 +162,7 @@ defmodule Jarga.Accounts.UserTest do
         password: "short"
       }
 
-      changeset = User.registration_changeset(%User{}, attrs)
+      changeset = UserSchema.registration_changeset(%UserSchema{}, attrs)
       assert "should be at least 12 character(s)" in errors_on(changeset).password
     end
 
@@ -169,7 +174,7 @@ defmodule Jarga.Accounts.UserTest do
         password: String.duplicate("a", 73)
       }
 
-      changeset = User.registration_changeset(%User{}, attrs)
+      changeset = UserSchema.registration_changeset(%UserSchema{}, attrs)
       assert "should be at most 72 character(s)" in errors_on(changeset).password
     end
 
@@ -181,7 +186,7 @@ defmodule Jarga.Accounts.UserTest do
         password: "hello world 123!"
       }
 
-      changeset = User.registration_changeset(%User{}, attrs)
+      changeset = UserSchema.registration_changeset(%UserSchema{}, attrs)
 
       assert changeset.valid?
       refute Ecto.Changeset.get_change(changeset, :hashed_password)
@@ -197,7 +202,7 @@ defmodule Jarga.Accounts.UserTest do
         password: "valid password 123"
       }
 
-      changeset = User.registration_changeset(%User{}, attrs)
+      changeset = UserSchema.registration_changeset(%UserSchema{}, attrs)
 
       assert changeset.valid?
       # Password validation passes but hashing doesn't occur
@@ -212,7 +217,7 @@ defmodule Jarga.Accounts.UserTest do
         password: "valid password 123"
       }
 
-      changeset = User.registration_changeset(%User{}, attrs)
+      changeset = UserSchema.registration_changeset(%UserSchema{}, attrs)
 
       assert changeset.valid?
       # Verify unique_constraint is present in changeset
@@ -229,7 +234,7 @@ defmodule Jarga.Accounts.UserTest do
         password: "valid password 123"
       }
 
-      changeset = User.registration_changeset(%User{}, attrs, validate_unique: false)
+      changeset = UserSchema.registration_changeset(%UserSchema{}, attrs, validate_unique: false)
 
       assert changeset.valid?
       # Verify unique_constraint is NOT present in changeset
@@ -241,23 +246,25 @@ defmodule Jarga.Accounts.UserTest do
 
   describe "password_changeset/3" do
     test "requires password" do
-      changeset = User.password_changeset(%User{}, %{})
+      changeset = UserSchema.password_changeset(%UserSchema{}, %{})
       assert "can't be blank" in errors_on(changeset).password
     end
 
     test "validates password minimum length" do
-      changeset = User.password_changeset(%User{}, %{password: "short"})
+      changeset = UserSchema.password_changeset(%UserSchema{}, %{password: "short"})
       assert "should be at least 12 character(s)" in errors_on(changeset).password
     end
 
     test "validates password maximum length" do
-      changeset = User.password_changeset(%User{}, %{password: String.duplicate("a", 73)})
+      changeset =
+        UserSchema.password_changeset(%UserSchema{}, %{password: String.duplicate("a", 73)})
+
       assert "should be at most 72 character(s)" in errors_on(changeset).password
     end
 
     test "validates password confirmation" do
       changeset =
-        User.password_changeset(%User{}, %{
+        UserSchema.password_changeset(%UserSchema{}, %{
           password: "hello world 123!",
           password_confirmation: "different password!"
         })
@@ -267,8 +274,8 @@ defmodule Jarga.Accounts.UserTest do
 
     test "does NOT hash password - hashing is infrastructure concern" do
       changeset =
-        User.password_changeset(
-          %User{},
+        UserSchema.password_changeset(
+          %UserSchema{},
           %{password: "hello world 123!", password_confirmation: "hello world 123!"}
         )
 
@@ -281,8 +288,8 @@ defmodule Jarga.Accounts.UserTest do
 
   describe "confirm_changeset/1" do
     test "sets confirmed_at to current time" do
-      user = %User{}
-      changeset = User.confirm_changeset(user)
+      user = %UserSchema{}
+      changeset = UserSchema.confirm_changeset(user)
 
       confirmed_at = Ecto.Changeset.get_change(changeset, :confirmed_at)
       assert confirmed_at != nil
@@ -292,7 +299,7 @@ defmodule Jarga.Accounts.UserTest do
     test "returns changeset for confirmed user" do
       now = DateTime.utc_now(:second)
       user = %User{confirmed_at: now}
-      changeset = User.confirm_changeset(user)
+      changeset = UserSchema.confirm_changeset(user)
 
       new_confirmed_at = Ecto.Changeset.get_change(changeset, :confirmed_at)
       assert new_confirmed_at != nil

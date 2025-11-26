@@ -70,7 +70,10 @@ defmodule JargaWeb.UserLive.Registration do
 
   def mount(_params, _session, socket) do
     changeset =
-      User.registration_changeset(%User{}, %{}, validate_unique: false, hash_password: false)
+      Accounts.change_user_registration(%User{}, %{},
+        validate_unique: false,
+        hash_password: false
+      )
 
     {:ok, assign_form(socket, changeset), temporary_assigns: [form: nil]}
   end
@@ -100,7 +103,7 @@ defmodule JargaWeb.UserLive.Registration do
 
   def handle_event("validate", %{"user" => user_params}, socket) do
     changeset =
-      User.registration_changeset(%User{}, user_params,
+      Accounts.change_user_registration(%User{}, user_params,
         validate_unique: false,
         hash_password: false
       )

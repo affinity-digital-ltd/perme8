@@ -22,6 +22,7 @@ defmodule Jarga.Accounts.Infrastructure.Repositories.UserRepository do
   import Ecto.Query, only: [from: 2]
 
   alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Accounts.Infrastructure.Schemas.UserSchema
   alias Jarga.Accounts.Infrastructure.Queries.Queries
   alias Jarga.Repo
 
@@ -45,7 +46,10 @@ defmodule Jarga.Accounts.Infrastructure.Repositories.UserRepository do
 
   """
   def get_by_id(id, repo \\ Repo) do
-    repo.get(User, id)
+    case repo.get(UserSchema, id) do
+      nil -> nil
+      schema -> User.from_schema(schema)
+    end
   end
 
   @doc """
@@ -68,8 +72,10 @@ defmodule Jarga.Accounts.Infrastructure.Repositories.UserRepository do
 
   """
   def get_by_email(email, repo \\ Repo) when is_binary(email) do
-    Queries.by_email_case_insensitive(email)
-    |> repo.one()
+    case Queries.by_email_case_insensitive(email) |> repo.one() do
+      nil -> nil
+      schema -> User.from_schema(schema)
+    end
   end
 
   @doc """
@@ -92,11 +98,11 @@ defmodule Jarga.Accounts.Infrastructure.Repositories.UserRepository do
 
   """
   def exists?(id, repo \\ Repo) do
-    repo.exists?(from(u in User, where: u.id == ^id))
+    repo.exists?(from(u in UserSchema, where: u.id == ^id))
   end
 
   @doc """
-  Inserts a new user.
+  Creates and inserts a new user from attributes.
 
   Returns `{:ok, user}` if successful, `{:error, changeset}` otherwise.
 
@@ -115,13 +121,16 @@ defmodule Jarga.Accounts.Infrastructure.Repositories.UserRepository do
 
   """
   def insert(attrs, repo \\ Repo) when is_map(attrs) do
-    %User{}
-    |> User.registration_changeset(attrs)
-    |> repo.insert()
+    case %UserSchema{}
+         |> UserSchema.registration_changeset(attrs)
+         |> repo.insert() do
+      {:ok, schema} -> {:ok, User.from_schema(schema)}
+      {:error, changeset} -> {:error, changeset}
+    end
   end
 
   @doc """
-  Updates an existing user.
+  Updates an existing user with new attributes.
 
   Returns `{:ok, user}` if successful, `{:error, changeset}` otherwise.
 
@@ -140,10 +149,73 @@ defmodule Jarga.Accounts.Infrastructure.Repositories.UserRepository do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update(user, attrs, repo \\ Repo) when is_map(attrs) do
+  def update(user_or_schema, attrs, repo \\ Repo)
+
+  def update(%User{} = user, attrs, repo) when is_map(attrs) do
     user
-    |> Ecto.Changeset.cast(attrs, [:first_name, :last_name, :email, :hashed_password])
-    |> Ecto.Changeset.validate_required([:first_name, :last_name, :email])
-    |> repo.update()
+    |> UserSchema.to_schema()
+    |> update(attrs, repo)
+  end
+
+  def update(%UserSchema{} = user_schema, attrs, repo) when is_map(attrs) do
+    case user_schema
+         |> Ecto.Changeset.cast(attrs, [:first_name, :last_name, :email, :hashed_password])
+         |> Ecto.Changeset.validate_required([:email])
+         |> repo.update() do
+      {:ok, schema} -> {:ok, User.from_schema(schema)}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Updates a user using a changeset.
+
+  Returns `{:ok, user}` if successful, `{:error, changeset}` otherwise.
+
+  This is a low-level function for use cases that need to use custom changesets.
+
+  ## Parameters
+
+    - changeset: The changeset to apply
+    - repo: Optional repo for dependency injection (defaults to Jarga.Repo)
+
+  ## Examples
+
+      iex> changeset = User.email_changeset(user, %{email: "new@example.com"})
+      iex> UserRepository.update_changeset(changeset)
+      {:ok, %User{}}
+
+  """
+  def update_changeset(%Ecto.Changeset{} = changeset, repo \\ Repo) do
+    case repo.update(changeset) do
+      {:ok, schema} -> {:ok, User.from_schema(schema)}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Inserts a new user using a changeset.
+
+  Returns `{:ok, user}` if successful, `{:error, changeset}` otherwise.
+
+  This is a low-level function for use cases that need to use custom changesets.
+
+  ## Parameters
+
+    - changeset: The changeset to insert
+    - repo: Optional repo for dependency injection (defaults to Jarga.Repo)
+
+  ## Examples
+
+      iex> changeset = User.registration_changeset(%User{}, attrs)
+      iex> UserRepository.insert_changeset(changeset)
+      {:ok, %User{}}
+
+  """
+  def insert_changeset(%Ecto.Changeset{} = changeset, repo \\ Repo) do
+    case repo.insert(changeset) do
+      {:ok, schema} -> {:ok, User.from_schema(schema)}
+      {:error, changeset} -> {:error, changeset}
+    end
   end
 end

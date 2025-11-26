@@ -24,10 +24,10 @@ defmodule Jarga.Accounts.Application.UseCases.UpdateUserPassword do
 
   import Ecto.Changeset, only: [get_change: 2, put_change: 3, delete_change: 2]
 
-  alias Jarga.Repo
-  alias Jarga.Accounts.Domain.Entities.{User, UserToken}
+  alias Jarga.Accounts.Infrastructure.Schemas.UserSchema
   alias Jarga.Accounts.Application.Services.PasswordService
   alias Jarga.Accounts.Infrastructure.Queries.Queries
+  alias Jarga.Accounts.Infrastructure.Repositories.{UserRepository, UserTokenRepository}
 
   @doc """
   Executes the update user password use case.
@@ -41,6 +41,7 @@ defmodule Jarga.Accounts.Application.UseCases.UpdateUserPassword do
   - `opts` - Keyword list of options:
     - `:repo` - Repository module (default: Jarga.Repo)
     - `:password_service` - Password service module or function (default: PasswordService.hash_password/1)
+    - `:transaction_fn` - Function to execute transaction (default: repo.unwrap_transaction/1)
 
   ## Returns
 
@@ -51,11 +52,12 @@ defmodule Jarga.Accounts.Application.UseCases.UpdateUserPassword do
   def execute(params, opts \\ []) do
     %{user: user, attrs: attrs} = params
 
-    repo = Keyword.get(opts, :repo, Repo)
+    repo = Keyword.get(opts, :repo, Jarga.Repo)
     password_service = Keyword.get(opts, :password_service, &PasswordService.hash_password/1)
+    transaction_fn = Keyword.get(opts, :transaction_fn, &repo.unwrap_transaction/1)
 
     # Validate password attributes
-    changeset = User.password_changeset(user, attrs)
+    changeset = UserSchema.password_changeset(user, attrs)
 
     # If changeset is valid and has a password, hash it
     changeset_with_hashed_password =
@@ -78,18 +80,21 @@ defmodule Jarga.Accounts.Application.UseCases.UpdateUserPassword do
       end
 
     # Execute update and token deletion in transaction
-    update_user_and_delete_all_tokens(changeset_with_hashed_password, repo)
+    update_user_and_delete_all_tokens(changeset_with_hashed_password, repo, transaction_fn)
   end
 
   # Private helper to update user and delete all tokens in a transaction
-  defp update_user_and_delete_all_tokens(changeset, repo) do
-    repo.transact(fn ->
-      with {:ok, user} <- repo.update(changeset) do
+  defp update_user_and_delete_all_tokens(changeset, repo, transaction_fn) do
+    transaction_fn.(fn ->
+      with {:ok, user} <- UserRepository.update_changeset(changeset, repo) do
         # Retrieve all tokens before deletion (to return expired list)
-        tokens_to_expire = repo.all_by(UserToken, user_id: user.id)
+        tokens_to_expire = UserTokenRepository.all_by_user_id(user.id, repo)
 
         # Delete all tokens in a single query
-        repo.delete_all(Queries.tokens_by_ids(Enum.map(tokens_to_expire, & &1.id)))
+        UserTokenRepository.delete_all(
+          Queries.tokens_by_ids(Enum.map(tokens_to_expire, & &1.id)),
+          repo
+        )
 
         {:ok, {user, tokens_to_expire}}
       end

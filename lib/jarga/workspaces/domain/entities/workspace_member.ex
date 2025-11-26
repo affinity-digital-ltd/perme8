@@ -16,8 +16,11 @@ defmodule Jarga.Workspaces.Domain.Entities.WorkspaceMember do
     field(:joined_at, :utc_datetime)
 
     belongs_to(:workspace, Jarga.Workspaces.Domain.Entities.Workspace)
-    belongs_to(:user, Jarga.Accounts.Domain.Entities.User)
-    belongs_to(:inviter, Jarga.Accounts.Domain.Entities.User, foreign_key: :invited_by)
+    belongs_to(:user, Jarga.Accounts.Infrastructure.Schemas.UserSchema)
+
+    belongs_to(:inviter, Jarga.Accounts.Infrastructure.Schemas.UserSchema,
+      foreign_key: :invited_by
+    )
 
     timestamps(type: :utc_datetime)
   end

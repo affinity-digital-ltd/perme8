@@ -18,7 +18,7 @@ defmodule Jarga.Accounts.Domain.Services.TokenBuilder do
   delegated to TokenGenerator service in the infrastructure layer.
   """
 
-  alias Jarga.Accounts.Domain.Entities.UserToken
+  alias Jarga.Accounts.Infrastructure.Schemas.UserTokenSchema
   alias Jarga.Accounts.Infrastructure.Services.TokenGenerator
 
   @doc """
@@ -33,9 +33,9 @@ defmodule Jarga.Accounts.Domain.Services.TokenBuilder do
 
   ## Returns
 
-  `{raw_token, user_token_struct}` tuple where:
+  `{raw_token, user_token_schema}` tuple where:
   - `raw_token` - Binary token to be stored in session/cookie
-  - `user_token_struct` - UserToken struct to be inserted into database
+  - `user_token_schema` - UserTokenSchema struct to be inserted into database
 
   ## Examples
 
@@ -50,7 +50,7 @@ defmodule Jarga.Accounts.Domain.Services.TokenBuilder do
     dt = user.authenticated_at || DateTime.utc_now(:second)
 
     {token,
-     %UserToken{
+     %UserTokenSchema{
        token: token,
        context: "session",
        user_id: user.id,
@@ -71,9 +71,9 @@ defmodule Jarga.Accounts.Domain.Services.TokenBuilder do
 
   ## Returns
 
-  `{encoded_token, user_token_struct}` tuple where:
+  `{encoded_token, user_token_schema}` tuple where:
   - `encoded_token` - URL-safe encoded token for email links
-  - `user_token_struct` - UserToken struct with hashed token for database
+  - `user_token_schema` - UserTokenSchema struct with hashed token for database
 
   ## Examples
 
@@ -96,7 +96,7 @@ defmodule Jarga.Accounts.Domain.Services.TokenBuilder do
     encoded_token = TokenGenerator.encode_token(token)
 
     {encoded_token,
-     %UserToken{
+     %UserTokenSchema{
        token: hashed_token,
        context: context,
        sent_to: sent_to,

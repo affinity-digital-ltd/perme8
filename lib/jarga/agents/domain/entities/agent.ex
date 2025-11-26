@@ -9,7 +9,7 @@ defmodule Jarga.Agents.Domain.Entities.Agent do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Accounts.Infrastructure.Schemas.UserSchema
 
   @type t :: %__MODULE__{
           id: Ecto.UUID.t(),
@@ -43,7 +43,7 @@ defmodule Jarga.Agents.Domain.Entities.Agent do
     field(:visibility, :string, default: "PRIVATE")
     field(:enabled, :boolean, default: true)
 
-    belongs_to(:user, User)
+    belongs_to(:user, UserSchema)
 
     timestamps(type: :utc_datetime)
   end

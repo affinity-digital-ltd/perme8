@@ -4,13 +4,16 @@ defmodule Jarga.Accounts.Application.UseCases.LoginByMagicLinkTest do
   import Jarga.AccountsFixtures
 
   alias Jarga.Accounts.Application.UseCases.LoginByMagicLink
-  alias Jarga.Accounts.Domain.Entities.UserToken
+  alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Accounts.Infrastructure.Schemas.UserTokenSchema
+  alias Jarga.Accounts.Domain.Services.TokenBuilder
+  alias Jarga.Accounts.Infrastructure.Schemas.UserSchema
 
   describe "execute/2" do
     test "Case 1: confirmed user with password - deletes token only" do
       user = user_fixture()
       user = %{user | confirmed_at: DateTime.utc_now()}
-      {token, user_token} = UserToken.build_email_token(user, "login")
+      {token, user_token} = TokenBuilder.build_email_token(user, "login")
       inserted_token = Repo.insert!(user_token)
 
       assert {:ok, {returned_user, expired_tokens}} = LoginByMagicLink.execute(%{token: token})
@@ -19,23 +22,26 @@ defmodule Jarga.Accounts.Application.UseCases.LoginByMagicLinkTest do
       assert expired_tokens == []
 
       # Token should be deleted
-      refute Repo.get(UserToken, inserted_token.id)
+      refute Repo.get(UserTokenSchema, inserted_token.id)
     end
 
     test "Case 2: unconfirmed user without password - confirms and deletes all tokens" do
       # Create a basic user first, then remove password
       user = user_fixture()
       # Update user to remove password and confirmation
-      user_updated =
+      user_updated_schema =
         user
+        |> UserSchema.to_schema()
         |> Ecto.Changeset.change(%{hashed_password: nil, confirmed_at: nil})
         |> Repo.update!()
 
-      {token, user_token} = UserToken.build_email_token(user_updated, "login")
+      user_updated = User.from_schema(user_updated_schema)
+
+      {token, user_token} = TokenBuilder.build_email_token(user_updated, "login")
       inserted_token = Repo.insert!(user_token)
 
       # Create additional token to verify all are deleted
-      {_other_token, other_user_token} = UserToken.build_session_token(user_updated)
+      {_other_token, other_user_token} = TokenBuilder.build_session_token(user_updated)
       inserted_other_token = Repo.insert!(other_user_token)
 
       assert {:ok, {returned_user, expired_tokens}} = LoginByMagicLink.execute(%{token: token})
@@ -44,19 +50,22 @@ defmodule Jarga.Accounts.Application.UseCases.LoginByMagicLinkTest do
       assert length(expired_tokens) >= 1
 
       # All tokens should be deleted
-      refute Repo.get(UserToken, inserted_token.id)
-      refute Repo.get(UserToken, inserted_other_token.id)
+      refute Repo.get(UserTokenSchema, inserted_token.id)
+      refute Repo.get(UserTokenSchema, inserted_other_token.id)
     end
 
     test "Case 3: unconfirmed user with password - confirms and deletes only magic link token" do
       user = user_fixture()
       # Update user to be unconfirmed
-      user_unconfirmed =
+      user_unconfirmed_schema =
         user
+        |> UserSchema.to_schema()
         |> Ecto.Changeset.change(%{confirmed_at: nil})
         |> Repo.update!()
 
-      {token, user_token} = UserToken.build_email_token(user_unconfirmed, "login")
+      user_unconfirmed = User.from_schema(user_unconfirmed_schema)
+
+      {token, user_token} = TokenBuilder.build_email_token(user_unconfirmed, "login")
       inserted_token = Repo.insert!(user_token)
 
       assert {:ok, {returned_user, expired_tokens}} = LoginByMagicLink.execute(%{token: token})
@@ -65,7 +74,7 @@ defmodule Jarga.Accounts.Application.UseCases.LoginByMagicLinkTest do
       assert expired_tokens == []
 
       # Only magic link token should be deleted
-      refute Repo.get(UserToken, inserted_token.id)
+      refute Repo.get(UserTokenSchema, inserted_token.id)
     end
 
     test "returns error for invalid token" do
@@ -81,7 +90,7 @@ defmodule Jarga.Accounts.Application.UseCases.LoginByMagicLinkTest do
     test "transaction rolls back on failure" do
       user = user_fixture()
       user = %{user | confirmed_at: nil}
-      {token, user_token} = UserToken.build_email_token(user, "login")
+      {token, user_token} = TokenBuilder.build_email_token(user, "login")
       Repo.insert!(user_token)
 
       # This test verifies that if any step fails, the transaction rolls back
@@ -93,7 +102,7 @@ defmodule Jarga.Accounts.Application.UseCases.LoginByMagicLinkTest do
     test "accepts injectable repo for testing" do
       user = user_fixture()
       user = %{user | confirmed_at: DateTime.utc_now()}
-      {token, user_token} = UserToken.build_email_token(user, "login")
+      {token, user_token} = TokenBuilder.build_email_token(user, "login")
       Repo.insert!(user_token)
 
       assert {:ok, {_user, _tokens}} =

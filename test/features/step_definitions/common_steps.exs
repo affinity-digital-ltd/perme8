@@ -22,8 +22,14 @@ defmodule CommonSteps do
        %{args: [name, slug]} = context do
     # Only checkout sandbox if not already checked out (first workspace in Background)
     unless context[:workspace] do
-      :ok = Sandbox.checkout(Jarga.Repo)
-      Sandbox.mode(Jarga.Repo, {:shared, self()})
+      # Handle both :ok and {:already, _owner} returns from checkout
+      case Sandbox.checkout(Jarga.Repo) do
+        :ok ->
+          Sandbox.mode(Jarga.Repo, {:shared, self()})
+
+        {:already, _owner} ->
+          :ok
+      end
     end
 
     # Create owner user for workspace

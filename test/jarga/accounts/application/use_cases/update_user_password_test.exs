@@ -4,7 +4,10 @@ defmodule Jarga.Accounts.Application.UseCases.UpdateUserPasswordTest do
   import Jarga.AccountsFixtures
 
   alias Jarga.Accounts.Application.UseCases.UpdateUserPassword
-  alias Jarga.Accounts.Domain.Entities.{User, UserToken}
+  alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Accounts.Infrastructure.Schemas.UserTokenSchema
+  alias Jarga.Accounts.Domain.Services.TokenBuilder
+  alias Jarga.Accounts.Infrastructure.Schemas.UserSchema
 
   describe "execute/2" do
     setup do
@@ -51,14 +54,14 @@ defmodule Jarga.Accounts.Application.UseCases.UpdateUserPasswordTest do
 
     test "deletes all user tokens after update", %{user: user} do
       # Create some tokens for the user
-      {_session_token, session_user_token} = UserToken.build_session_token(user)
-      {_email_token, email_user_token} = UserToken.build_email_token(user, "confirm")
+      {_session_token, session_user_token} = TokenBuilder.build_session_token(user)
+      {_email_token, email_user_token} = TokenBuilder.build_email_token(user, "confirm")
 
       Repo.insert!(session_user_token)
       Repo.insert!(email_user_token)
 
       # Verify tokens exist
-      assert length(Repo.all_by(UserToken, user_id: user.id)) == 2
+      assert length(Repo.all_by(UserTokenSchema, user_id: user.id)) == 2
 
       attrs = %{
         password: "new valid password",
@@ -72,14 +75,14 @@ defmodule Jarga.Accounts.Application.UseCases.UpdateUserPasswordTest do
       assert length(expired_tokens) == 2
 
       # No tokens should remain in database
-      assert Repo.all_by(UserToken, user_id: user.id) == []
+      assert Repo.all_by(UserTokenSchema, user_id: user.id) == []
     end
 
     test "returns expired tokens list", %{user: user} do
       # Create multiple tokens
-      {_token1, user_token1} = UserToken.build_session_token(user)
-      {_token2, user_token2} = UserToken.build_email_token(user, "confirm")
-      {_token3, user_token3} = UserToken.build_email_token(user, "login")
+      {_token1, user_token1} = TokenBuilder.build_session_token(user)
+      {_token2, user_token2} = TokenBuilder.build_email_token(user, "confirm")
+      {_token3, user_token3} = TokenBuilder.build_email_token(user, "login")
 
       inserted_token1 = Repo.insert!(user_token1)
       inserted_token2 = Repo.insert!(user_token2)
@@ -102,7 +105,7 @@ defmodule Jarga.Accounts.Application.UseCases.UpdateUserPasswordTest do
 
     test "rolls back transaction on failure", %{user: user} do
       # Create a token to verify rollback
-      {_token, user_token} = UserToken.build_session_token(user)
+      {_token, user_token} = TokenBuilder.build_session_token(user)
       Repo.insert!(user_token)
 
       # Use invalid attrs to force failure
@@ -115,9 +118,9 @@ defmodule Jarga.Accounts.Application.UseCases.UpdateUserPasswordTest do
                UpdateUserPassword.execute(%{user: user, attrs: attrs})
 
       # Token should still exist (transaction rolled back)
-      assert length(Repo.all_by(UserToken, user_id: user.id)) == 1
+      assert length(Repo.all_by(UserTokenSchema, user_id: user.id)) == 1
       # User password should be unchanged
-      assert Repo.get!(User, user.id).hashed_password == user.hashed_password
+      assert Repo.get!(UserSchema, user.id).hashed_password == user.hashed_password
     end
 
     test "returns error for invalid password", %{user: user} do

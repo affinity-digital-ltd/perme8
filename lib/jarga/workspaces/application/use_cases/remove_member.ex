@@ -17,6 +17,10 @@ defmodule Jarga.Workspaces.Application.UseCases.RemoveMember do
 
   @behaviour Jarga.Workspaces.Application.UseCases.UseCase
 
+  alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Workspaces.Domain.Entities.WorkspaceMember
+  alias Jarga.Workspaces.Domain.Policies.MembershipPolicy
+  alias Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository
   alias Jarga.Repo
   alias Jarga.Workspaces.Domain.Entities.WorkspaceMember
   alias Jarga.Workspaces.Application.Policies.MembershipPolicy
@@ -98,11 +102,13 @@ defmodule Jarga.Workspaces.Application.UseCases.RemoveMember do
 
   # Notify user if they had already joined (not just a pending invitation)
   defp notify_user_if_joined(
-         %WorkspaceMember{user: user, joined_at: joined_at},
+         %WorkspaceMember{user: user_schema, joined_at: joined_at},
          workspace,
          notifier
        )
-       when not is_nil(user) and not is_nil(joined_at) do
+       when not is_nil(user_schema) and not is_nil(joined_at) do
+    # Convert UserSchema to domain User before passing to notifier
+    user = User.from_schema(user_schema)
     notifier.notify_user_removed(user, workspace)
   end
 

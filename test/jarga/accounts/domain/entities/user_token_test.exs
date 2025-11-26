@@ -1,16 +1,17 @@
 defmodule Jarga.Accounts.UserTokenTest do
   use Jarga.DataCase, async: true
 
-  alias Jarga.Accounts.Domain.Entities.UserToken
-  alias Jarga.Accounts.Infrastructure.Queries.Queries
-
   import Jarga.AccountsFixtures
+
+  alias Jarga.Accounts.Domain.Services.TokenBuilder
+  alias Jarga.Accounts.Infrastructure.Queries.Queries
+  alias Jarga.Accounts.Infrastructure.Schemas.UserSchema
 
   describe "build_session_token/1" do
     test "generates a session token" do
       user = user_fixture()
 
-      {token, user_token} = UserToken.build_session_token(user)
+      {token, user_token} = TokenBuilder.build_session_token(user)
 
       assert is_binary(token)
       assert byte_size(token) == 32
@@ -24,7 +25,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       authenticated_at = DateTime.utc_now(:second) |> DateTime.add(-3600, :second)
       user_with_auth = %{user | authenticated_at: authenticated_at}
 
-      {_token, user_token} = UserToken.build_session_token(user_with_auth)
+      {_token, user_token} = TokenBuilder.build_session_token(user_with_auth)
 
       assert user_token.authenticated_at == authenticated_at
     end
@@ -32,7 +33,7 @@ defmodule Jarga.Accounts.UserTokenTest do
     test "uses current time when user has no authenticated_at" do
       user = %{user_fixture() | authenticated_at: nil}
 
-      {_token, user_token} = UserToken.build_session_token(user)
+      {_token, user_token} = TokenBuilder.build_session_token(user)
 
       assert user_token.authenticated_at != nil
       assert DateTime.diff(DateTime.utc_now(), user_token.authenticated_at) < 5
@@ -41,8 +42,8 @@ defmodule Jarga.Accounts.UserTokenTest do
     test "generates unique tokens" do
       user = user_fixture()
 
-      {token1, _} = UserToken.build_session_token(user)
-      {token2, _} = UserToken.build_session_token(user)
+      {token1, _} = TokenBuilder.build_session_token(user)
+      {token2, _} = TokenBuilder.build_session_token(user)
 
       assert token1 != token2
     end
@@ -51,7 +52,7 @@ defmodule Jarga.Accounts.UserTokenTest do
   describe "verify_session_token_query/1" do
     test "returns valid query for valid session token" do
       user = user_fixture()
-      {token, user_token} = UserToken.build_session_token(user)
+      {token, user_token} = TokenBuilder.build_session_token(user)
       Repo.insert!(user_token)
 
       {:ok, query} = Queries.verify_session_token_query(token)
@@ -67,7 +68,7 @@ defmodule Jarga.Accounts.UserTokenTest do
       authenticated_at = DateTime.utc_now(:second) |> DateTime.add(-1800, :second)
       user_with_auth = %{user | authenticated_at: authenticated_at}
 
-      {token, user_token} = UserToken.build_session_token(user_with_auth)
+      {token, user_token} = TokenBuilder.build_session_token(user_with_auth)
       Repo.insert!(user_token)
 
       {:ok, query} = Queries.verify_session_token_query(token)
@@ -78,7 +79,7 @@ defmodule Jarga.Accounts.UserTokenTest do
 
     test "does not return expired session token" do
       user = user_fixture()
-      {token, user_token} = UserToken.build_session_token(user)
+      {token, user_token} = TokenBuilder.build_session_token(user)
       Repo.insert!(user_token)
 
       # Set token to 15 days ago (past 14 day expiry)
@@ -99,7 +100,7 @@ defmodule Jarga.Accounts.UserTokenTest do
 
     test "returns inserted_at timestamp" do
       user = user_fixture()
-      {token, user_token} = UserToken.build_session_token(user)
+      {token, user_token} = TokenBuilder.build_session_token(user)
       Repo.insert!(user_token)
 
       {:ok, query} = Queries.verify_session_token_query(token)
@@ -114,7 +115,7 @@ defmodule Jarga.Accounts.UserTokenTest do
     test "generates a login token" do
       user = user_fixture(%{email: "test@example.com"})
 
-      {encoded_token, user_token} = UserToken.build_email_token(user, "login")
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, "login")
 
       assert is_binary(encoded_token)
       assert String.length(encoded_token) > 0
@@ -127,7 +128,7 @@ defmodule Jarga.Accounts.UserTokenTest do
     test "generates change email token" do
       user = user_fixture(%{email: "original@example.com"})
 
-      {encoded_token, user_token} = UserToken.build_email_token(user, "change:new@example.com")
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, "change:new@example.com")
 
       assert is_binary(encoded_token)
       assert user_token.context == "change:new@example.com"
@@ -138,7 +139,7 @@ defmodule Jarga.Accounts.UserTokenTest do
     test "hashes the token for storage" do
       user = user_fixture()
 
-      {encoded_token, user_token} = UserToken.build_email_token(user, "login")
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, "login")
 
       # Token in database should be hashed
       assert user_token.token != encoded_token
@@ -148,8 +149,8 @@ defmodule Jarga.Accounts.UserTokenTest do
     test "generates unique tokens" do
       user = user_fixture()
 
-      {token1, _} = UserToken.build_email_token(user, "login")
-      {token2, _} = UserToken.build_email_token(user, "login")
+      {token1, _} = TokenBuilder.build_email_token(user, "login")
+      {token2, _} = TokenBuilder.build_email_token(user, "login")
 
       assert token1 != token2
     end
@@ -157,7 +158,7 @@ defmodule Jarga.Accounts.UserTokenTest do
     test "encoded token is URL-safe" do
       user = user_fixture()
 
-      {encoded_token, _} = UserToken.build_email_token(user, "login")
+      {encoded_token, _} = TokenBuilder.build_email_token(user, "login")
 
       # Should not contain padding characters
       refute String.contains?(encoded_token, "=")
@@ -169,7 +170,7 @@ defmodule Jarga.Accounts.UserTokenTest do
   describe "verify_magic_link_token_query/1" do
     test "returns valid query for valid magic link token" do
       user = user_fixture()
-      {encoded_token, user_token} = UserToken.build_email_token(user, "login")
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, "login")
       Repo.insert!(user_token)
 
       {:ok, query} = Queries.verify_magic_link_token_query(encoded_token)
@@ -182,7 +183,7 @@ defmodule Jarga.Accounts.UserTokenTest do
 
     test "does not return expired magic link token" do
       user = user_fixture()
-      {encoded_token, user_token} = UserToken.build_email_token(user, "login")
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, "login")
       Repo.insert!(user_token)
 
       # Set token to 20 minutes ago (past 15 minute expiry)
@@ -194,11 +195,11 @@ defmodule Jarga.Accounts.UserTokenTest do
 
     test "does not return token if email changed" do
       user = user_fixture(%{email: "original@example.com"})
-      {encoded_token, user_token} = UserToken.build_email_token(user, "login")
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, "login")
       Repo.insert!(user_token)
 
       # Change user's email
-      Repo.update!(Ecto.Changeset.change(user, email: "new@example.com"))
+      Repo.update!(Ecto.Changeset.change(UserSchema.to_schema(user), email: "new@example.com"))
 
       {:ok, query} = Queries.verify_magic_link_token_query(encoded_token)
       assert Repo.one(query) == nil
@@ -211,7 +212,7 @@ defmodule Jarga.Accounts.UserTokenTest do
 
     test "does not return token with wrong context" do
       user = user_fixture()
-      {encoded_token, user_token} = UserToken.build_email_token(user, "change:new@example.com")
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, "change:new@example.com")
       Repo.insert!(user_token)
 
       # Try to verify as magic link (but it's a change email token)
@@ -221,7 +222,7 @@ defmodule Jarga.Accounts.UserTokenTest do
 
     test "returns both user and token" do
       user = user_fixture()
-      {encoded_token, user_token} = UserToken.build_email_token(user, "login")
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, "login")
       user_token = Repo.insert!(user_token)
 
       {:ok, query} = Queries.verify_magic_link_token_query(encoded_token)
@@ -236,7 +237,7 @@ defmodule Jarga.Accounts.UserTokenTest do
     test "returns valid query for valid change email token" do
       user = user_fixture()
       context = "change:new@example.com"
-      {encoded_token, user_token} = UserToken.build_email_token(user, context)
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, context)
       user_token = Repo.insert!(user_token)
 
       {:ok, query} = Queries.verify_change_email_token_query(encoded_token, context)
@@ -249,7 +250,7 @@ defmodule Jarga.Accounts.UserTokenTest do
     test "does not return expired change email token" do
       user = user_fixture()
       context = "change:new@example.com"
-      {encoded_token, user_token} = UserToken.build_email_token(user, context)
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, context)
       Repo.insert!(user_token)
 
       # Set token to 8 days ago (past 7 day expiry)
@@ -261,7 +262,10 @@ defmodule Jarga.Accounts.UserTokenTest do
 
     test "does not return token with wrong context" do
       user = user_fixture()
-      {encoded_token, user_token} = UserToken.build_email_token(user, "change:email1@example.com")
+
+      {encoded_token, user_token} =
+        TokenBuilder.build_email_token(user, "change:email1@example.com")
+
       Repo.insert!(user_token)
 
       # Try to verify with different context
@@ -278,7 +282,7 @@ defmodule Jarga.Accounts.UserTokenTest do
 
     test "requires context to start with change:" do
       user = user_fixture()
-      {encoded_token, user_token} = UserToken.build_email_token(user, "change:new@example.com")
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, "change:new@example.com")
       Repo.insert!(user_token)
 
       # Should not match the function clause for non-change: contexts
@@ -290,7 +294,7 @@ defmodule Jarga.Accounts.UserTokenTest do
     test "returns token within validity period" do
       user = user_fixture()
       context = "change:new@example.com"
-      {encoded_token, user_token} = UserToken.build_email_token(user, context)
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, context)
       Repo.insert!(user_token)
 
       # Set token to 3 days ago (within 7 day expiry)

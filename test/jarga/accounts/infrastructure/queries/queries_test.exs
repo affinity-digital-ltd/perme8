@@ -4,18 +4,19 @@ defmodule Jarga.Accounts.QueriesTest do
   import Ecto.Query
   import Jarga.AccountsFixtures
 
+  alias Jarga.Accounts.Domain.Services.TokenBuilder
   alias Jarga.Accounts.Infrastructure.Queries.Queries
-  alias Jarga.Accounts.Domain.Entities.{User, UserToken}
+  alias Jarga.Accounts.Infrastructure.Schemas.{UserSchema, UserTokenSchema}
 
   describe "base/0" do
-    test "returns the User queryable" do
-      assert Queries.base() == User
+    test "returns the UserSchema queryable" do
+      assert Queries.base() == UserSchema
     end
   end
 
   describe "tokens_base/0" do
-    test "returns the UserToken queryable" do
-      assert Queries.tokens_base() == UserToken
+    test "returns the UserTokenSchema queryable" do
+      assert Queries.tokens_base() == UserTokenSchema
     end
   end
 
@@ -137,7 +138,7 @@ defmodule Jarga.Accounts.QueriesTest do
       {_encoded1, _token1} = generate_user_magic_link_token(user)
       {_encoded2, _token2} = generate_user_magic_link_token(user)
 
-      all_tokens = Repo.all(from(t in UserToken, where: t.user_id == ^user.id))
+      all_tokens = Repo.all(from(t in UserTokenSchema, where: t.user_id == ^user.id))
       token_ids = Enum.map(all_tokens, & &1.id)
 
       query = Queries.tokens_by_ids(token_ids)
@@ -154,7 +155,7 @@ defmodule Jarga.Accounts.QueriesTest do
       {_encoded1, _token1} = generate_user_magic_link_token(user1)
       {_encoded2, _token2} = generate_user_magic_link_token(user2)
 
-      user1_tokens = Repo.all(from(t in UserToken, where: t.user_id == ^user1.id))
+      user1_tokens = Repo.all(from(t in UserTokenSchema, where: t.user_id == ^user1.id))
       token_ids = Enum.map(user1_tokens, & &1.id)
 
       query = Queries.tokens_by_ids(token_ids)
@@ -210,7 +211,7 @@ defmodule Jarga.Accounts.QueriesTest do
       user = user_fixture()
 
       # Clear any session tokens created during fixture
-      Repo.delete_all(from(t in UserToken, where: t.user_id == ^user.id))
+      Repo.delete_all(from(t in UserTokenSchema, where: t.user_id == ^user.id))
 
       query = Queries.tokens_for_user(user.id)
       assert Repo.all(query) == []
@@ -234,7 +235,7 @@ defmodule Jarga.Accounts.QueriesTest do
     test "returns valid query for session token within validity period" do
       user = user_fixture()
       # Create a session token explicitly
-      {_encoded, token_record} = UserToken.build_session_token(user)
+      {_encoded, token_record} = TokenBuilder.build_session_token(user)
       Repo.insert!(token_record)
 
       {:ok, query} = Queries.verify_session_token_query(token_record.token)
@@ -246,7 +247,7 @@ defmodule Jarga.Accounts.QueriesTest do
     test "query includes authenticated_at in user struct" do
       user = user_fixture()
       # Create a session token explicitly
-      {_encoded, token_record} = UserToken.build_session_token(user)
+      {_encoded, token_record} = TokenBuilder.build_session_token(user)
       Repo.insert!(token_record)
 
       {:ok, query} = Queries.verify_session_token_query(token_record.token)
@@ -259,11 +260,11 @@ defmodule Jarga.Accounts.QueriesTest do
       user = user_fixture()
 
       # Create an expired session token (older than 14 days)
-      {_encoded, token_record} = UserToken.build_session_token(user)
+      {_encoded, token_record} = TokenBuilder.build_session_token(user)
       # Insert the token first
       inserted_token = Repo.insert!(token_record)
       # Update the inserted_at to make it expired
-      Repo.update_all(from(t in UserToken, where: t.id == ^inserted_token.id),
+      Repo.update_all(from(t in UserTokenSchema, where: t.id == ^inserted_token.id),
         set: [inserted_at: DateTime.add(DateTime.utc_now(), -15, :day)]
       )
 
@@ -319,12 +320,12 @@ defmodule Jarga.Accounts.QueriesTest do
       user = user_fixture()
 
       # Create an expired token (older than 15 minutes)
-      {encoded_token, user_token} = UserToken.build_email_token(user, "login")
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, "login")
 
       # Insert the token first, then update its inserted_at to make it expired
       inserted_token = Repo.insert!(user_token)
 
-      Repo.update_all(from(t in UserToken, where: t.id == ^inserted_token.id),
+      Repo.update_all(from(t in UserTokenSchema, where: t.id == ^inserted_token.id),
         set: [inserted_at: DateTime.add(DateTime.utc_now(), -20, :minute)]
       )
 
@@ -341,13 +342,13 @@ defmodule Jarga.Accounts.QueriesTest do
       context = "change:#{user.email}"
 
       # Build and insert the token manually
-      {encoded_token, user_token} = UserToken.build_email_token(user, context)
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, context)
       user_token = %{user_token | sent_to: new_email}
       Repo.insert!(user_token)
 
       {:ok, query} = Queries.verify_change_email_token_query(encoded_token, context)
 
-      assert %UserToken{} = token = Repo.one(query)
+      assert %UserTokenSchema{} = token = Repo.one(query)
       assert token.context == context
       assert token.user_id == user.id
     end
@@ -370,13 +371,13 @@ defmodule Jarga.Accounts.QueriesTest do
       context = "change:#{user.email}"
 
       # Create an expired token (older than 7 days)
-      {encoded_token, user_token} = UserToken.build_email_token(user, context)
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, context)
       user_token = %{user_token | sent_to: new_email}
 
       # Insert the token first, then update its inserted_at to make it expired
       inserted_token = Repo.insert!(user_token)
 
-      Repo.update_all(from(t in UserToken, where: t.id == ^inserted_token.id),
+      Repo.update_all(from(t in UserTokenSchema, where: t.id == ^inserted_token.id),
         set: [inserted_at: DateTime.add(DateTime.utc_now(), -8, :day)]
       )
 
@@ -391,7 +392,7 @@ defmodule Jarga.Accounts.QueriesTest do
       context = "change:#{user.email}"
 
       # Build and insert the token
-      {encoded_token, user_token} = UserToken.build_email_token(user, context)
+      {encoded_token, user_token} = TokenBuilder.build_email_token(user, context)
       user_token = %{user_token | sent_to: new_email}
       Repo.insert!(user_token)
 

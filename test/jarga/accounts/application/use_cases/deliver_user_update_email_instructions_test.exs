@@ -5,7 +5,7 @@ defmodule Jarga.Accounts.Application.UseCases.DeliverUserUpdateEmailInstructions
   import Swoosh.TestAssertions
 
   alias Jarga.Accounts.Application.UseCases.DeliverUserUpdateEmailInstructions
-  alias Jarga.Accounts.Domain.Entities.UserToken
+  alias Jarga.Accounts.Infrastructure.Schemas.UserTokenSchema
 
   describe "execute/2" do
     setup do
@@ -46,7 +46,7 @@ defmodule Jarga.Accounts.Application.UseCases.DeliverUserUpdateEmailInstructions
       })
 
       # Token should exist in database
-      user_tokens = Repo.all_by(UserToken, user_id: user.id)
+      user_tokens = Repo.all_by(UserTokenSchema, user_id: user.id)
       assert length(user_tokens) == 1
 
       # Token context should include the current email
@@ -124,7 +124,7 @@ defmodule Jarga.Accounts.Application.UseCases.DeliverUserUpdateEmailInstructions
       })
 
       # Token context should be "change:old@example.com"
-      [user_token] = Repo.all_by(UserToken, user_id: user.id)
+      [user_token] = Repo.all_by(UserTokenSchema, user_id: user.id)
       assert user_token.context == "change:old@example.com"
     end
 
@@ -147,7 +147,7 @@ defmodule Jarga.Accounts.Application.UseCases.DeliverUserUpdateEmailInstructions
       })
 
       # Should have two tokens with different contexts
-      user_tokens = Repo.all_by(UserToken, user_id: user.id)
+      user_tokens = Repo.all_by(UserTokenSchema, user_id: user.id)
       assert length(user_tokens) == 2
 
       contexts = Enum.map(user_tokens, & &1.context) |> Enum.sort()

@@ -5,7 +5,7 @@ defmodule Jarga.Accounts.Application.UseCases.DeliverLoginInstructionsTest do
   import Swoosh.TestAssertions
 
   alias Jarga.Accounts.Application.UseCases.DeliverLoginInstructions
-  alias Jarga.Accounts.Domain.Entities.UserToken
+  alias Jarga.Accounts.Infrastructure.Schemas.UserTokenSchema
 
   describe "execute/2" do
     setup do
@@ -35,7 +35,7 @@ defmodule Jarga.Accounts.Application.UseCases.DeliverLoginInstructionsTest do
       })
 
       # Token should exist in database with context "login"
-      user_tokens = Repo.all_by(UserToken, user_id: user.id)
+      user_tokens = Repo.all_by(UserTokenSchema, user_id: user.id)
       assert length(user_tokens) == 1
 
       [user_token] = user_tokens
@@ -97,7 +97,7 @@ defmodule Jarga.Accounts.Application.UseCases.DeliverLoginInstructionsTest do
       DeliverLoginInstructions.execute(%{user: user, url_fun: url_fun})
 
       # Should have two tokens
-      user_tokens = Repo.all_by(UserToken, user_id: user.id)
+      user_tokens = Repo.all_by(UserTokenSchema, user_id: user.id)
       assert length(user_tokens) == 2
 
       # Both should have context "login"

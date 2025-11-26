@@ -30,6 +30,7 @@ defmodule Jarga.TestUsers do
 
   alias Jarga.Accounts
   alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Accounts.Infrastructure.Schemas.UserSchema
   alias Jarga.Repo
 
   @test_users %{
@@ -75,7 +76,7 @@ defmodule Jarga.TestUsers do
   """
   def ensure_test_users_exist do
     Enum.each(@test_users, fn {key, attrs} ->
-      case Repo.get_by(User, email: attrs.email) do
+      case Repo.get_by(UserSchema, email: attrs.email) do
         nil -> create_test_user(key, attrs)
         _user -> :ok
       end
@@ -96,12 +97,12 @@ defmodule Jarga.TestUsers do
   def get_user(key) when is_atom(key) do
     attrs = Map.fetch!(@test_users, key)
 
-    case Repo.get_by(User, email: attrs.email) do
+    case Repo.get_by(UserSchema, email: attrs.email) do
       nil ->
         raise "Test user #{key} (#{attrs.email}) not found. Did you call ensure_test_users_exist/0?"
 
-      user ->
-        user
+      user_schema ->
+        User.from_schema(user_schema)
     end
   end
 
@@ -144,9 +145,9 @@ defmodule Jarga.TestUsers do
   """
   def clear_test_users do
     Enum.each(@test_users, fn {_key, attrs} ->
-      case Repo.get_by(User, email: attrs.email) do
+      case Repo.get_by(UserSchema, email: attrs.email) do
         nil -> :ok
-        user -> Repo.delete(user)
+        user_schema -> Repo.delete(user_schema)
       end
     end)
   end
@@ -163,7 +164,9 @@ defmodule Jarga.TestUsers do
       })
 
     # Confirm users immediately so they can log in (bypassing email confirmation)
+    # Convert domain User to UserSchema, update, then discard (return :ok)
     user
+    |> UserSchema.to_schema()
     |> Ecto.Changeset.change(%{confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second)})
     |> Repo.update!()
 

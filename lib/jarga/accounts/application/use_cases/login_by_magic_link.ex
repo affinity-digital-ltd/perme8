@@ -35,9 +35,10 @@ defmodule Jarga.Accounts.Application.UseCases.LoginByMagicLink do
 
   @behaviour Jarga.Accounts.Application.UseCases.UseCase
 
-  alias Jarga.Repo
-  alias Jarga.Accounts.Domain.Entities.{User, UserToken}
+  alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Accounts.Infrastructure.Schemas.UserSchema
   alias Jarga.Accounts.Infrastructure.Queries.Queries
+  alias Jarga.Accounts.Infrastructure.Repositories.{UserRepository, UserTokenRepository}
 
   @doc """
   Executes the login by magic link use case.
@@ -49,6 +50,7 @@ defmodule Jarga.Accounts.Application.UseCases.LoginByMagicLink do
 
   - `opts` - Keyword list of options:
     - `:repo` - Repository module (default: Jarga.Repo)
+    - `:transaction_fn` - Function to execute transaction (default: repo.unwrap_transaction/1)
 
   ## Returns
 
@@ -59,11 +61,12 @@ defmodule Jarga.Accounts.Application.UseCases.LoginByMagicLink do
   @impl true
   def execute(params, opts \\ []) do
     %{token: token} = params
-    repo = Keyword.get(opts, :repo, Repo)
+    repo = Keyword.get(opts, :repo, Jarga.Repo)
+    transaction_fn = Keyword.get(opts, :transaction_fn, &repo.unwrap_transaction/1)
 
     with {:ok, query} <- Queries.verify_magic_link_token_query(token),
          result when not is_nil(result) <- repo.one(query) do
-      handle_magic_link_result(result, repo)
+      handle_magic_link_result(result, repo, transaction_fn)
     else
       nil -> {:error, :not_found}
       :error -> {:error, :invalid_token}
@@ -72,16 +75,17 @@ defmodule Jarga.Accounts.Application.UseCases.LoginByMagicLink do
 
   # Case 3: Unconfirmed user with password - confirm and delete only the magic link token
   defp handle_magic_link_result(
-         {%User{confirmed_at: nil, hashed_password: hash} = user, token},
-         repo
+         {%UserSchema{confirmed_at: nil, hashed_password: hash} = user, token},
+         repo,
+         _transaction_fn
        )
        when not is_nil(hash) do
     # For password-based registration, we confirm the user when they click the magic link
     # This is safe because they have proven ownership of the email
-    case User.confirm_changeset(user) |> repo.update() do
+    case UserRepository.update_changeset(UserSchema.confirm_changeset(user), repo) do
       {:ok, confirmed_user} ->
         # Delete only the magic link token after confirmation
-        repo.delete!(token)
+        UserTokenRepository.delete!(token, repo)
         {:ok, {confirmed_user, []}}
 
       error ->
@@ -90,19 +94,30 @@ defmodule Jarga.Accounts.Application.UseCases.LoginByMagicLink do
   end
 
   # Case 2: Unconfirmed user without password - confirm and delete ALL tokens
-  defp handle_magic_link_result({%User{confirmed_at: nil} = user, _token}, repo) do
-    repo.transact(fn ->
-      with {:ok, user} <- user |> User.confirm_changeset() |> repo.update() do
-        tokens_to_expire = repo.all_by(UserToken, user_id: user.id)
-        repo.delete_all(Queries.tokens_by_ids(Enum.map(tokens_to_expire, & &1.id)))
+  defp handle_magic_link_result(
+         {%UserSchema{confirmed_at: nil} = user, _token},
+         repo,
+         transaction_fn
+       ) do
+    transaction_fn.(fn ->
+      with {:ok, user} <-
+             UserRepository.update_changeset(UserSchema.confirm_changeset(user), repo) do
+        tokens_to_expire = UserTokenRepository.all_by_user_id(user.id, repo)
+
+        UserTokenRepository.delete_all(
+          Queries.tokens_by_ids(Enum.map(tokens_to_expire, & &1.id)),
+          repo
+        )
+
         {:ok, {user, tokens_to_expire}}
       end
     end)
   end
 
   # Case 1: Already confirmed user - just delete the token
-  defp handle_magic_link_result({user, token}, repo) do
-    repo.delete!(token)
+  defp handle_magic_link_result({user_schema, token}, repo, _transaction_fn) do
+    UserTokenRepository.delete!(token, repo)
+    user = User.from_schema(user_schema)
     {:ok, {user, []}}
   end
 end

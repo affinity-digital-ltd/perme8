@@ -19,8 +19,8 @@ defmodule Jarga.Accounts.Application.UseCases.GenerateSessionToken do
 
   @behaviour Jarga.Accounts.Application.UseCases.UseCase
 
-  alias Jarga.Repo
-  alias Jarga.Accounts.Domain.Entities.UserToken
+  alias Jarga.Accounts.Domain.Services.TokenBuilder
+  alias Jarga.Accounts.Infrastructure.Repositories.UserTokenRepository
 
   @doc """
   Executes the generate session token use case.
@@ -41,18 +41,13 @@ defmodule Jarga.Accounts.Application.UseCases.GenerateSessionToken do
   def execute(params, opts \\ []) do
     %{user: user} = params
 
-    repo = Keyword.get(opts, :repo, Repo)
+    repo = Keyword.get(opts, :repo, Jarga.Repo)
 
     # Build session token
-    {token, user_token} = UserToken.build_session_token(user)
+    {token, user_token} = TokenBuilder.build_session_token(user)
 
     # Persist token in database
-    # Support both module and map (for testing)
-    if is_atom(repo) do
-      repo.insert!(user_token)
-    else
-      repo.insert!.(user_token)
-    end
+    UserTokenRepository.insert!(user_token, repo)
 
     # Return encoded token
     token

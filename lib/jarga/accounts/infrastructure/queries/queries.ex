@@ -26,7 +26,8 @@ defmodule Jarga.Accounts.Infrastructure.Queries.Queries do
 
   import Ecto.Query, warn: false
 
-  alias Jarga.Accounts.Domain.Entities.{User, UserToken}
+  alias Jarga.Accounts.Infrastructure.Schemas.UserTokenSchema
+  alias Jarga.Accounts.Infrastructure.Schemas.UserSchema
   alias Jarga.Accounts.Infrastructure.Services.TokenGenerator
   alias Jarga.Accounts.Domain.Policies.TokenPolicy
 
@@ -34,14 +35,14 @@ defmodule Jarga.Accounts.Infrastructure.Queries.Queries do
   Base query for users.
   """
   def base do
-    User
+    UserSchema
   end
 
   @doc """
   Base query for user tokens.
   """
   def tokens_base do
-    UserToken
+    UserTokenSchema
   end
 
   @doc """

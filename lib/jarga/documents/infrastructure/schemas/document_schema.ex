@@ -16,10 +16,13 @@ defmodule Jarga.Documents.Infrastructure.Schemas.DocumentSchema do
     field(:is_public, :boolean, default: false)
     field(:is_pinned, :boolean, default: false)
 
-    belongs_to(:user, Jarga.Accounts.Domain.Entities.User)
+    belongs_to(:user, Jarga.Accounts.Infrastructure.Schemas.UserSchema)
     belongs_to(:workspace, Jarga.Workspaces.Domain.Entities.Workspace, type: Ecto.UUID)
     belongs_to(:project, Jarga.Projects.Domain.Entities.Project, type: Ecto.UUID)
-    belongs_to(:created_by_user, Jarga.Accounts.Domain.Entities.User, foreign_key: :created_by)
+
+    belongs_to(:created_by_user, Jarga.Accounts.Infrastructure.Schemas.UserSchema,
+      foreign_key: :created_by
+    )
 
     # Polymorphic components (notes, task lists, sheets, etc.)
     has_many(:document_components, Jarga.Documents.Infrastructure.Schemas.DocumentComponentSchema,

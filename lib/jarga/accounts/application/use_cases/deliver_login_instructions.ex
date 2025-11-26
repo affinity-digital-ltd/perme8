@@ -19,9 +19,9 @@ defmodule Jarga.Accounts.Application.UseCases.DeliverLoginInstructions do
 
   @behaviour Jarga.Accounts.Application.UseCases.UseCase
 
-  alias Jarga.Repo
-  alias Jarga.Accounts.Domain.Entities.UserToken
+  alias Jarga.Accounts.Domain.Services.TokenBuilder
   alias Jarga.Accounts.Infrastructure.Notifiers.UserNotifier
+  alias Jarga.Accounts.Infrastructure.Repositories.UserTokenRepository
 
   @doc """
   Executes the deliver login instructions use case.
@@ -44,18 +44,14 @@ defmodule Jarga.Accounts.Application.UseCases.DeliverLoginInstructions do
   def execute(params, opts \\ []) do
     %{user: user, url_fun: url_fun} = params
 
-    repo = Keyword.get(opts, :repo, Repo)
+    repo = Keyword.get(opts, :repo, Jarga.Repo)
     notifier = Keyword.get(opts, :notifier, &UserNotifier.deliver_login_instructions/2)
 
     # Build email token with context "login"
-    {encoded_token, user_token} = UserToken.build_email_token(user, "login")
+    {encoded_token, user_token} = TokenBuilder.build_email_token(user, "login")
 
     # Persist token in database
-    if is_atom(repo) do
-      repo.insert!(user_token)
-    else
-      repo.insert!.(user_token)
-    end
+    UserTokenRepository.insert!(user_token, repo)
 
     # Generate login URL
     url = url_fun.(encoded_token)

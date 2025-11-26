@@ -26,7 +26,7 @@ defmodule Jarga.Notifications.Domain.Entities.Notification do
         }
 
   schema "notifications" do
-    belongs_to(:user, Jarga.Accounts.Domain.Entities.User)
+    belongs_to(:user, Jarga.Accounts.Infrastructure.Schemas.UserSchema)
 
     field(:type, :string)
     field(:title, :string)

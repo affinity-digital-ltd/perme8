@@ -13,7 +13,7 @@ defmodule Jarga.Notes.Domain.Entities.Note do
     field(:note_content, :map)
     field(:yjs_state, :binary)
 
-    belongs_to(:user, Jarga.Accounts.Domain.Entities.User)
+    belongs_to(:user, Jarga.Accounts.Infrastructure.Schemas.UserSchema)
     belongs_to(:workspace, Jarga.Workspaces.Domain.Entities.Workspace, type: Ecto.UUID)
     belongs_to(:project, Jarga.Projects.Domain.Entities.Project, type: Ecto.UUID)
 

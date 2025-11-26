@@ -2,7 +2,7 @@ defmodule Jarga.Accounts.Domain.Services.TokenBuilderTest do
   use ExUnit.Case, async: true
 
   alias Jarga.Accounts.Domain.Services.TokenBuilder
-  alias Jarga.Accounts.Domain.Entities.UserToken
+  alias Jarga.Accounts.Infrastructure.Schemas.UserTokenSchema
 
   describe "build_session_token/1" do
     test "generates a session token with user id" do
@@ -12,7 +12,7 @@ defmodule Jarga.Accounts.Domain.Services.TokenBuilderTest do
 
       assert is_binary(token)
       assert byte_size(token) == 32
-      assert %UserToken{} = user_token
+      assert %UserTokenSchema{} = user_token
       assert user_token.user_id == "user123"
       assert user_token.context == "session"
       assert user_token.token == token
@@ -54,7 +54,7 @@ defmodule Jarga.Accounts.Domain.Services.TokenBuilderTest do
 
       assert is_binary(encoded_token)
       assert String.valid?(encoded_token)
-      assert %UserToken{} = user_token
+      assert %UserTokenSchema{} = user_token
       assert user_token.user_id == "user123"
       assert user_token.context == "login"
       assert user_token.sent_to == "user@example.com"

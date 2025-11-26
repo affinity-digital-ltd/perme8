@@ -4,7 +4,9 @@ defmodule Jarga.Accounts.Application.UseCases.GenerateSessionTokenTest do
   import Jarga.AccountsFixtures
 
   alias Jarga.Accounts.Application.UseCases.GenerateSessionToken
-  alias Jarga.Accounts.Domain.Entities.UserToken
+  alias Jarga.Accounts.Domain.Entities.User
+  alias Jarga.Accounts.Infrastructure.Schemas.UserTokenSchema
+  alias Jarga.Accounts.Infrastructure.Schemas.UserSchema
 
   describe "execute/2" do
     setup do
@@ -19,7 +21,7 @@ defmodule Jarga.Accounts.Application.UseCases.GenerateSessionTokenTest do
       assert is_binary(token)
 
       # Token should be persisted in database
-      user_tokens = Repo.all_by(UserToken, user_id: user.id)
+      user_tokens = Repo.all_by(UserTokenSchema, user_id: user.id)
       assert length(user_tokens) == 1
 
       # Token context should be "session"
@@ -39,7 +41,7 @@ defmodule Jarga.Accounts.Application.UseCases.GenerateSessionTokenTest do
       token = GenerateSessionToken.execute(%{user: user})
 
       # Verify token exists in database
-      user_tokens = Repo.all_by(UserToken, user_id: user.id)
+      user_tokens = Repo.all_by(UserTokenSchema, user_id: user.id)
       assert length(user_tokens) == 1
 
       [user_token] = user_tokens
@@ -54,8 +56,12 @@ defmodule Jarga.Accounts.Application.UseCases.GenerateSessionTokenTest do
       # Update user with authenticated_at timestamp
       authenticated_at = DateTime.utc_now() |> DateTime.truncate(:second)
 
-      {:ok, user_with_auth} =
-        Repo.update(Ecto.Changeset.change(user, authenticated_at: authenticated_at))
+      {:ok, user_with_auth_schema} =
+        Repo.update(
+          Ecto.Changeset.change(UserSchema.to_schema(user), authenticated_at: authenticated_at)
+        )
+
+      user_with_auth = User.from_schema(user_with_auth_schema)
 
       token = GenerateSessionToken.execute(%{user: user_with_auth})
 
@@ -63,7 +69,7 @@ defmodule Jarga.Accounts.Application.UseCases.GenerateSessionTokenTest do
       assert is_binary(token)
 
       # Verify token is in database
-      [user_token] = Repo.all_by(UserToken, user_id: user_with_auth.id)
+      [user_token] = Repo.all_by(UserTokenSchema, user_id: user_with_auth.id)
       assert user_token.context == "session"
     end
 
@@ -102,7 +108,7 @@ defmodule Jarga.Accounts.Application.UseCases.GenerateSessionTokenTest do
       assert token1 != token2
 
       # Both should be stored in database
-      user_tokens = Repo.all_by(UserToken, user_id: user.id)
+      user_tokens = Repo.all_by(UserTokenSchema, user_id: user.id)
       assert length(user_tokens) == 2
     end
   end

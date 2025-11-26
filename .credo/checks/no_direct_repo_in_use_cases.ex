@@ -93,9 +93,9 @@ defmodule Jarga.Credo.Check.Architecture.NoDirectRepoInUseCases do
   defp use_case_file?(source_file) do
     path = source_file.filename
 
-    # Check if in application/use_cases/ directory
+    # Check if in application/use_cases/ directory, but exclude test files
     String.contains?(path, "/application/use_cases/") and
-      not String.contains?(path, "/test/")
+      not (String.starts_with?(path, "test/") or String.contains?(path, "/test/"))
   end
 
   # Detect: alias Jarga.Repo

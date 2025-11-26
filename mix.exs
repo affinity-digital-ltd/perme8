@@ -121,7 +121,7 @@ defmodule Jarga.MixProject do
       {:bypass, "~> 2.1", only: :test},
       {:mox, "~> 1.0", only: :test},
       {:wallaby, "~> 0.30", runtime: false, only: :test},
-      {:cucumber, "~> 0.4.1", only: :test},
+      {:cucumber, "~> 0.4.2", only: :test},
       {:slugy, "~> 4.1"},
       {:mdex, "~> 0.2"}
     ]

@@ -1,68 +1,59 @@
 defmodule Jarga.Accounts.Domain.Entities.UserToken do
   @moduledoc """
-  Schema for user authentication tokens used for sessions, magic links, and email changes.
+  Pure domain entity for user authentication tokens.
 
-  This is a pure Ecto schema with NO business logic.
-  Token building logic has been moved to TokenBuilder domain service.
+  This is a plain struct with NO Ecto dependencies, following Clean Architecture principles.
+  Token building logic is delegated to TokenBuilder domain service.
 
-  ## Note
+  ## Fields
 
-  The `build_session_token/1` and `build_email_token/2` functions are kept here
-  for backward compatibility and delegate to TokenBuilder service.
+  - `id` - Token identifier (binary_id)
+  - `token` - Token value (binary)
+  - `context` - Token context ("session", "login", "change:email")
+  - `sent_to` - Email address where token was sent
+  - `authenticated_at` - Timestamp when user was authenticated (session tokens)
+  - `user_id` - Associated user ID
+  - `inserted_at` - When token was created
   """
 
-  use Ecto.Schema
-  alias Jarga.Accounts.Domain.Services.TokenBuilder
+  alias Jarga.Accounts.Infrastructure.Schemas.UserTokenSchema
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-  schema "users_tokens" do
-    field(:token, :binary)
-    field(:context, :string)
-    field(:sent_to, :string)
-    field(:authenticated_at, :utc_datetime)
-    belongs_to(:user, Jarga.Accounts.Domain.Entities.User, type: :binary_id)
+  @type t :: %__MODULE__{
+          id: String.t() | nil,
+          token: binary() | nil,
+          context: String.t() | nil,
+          sent_to: String.t() | nil,
+          authenticated_at: DateTime.t() | nil,
+          user_id: String.t() | nil,
+          inserted_at: DateTime.t() | nil
+        }
 
-    timestamps(type: :utc_datetime, updated_at: false)
-  end
+  defstruct [
+    :id,
+    :token,
+    :context,
+    :sent_to,
+    :authenticated_at,
+    :user_id,
+    :inserted_at
+  ]
 
   @doc """
-  Generates a token that will be stored in a signed place,
-  such as session or cookie. As they are signed, those
-  tokens do not need to be hashed.
+  Converts a UserTokenSchema (Ecto schema) to a UserToken (domain entity).
 
-  The reason why we store session tokens in the database, even
-  though Phoenix already provides a session cookie, is because
-  Phoenix' default session cookies are not persisted, they are
-  simply signed and potentially encrypted. This means they are
-  valid indefinitely, unless you change the signing/encryption
-  salt.
-
-  Therefore, storing them allows individual user
-  sessions to be expired. The token system can also be extended
-  to store additional data, such as the device used for logging in.
-  You could then use this information to display all valid sessions
-  and devices in the UI and allow users to explicitly expire any
-  session they deem invalid.
+  Returns nil if schema is nil.
   """
-  def build_session_token(user) do
-    TokenBuilder.build_session_token(user)
-  end
+  def from_schema(nil), do: nil
 
-  @doc """
-  Builds a token and its hash to be delivered to the user's email.
-
-  The non-hashed token is sent to the user email while the
-  hashed part is stored in the database. The original token cannot be reconstructed,
-  which means anyone with read-only access to the database cannot directly use
-  the token in the application to gain access. Furthermore, if the user changes
-  their email in the system, the tokens sent to the previous email are no longer
-  valid.
-
-  Users can easily adapt the existing code to provide other types of delivery methods,
-  for example, by phone numbers.
-  """
-  def build_email_token(user, context) do
-    TokenBuilder.build_email_token(user, context)
+  def from_schema(%UserTokenSchema{} = schema) do
+    %__MODULE__{
+      id: schema.id,
+      token: schema.token,
+      context: schema.context,
+      sent_to: schema.sent_to,
+      authenticated_at: schema.authenticated_at,
+      user_id: schema.user_id,
+      inserted_at: schema.inserted_at
+    }
   end
 end

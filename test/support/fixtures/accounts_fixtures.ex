@@ -11,8 +11,21 @@ defmodule Jarga.AccountsFixtures do
 
   alias Jarga.Accounts
   alias Jarga.Accounts.Application.Services.PasswordService
+  alias Jarga.Accounts.Domain.Entities.User
   alias Jarga.Accounts.Domain.Scope
-  alias Jarga.Accounts.Domain.Entities.UserToken
+  alias Jarga.Accounts.Domain.Services.TokenBuilder
+  alias Jarga.Accounts.Infrastructure.Schemas.{UserSchema, UserTokenSchema}
+
+  # Private test helper - updates user directly in database
+  defp update_user_directly(user, attrs) do
+    updated_schema =
+      user
+      |> UserSchema.to_schema()
+      |> Ecto.Changeset.change(attrs)
+      |> Jarga.Repo.update!()
+
+    User.from_schema(updated_schema)
+  end
 
   def unique_user_email, do: "user#{System.unique_integer([:positive])}@example.com"
   def valid_user_password, do: "hello world!"
@@ -39,9 +52,8 @@ defmodule Jarga.AccountsFixtures do
     # Then directly set hashed_password in database using PasswordService
     hashed_password = PasswordService.hash_password(password)
 
-    user
-    |> Ecto.Changeset.change(hashed_password: hashed_password)
-    |> Jarga.Repo.update!()
+    # Update user directly in database (test helper)
+    update_user_directly(user, hashed_password: hashed_password)
   end
 
   def user_fixture(attrs \\ %{}) do
@@ -70,9 +82,8 @@ defmodule Jarga.AccountsFixtures do
   def set_password(user) do
     hashed_password = PasswordService.hash_password(valid_user_password())
 
-    user
-    |> Ecto.Changeset.change(hashed_password: hashed_password)
-    |> Jarga.Repo.update!()
+    # Update user directly in database (test helper)
+    update_user_directly(user, hashed_password: hashed_password)
   end
 
   def extract_user_token(fun) do
@@ -83,7 +94,7 @@ defmodule Jarga.AccountsFixtures do
 
   def override_token_authenticated_at(token, authenticated_at) when is_binary(token) do
     Jarga.Repo.update_all(
-      from(t in UserToken,
+      from(t in UserTokenSchema,
         where: t.token == ^token
       ),
       set: [authenticated_at: authenticated_at]
@@ -91,23 +102,23 @@ defmodule Jarga.AccountsFixtures do
   end
 
   def generate_user_magic_link_token(user) do
-    {encoded_token, user_token} = UserToken.build_email_token(user, "login")
-    Jarga.Repo.insert!(user_token)
-    {encoded_token, user_token.token}
+    {encoded_token, user_token_schema} = TokenBuilder.build_email_token(user, "login")
+    Jarga.Repo.insert!(user_token_schema)
+    {encoded_token, user_token_schema.token}
   end
 
   def offset_user_token(token, amount_to_add, unit) do
     dt = DateTime.add(DateTime.utc_now(:second), amount_to_add, unit)
 
     Jarga.Repo.update_all(
-      from(ut in UserToken, where: ut.token == ^token),
+      from(ut in UserTokenSchema, where: ut.token == ^token),
       set: [inserted_at: dt, authenticated_at: dt]
     )
   end
 
   def expire_user_login_token(user_id) do
     Jarga.Repo.update_all(
-      from(t in UserToken,
+      from(t in UserTokenSchema,
         where: t.user_id == ^user_id and t.context == "login",
         update: [set: [inserted_at: fragment("inserted_at - INTERVAL '20 minutes'")]]
       ),

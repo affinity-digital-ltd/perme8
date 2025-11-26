@@ -37,15 +37,19 @@ defmodule Jarga.Accounts do
     exports: [
       {Domain.Entities.User, []},
       {Domain.Scope, []},
-      {Application.Services.PasswordService, []}
+      {Application.Services.PasswordService, []},
+      {Domain.Services.TokenBuilder, []},
+      {Infrastructure.Schemas.UserSchema, []},
+      {Infrastructure.Schemas.UserTokenSchema, []}
     ]
 
   import Ecto.Query, warn: false
   alias Jarga.Repo
 
-  alias Jarga.Accounts.Domain.Entities.{User, UserToken}
+  alias Jarga.Accounts.Domain.Entities.User
   alias Jarga.Accounts.Domain.Policies.AuthenticationPolicy
   alias Jarga.Accounts.Infrastructure.Queries.Queries
+  alias Jarga.Accounts.Infrastructure.Schemas.{UserSchema, UserTokenSchema}
   alias Jarga.Accounts.Application.UseCases
 
   ## Database getters
@@ -54,16 +58,22 @@ defmodule Jarga.Accounts do
   Gets a user by email. Returns `nil` if not found.
   """
   def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
+    case Repo.get_by(UserSchema, email: email) do
+      nil -> nil
+      schema -> User.from_schema(schema)
+    end
   end
 
   @doc """
   Gets a user by email (case-insensitive). Returns `nil` if not found.
   """
   def get_user_by_email_case_insensitive(email) when is_binary(email) do
-    email
-    |> Queries.by_email_case_insensitive()
-    |> Repo.one()
+    case email
+         |> Queries.by_email_case_insensitive()
+         |> Repo.one() do
+      nil -> nil
+      schema -> User.from_schema(schema)
+    end
   end
 
   @doc """
@@ -74,10 +84,16 @@ defmodule Jarga.Accounts do
   """
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: email)
+    user_schema = Repo.get_by(UserSchema, email: email)
 
-    if User.valid_password?(user, password) and user.confirmed_at != nil do
-      user
+    if user_schema do
+      user = User.from_schema(user_schema)
+
+      if User.valid_password?(user, password) and user.confirmed_at != nil do
+        user
+      else
+        nil
+      end
     else
       nil
     end
@@ -86,7 +102,11 @@ defmodule Jarga.Accounts do
   @doc """
   Gets a single user. Raises `Ecto.NoResultsError` if not found.
   """
-  def get_user!(id), do: Repo.get!(User, id)
+  def get_user!(id) do
+    UserSchema
+    |> Repo.get!(id)
+    |> User.from_schema()
+  end
 
   ## User registration
 
@@ -115,10 +135,17 @@ defmodule Jarga.Accounts do
   end
 
   @doc """
+  Returns a changeset for user registration.
+  """
+  def change_user_registration(user, attrs \\ %{}, opts \\ []) do
+    UserSchema.registration_changeset(user, attrs, opts)
+  end
+
+  @doc """
   Returns a changeset for changing the user email.
   """
   def change_user_email(user, attrs \\ %{}, opts \\ []) do
-    User.email_changeset(user, attrs, opts)
+    UserSchema.email_changeset(user, attrs, opts)
   end
 
   @doc """
@@ -138,7 +165,7 @@ defmodule Jarga.Accounts do
   Returns a changeset for changing the user password.
   """
   def change_user_password(user, attrs \\ %{}, opts \\ []) do
-    User.password_changeset(user, attrs, opts)
+    UserSchema.password_changeset(user, attrs, opts)
   end
 
   @doc """
@@ -171,7 +198,14 @@ defmodule Jarga.Accounts do
   """
   def get_user_by_session_token(token) do
     {:ok, query} = Queries.verify_session_token_query(token)
-    Repo.one(query)
+
+    case Repo.one(query) do
+      {user_schema, token_inserted_at} ->
+        {User.from_schema(user_schema), token_inserted_at}
+
+      nil ->
+        nil
+    end
   end
 
   @doc """
@@ -179,8 +213,8 @@ defmodule Jarga.Accounts do
   """
   def get_user_by_magic_link_token(token) do
     with {:ok, query} <- Queries.verify_magic_link_token_query(token),
-         {user, _token} <- Repo.one(query) do
-      user
+         {user_schema, _token} <- Repo.one(query) do
+      User.from_schema(user_schema)
     else
       _ -> nil
     end
@@ -239,9 +273,11 @@ defmodule Jarga.Accounts do
 
   @doc """
   Gets a user token by user_id (primarily for testing).
+  Returns a domain UserToken entity.
   """
   def get_user_token_by_user_id(user_id) do
-    Repo.get_by!(UserToken, user_id: user_id)
+    Repo.get_by!(UserTokenSchema, user_id: user_id)
+    |> UserTokenSchema.to_entity()
   end
 
   ## User preferences
@@ -252,9 +288,13 @@ defmodule Jarga.Accounts do
   """
   def get_selected_agent_id(user_id, workspace_id)
       when is_binary(user_id) and is_binary(workspace_id) do
-    case Repo.get(User, user_id) do
-      nil -> nil
-      user -> get_in(user.preferences, ["selected_agents", workspace_id])
+    case Repo.get(UserSchema, user_id) do
+      nil ->
+        nil
+
+      user_schema ->
+        user = User.from_schema(user_schema)
+        get_in(user.preferences, ["selected_agents", workspace_id])
     end
   end
 
@@ -263,20 +303,24 @@ defmodule Jarga.Accounts do
   """
   def set_selected_agent_id(user_id, workspace_id, agent_id)
       when is_binary(user_id) and is_binary(workspace_id) and is_binary(agent_id) do
-    case Repo.get(User, user_id) do
+    case Repo.get(UserSchema, user_id) do
       nil ->
         {:error, :user_not_found}
 
-      user ->
+      user_schema ->
+        user = User.from_schema(user_schema)
         selected_agents = Map.get(user.preferences, "selected_agents", %{})
         updated_selected_agents = Map.put(selected_agents, workspace_id, agent_id)
 
         updated_preferences =
           Map.put(user.preferences, "selected_agents", updated_selected_agents)
 
-        user
-        |> Ecto.Changeset.change(preferences: updated_preferences)
-        |> Repo.update()
+        case user_schema
+             |> Ecto.Changeset.change(preferences: updated_preferences)
+             |> Repo.update() do
+          {:ok, updated_schema} -> {:ok, User.from_schema(updated_schema)}
+          {:error, changeset} -> {:error, changeset}
+        end
     end
   end
 end
