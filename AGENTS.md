@@ -385,10 +385,33 @@ Quality Assurance Phases:
 **When main Agent should handle directly:**
 
 - Simple bug fixes (< 5 lines)
-- Documentation-only changes
 - Configuration updates
 - Exploratory research
 - Answering questions about codebase
+
+**IMPORTANT: When user requests acceptance criteria or feature specifications:**
+
+Main Agent should ALWAYS create a `.feature` file in `test/features/` using Gherkin syntax, NOT a markdown document. Even for simple requests, use BDD format:
+
+```gherkin
+Feature: [Feature Name]
+  As a [user role]
+  I want [goal]
+  So that [benefit]
+
+  Scenario: [Scenario name]
+    Given [precondition]
+    When [action]
+    Then [expected result]
+```
+
+**Examples:**
+- User asks: "Create acceptance criteria for checkbox strikethrough"
+  → Main Agent creates: `test/features/todo_checkbox_strikethrough.feature`
+- User asks: "Write specs for user login"
+  → Main Agent creates: `test/features/user_login.feature`
+
+This maintains consistency with BDD workflow and creates executable specifications from the start.
 
 ### Critical Rules
 
