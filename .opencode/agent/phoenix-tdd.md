@@ -1,6 +1,7 @@
 ---
 name: phoenix-tdd
 description: Implements Phoenix backend and LiveView features using strict Test-Driven Development with Phoenix/Elixir, following the Red-Green-Refactor cycle
+mode: subagent
 tools:
   read: true
   write: true

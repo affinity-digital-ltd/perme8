@@ -1,6 +1,7 @@
 ---
 name: test-validator
 description: Validates test quality, coverage, and adherence to TDD best practices for both backend and frontend code
+mode: subagent
 tools:
   read: true
   bash: true

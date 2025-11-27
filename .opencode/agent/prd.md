@@ -1,6 +1,7 @@
 ---
 name: prd
 description: Interviews users to gather comprehensive product requirements and creates a structured PRD to brief the architect agent
+mode: subagent
 tools:
   read: true
   grep: true

@@ -1,6 +1,7 @@
 ---
 name: architect
 description: Analyzes feature requests and creates comprehensive TDD implementation plans spanning full stack architecture
+mode: subagent
 tools:
   read: true
   grep: true

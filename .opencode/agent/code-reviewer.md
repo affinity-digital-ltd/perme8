@@ -1,6 +1,7 @@
 ---
 name: code-reviewer
 description: Reviews code for Clean Architecture compliance, folder structure correctness, domain boundary integrity, technical boundary violations, security issues, and best practices
+mode: subagent
 tools:
   read: true
   bash: true
