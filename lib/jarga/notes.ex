@@ -16,7 +16,7 @@ defmodule Jarga.Notes do
 
   alias Jarga.Repo
   alias Jarga.Accounts.Domain.Entities.User
-  alias Jarga.Notes.Domain.Entities.Note
+  alias Jarga.Notes.Infrastructure.Schemas.NoteSchema
   alias Jarga.Notes.Infrastructure.Queries.Queries
   alias Jarga.Notes.Infrastructure.Repositories.AuthorizationRepository
 
@@ -36,7 +36,7 @@ defmodule Jarga.Notes do
 
   """
   def get_note_by_id(note_id) do
-    Repo.get(Note, note_id)
+    Repo.get(NoteSchema, note_id)
   end
 
   @doc """
@@ -89,8 +89,8 @@ defmodule Jarga.Notes do
           workspace_id: workspace_id
         })
 
-      %Note{}
-      |> Note.changeset(attrs_with_user)
+      %NoteSchema{}
+      |> NoteSchema.changeset(attrs_with_user)
       |> Repo.insert()
     end
   end
@@ -116,7 +116,7 @@ defmodule Jarga.Notes do
     case AuthorizationRepository.verify_note_access(user, note_id) do
       {:ok, note} ->
         note
-        |> Note.changeset(attrs)
+        |> NoteSchema.changeset(attrs)
         |> Repo.update()
 
       {:error, reason} ->
@@ -143,7 +143,7 @@ defmodule Jarga.Notes do
     case AuthorizationRepository.verify_note_access_via_document(user, note_id) do
       {:ok, note} ->
         note
-        |> Note.changeset(attrs)
+        |> NoteSchema.changeset(attrs)
         |> Repo.update()
 
       {:error, reason} ->

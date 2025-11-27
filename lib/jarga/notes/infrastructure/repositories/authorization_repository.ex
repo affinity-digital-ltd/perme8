@@ -11,7 +11,7 @@ defmodule Jarga.Notes.Infrastructure.Repositories.AuthorizationRepository do
   alias Jarga.Repo
   alias Jarga.Accounts.Domain.Entities.User
   alias Jarga.Workspaces
-  alias Jarga.Notes.Domain.Entities.Note
+  alias Jarga.Notes.Infrastructure.Schemas.NoteSchema
   alias Jarga.Notes.Infrastructure.Queries.Queries
   alias Jarga.Documents.Infrastructure.Schemas.DocumentComponentSchema
   alias Jarga.Documents.Infrastructure.Schemas.DocumentSchema
@@ -37,7 +37,7 @@ defmodule Jarga.Notes.Infrastructure.Repositories.AuthorizationRepository do
          |> Repo.one() do
       nil ->
         # Check if note exists at all
-        if Repo.get(Note, note_id) do
+        if Repo.get(NoteSchema, note_id) do
           {:error, :unauthorized}
         else
           {:error, :note_not_found}
@@ -59,7 +59,7 @@ defmodule Jarga.Notes.Infrastructure.Repositories.AuthorizationRepository do
   def verify_note_access_via_document(%User{} = user, note_id) do
     # Find the note and its associated document via document_components
     query =
-      from(n in Note,
+      from(n in NoteSchema,
         join: dc in DocumentComponentSchema,
         on: dc.component_id == n.id and dc.component_type == "note",
         join: d in DocumentSchema,
@@ -74,7 +74,7 @@ defmodule Jarga.Notes.Infrastructure.Repositories.AuthorizationRepository do
     case Repo.one(query) do
       nil ->
         # Check if note exists at all
-        if Repo.get(Note, note_id) do
+        if Repo.get(NoteSchema, note_id) do
           {:error, :unauthorized}
         else
           {:error, :note_not_found}

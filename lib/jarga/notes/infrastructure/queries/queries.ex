@@ -5,14 +5,14 @@ defmodule Jarga.Notes.Infrastructure.Queries.Queries do
   """
 
   import Ecto.Query
-  alias Jarga.Notes.Domain.Entities.Note
+  alias Jarga.Notes.Infrastructure.Schemas.NoteSchema
   alias Jarga.Accounts.Domain.Entities.User
 
   @doc """
   Base query for notes.
   """
   def base do
-    from(n in Note, as: :note)
+    from(n in NoteSchema, as: :note)
   end
 
   @doc """
