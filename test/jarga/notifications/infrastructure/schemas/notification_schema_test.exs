@@ -1,11 +1,11 @@
-defmodule Jarga.Notifications.Domain.Entities.NotificationTest do
+defmodule Jarga.Notifications.Infrastructure.Schemas.NotificationSchemaTest do
   use ExUnit.Case, async: true
 
-  alias Jarga.Notifications.Domain.Entities.Notification
+  alias Jarga.Notifications.Infrastructure.Schemas.NotificationSchema
 
   describe "create_changeset/1" do
     test "validates required fields" do
-      changeset = Notification.create_changeset(%{})
+      changeset = NotificationSchema.create_changeset(%{})
 
       refute changeset.valid?
 
@@ -20,7 +20,7 @@ defmodule Jarga.Notifications.Domain.Entities.NotificationTest do
         title: "Test Notification"
       }
 
-      changeset = Notification.create_changeset(attrs)
+      changeset = NotificationSchema.create_changeset(attrs)
 
       refute changeset.valid?
       assert %{type: ["is invalid"]} = errors_on(changeset)
@@ -35,7 +35,7 @@ defmodule Jarga.Notifications.Domain.Entities.NotificationTest do
         data: %{"workspace_id" => Ecto.UUID.generate()}
       }
 
-      changeset = Notification.create_changeset(attrs)
+      changeset = NotificationSchema.create_changeset(attrs)
 
       assert changeset.valid?
     end
@@ -47,7 +47,7 @@ defmodule Jarga.Notifications.Domain.Entities.NotificationTest do
         title: "Test Notification"
       }
 
-      changeset = Notification.create_changeset(attrs)
+      changeset = NotificationSchema.create_changeset(attrs)
 
       assert changeset.valid?
       assert Ecto.Changeset.get_field(changeset, :read) == false
@@ -57,7 +57,7 @@ defmodule Jarga.Notifications.Domain.Entities.NotificationTest do
 
   describe "mark_read_changeset/1" do
     test "marks notification as read with timestamp" do
-      notification = %Notification{
+      notification = %NotificationSchema{
         id: Ecto.UUID.generate(),
         user_id: Ecto.UUID.generate(),
         type: "workspace_invitation",
@@ -66,7 +66,7 @@ defmodule Jarga.Notifications.Domain.Entities.NotificationTest do
         read_at: nil
       }
 
-      changeset = Notification.mark_read_changeset(notification)
+      changeset = NotificationSchema.mark_read_changeset(notification)
 
       assert changeset.valid?
       assert Ecto.Changeset.get_change(changeset, :read) == true
@@ -76,7 +76,7 @@ defmodule Jarga.Notifications.Domain.Entities.NotificationTest do
 
   describe "mark_action_taken_changeset/1" do
     test "marks action as taken with timestamp" do
-      notification = %Notification{
+      notification = %NotificationSchema{
         id: Ecto.UUID.generate(),
         user_id: Ecto.UUID.generate(),
         type: "workspace_invitation",
@@ -84,7 +84,7 @@ defmodule Jarga.Notifications.Domain.Entities.NotificationTest do
         action_taken_at: nil
       }
 
-      changeset = Notification.mark_action_taken_changeset(notification)
+      changeset = NotificationSchema.mark_action_taken_changeset(notification)
 
       assert changeset.valid?
       assert %DateTime{} = Ecto.Changeset.get_change(changeset, :action_taken_at)

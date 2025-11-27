@@ -252,4 +252,13 @@ defmodule Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository do
 
     repo.exists?(query)
   end
+
+  @doc """
+  Executes a transaction with unwrapping support.
+  This allows use cases to run database operations in a transaction
+  without directly depending on Repo.
+  """
+  def transact(fun) when is_function(fun, 0) do
+    Repo.transact(fun)
+  end
 end

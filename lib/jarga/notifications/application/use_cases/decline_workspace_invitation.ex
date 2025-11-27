@@ -9,7 +9,6 @@ defmodule Jarga.Notifications.Application.UseCases.DeclineWorkspaceInvitation do
   4. Marks the notification as action_taken
   """
 
-  alias Jarga.Repo
   alias Jarga.Workspaces
   alias Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
   alias Jarga.Notifications.Infrastructure.Notifiers.PubSubNotifier
@@ -34,7 +33,7 @@ defmodule Jarga.Notifications.Application.UseCases.DeclineWorkspaceInvitation do
     notifier = Keyword.get(opts, :notifier, PubSubNotifier)
 
     result =
-      Repo.transact(fn ->
+      NotificationRepository.transact(fn ->
         with {:ok, notification} <- get_notification(notification_id, user_id),
              :ok <- validate_notification_type(notification),
              :ok <- check_not_already_actioned(notification),

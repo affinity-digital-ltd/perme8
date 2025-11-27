@@ -1,6 +1,6 @@
-defmodule Jarga.Notifications.Domain.Entities.Notification do
+defmodule Jarga.Notifications.Infrastructure.Schemas.NotificationSchema do
   @moduledoc """
-  Schema for storing user notifications.
+  Ecto schema for storing user notifications.
 
   Supports multiple notification types (workspace_invitation, etc.)
   with type-specific data stored in the data field.

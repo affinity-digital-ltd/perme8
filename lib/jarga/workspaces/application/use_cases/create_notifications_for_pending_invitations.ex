@@ -18,9 +18,9 @@ defmodule Jarga.Workspaces.Application.UseCases.CreateNotificationsForPendingInv
 
   @behaviour Jarga.Workspaces.Application.UseCases.UseCase
 
-  alias Jarga.Repo
   alias Jarga.Accounts.Domain.Entities.User
   alias Jarga.Workspaces
+  alias Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository
   alias Jarga.Workspaces.Infrastructure.Notifiers.PubSubNotifier
 
   @doc """
@@ -45,7 +45,7 @@ defmodule Jarga.Workspaces.Application.UseCases.CreateNotificationsForPendingInv
     %{user: %User{} = user} = params
 
     result =
-      Repo.transact(fn ->
+      MembershipRepository.transact(fn ->
         # Find all pending invitations for this user's email (case-insensitive)
         pending_invitations = Workspaces.list_pending_invitations_with_details(user.email)
 

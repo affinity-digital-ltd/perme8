@@ -4,7 +4,7 @@ defmodule Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
   """
 
   import Ecto.Query
-  alias Jarga.Notifications.Domain.Entities.Notification
+  alias Jarga.Notifications.Infrastructure.Schemas.NotificationSchema
   alias Jarga.Repo
 
   @doc """
@@ -12,20 +12,20 @@ defmodule Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
   """
   def create(attrs) do
     attrs
-    |> Notification.create_changeset()
+    |> NotificationSchema.create_changeset()
     |> Repo.insert()
   end
 
   @doc """
   Gets a notification by ID.
   """
-  def get(id), do: Repo.get(Notification, id)
+  def get(id), do: Repo.get(NotificationSchema, id)
 
   @doc """
   Gets a notification by ID for a specific user.
   """
   def get_by_user(id, user_id) do
-    Notification
+    NotificationSchema
     |> where([n], n.id == ^id and n.user_id == ^user_id)
     |> Repo.one()
   end
@@ -36,7 +36,7 @@ defmodule Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
   def list_by_user(user_id, opts \\ []) do
     limit = Keyword.get(opts, :limit)
 
-    Notification
+    NotificationSchema
     |> where([n], n.user_id == ^user_id)
     |> order_by([n], desc: n.inserted_at)
     |> maybe_limit(limit)
@@ -47,7 +47,7 @@ defmodule Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
   Lists unread notifications for a user.
   """
   def list_unread_by_user(user_id) do
-    Notification
+    NotificationSchema
     |> where([n], n.user_id == ^user_id and n.read == false)
     |> order_by([n], desc: n.inserted_at)
     |> Repo.all()
@@ -57,7 +57,7 @@ defmodule Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
   Gets the count of unread notifications for a user.
   """
   def count_unread_by_user(user_id) do
-    Notification
+    NotificationSchema
     |> where([n], n.user_id == ^user_id and n.read == false)
     |> Repo.aggregate(:count)
   end
@@ -67,7 +67,7 @@ defmodule Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
   """
   def mark_as_read(notification) do
     notification
-    |> Notification.mark_read_changeset()
+    |> NotificationSchema.mark_read_changeset()
     |> Repo.update()
   end
 
@@ -79,7 +79,7 @@ defmodule Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     {count, _} =
-      Notification
+      NotificationSchema
       |> where([n], n.user_id == ^user_id and n.read == false)
       |> Repo.update_all(set: [read: true, read_at: now, updated_at: now])
 
@@ -91,7 +91,7 @@ defmodule Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
   Optionally stores the action type in the data field.
   """
   def mark_action_taken(notification, action \\ nil) do
-    changeset = Notification.mark_action_taken_changeset(notification)
+    changeset = NotificationSchema.mark_action_taken_changeset(notification)
 
     changeset =
       if action do
@@ -119,6 +119,15 @@ defmodule Jarga.Notifications.Infrastructure.Repositories.NotificationRepository
   """
   def delete(notification) do
     Repo.delete(notification)
+  end
+
+  @doc """
+  Executes a transaction with unwrapping support.
+  This allows use cases to run database operations in a transaction
+  without directly depending on Repo.
+  """
+  def transact(fun) when is_function(fun, 0) do
+    Repo.transact(fun)
   end
 
   defp maybe_limit(query, nil), do: query

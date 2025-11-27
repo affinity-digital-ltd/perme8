@@ -7,12 +7,12 @@ defmodule Jarga.Notifications do
   """
 
   # Core context - cannot depend on JargaWeb (interface layer)
-  # Exports: Domain entities + Infrastructure.Subscribers (for integration tests)
+  # Exports: Infrastructure schemas + Infrastructure.Subscribers (for integration tests)
   use Boundary,
     top_level?: true,
     deps: [Jarga.Accounts, Jarga.Workspaces, Jarga.Repo],
     exports: [
-      {Notification, []},
+      {Infrastructure.Schemas.NotificationSchema, []},
       # Exported for @integration tests that need to start PubSub subscribers
       {Infrastructure.Subscribers.WorkspaceInvitationSubscriber, []}
     ]
