@@ -1,4 +1,4 @@
-defmodule Jarga.Notes.Infrastructure.Schemas.NoteSchema do
+defmodule Jarga.Documents.Notes.Infrastructure.Schemas.NoteSchema do
   @moduledoc """
   Ecto schema for notes.
   This is the infrastructure representation that handles database persistence.

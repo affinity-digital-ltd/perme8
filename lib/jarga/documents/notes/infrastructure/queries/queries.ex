@@ -1,11 +1,11 @@
-defmodule Jarga.Notes.Infrastructure.Queries.Queries do
+defmodule Jarga.Documents.Notes.Infrastructure.Queries.Queries do
   @moduledoc """
   Query objects for the Notes context.
   Provides composable query functions for building database queries.
   """
 
   import Ecto.Query
-  alias Jarga.Notes.Infrastructure.Schemas.NoteSchema
+  alias Jarga.Documents.Notes.Infrastructure.Schemas.NoteSchema
   alias Jarga.Accounts.Domain.Entities.User
 
   @doc """

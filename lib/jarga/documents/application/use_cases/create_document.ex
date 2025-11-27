@@ -22,8 +22,8 @@ defmodule Jarga.Documents.Application.UseCases.CreateDocument do
 
   alias Ecto.Multi
   alias Jarga.Accounts.Domain.Entities.User
-  alias Jarga.Notes
   alias Jarga.Documents.Infrastructure.Schemas.{DocumentSchema, DocumentComponentSchema}
+  alias Jarga.Documents.Notes.Infrastructure.Repositories.NoteRepository
   alias Jarga.Documents.Domain.SlugGenerator
   alias Jarga.Documents.Infrastructure.Repositories.AuthorizationRepository
   alias Jarga.Documents.Infrastructure.Repositories.DocumentRepository
@@ -94,10 +94,12 @@ defmodule Jarga.Documents.Application.UseCases.CreateDocument do
       |> Multi.run(:note, fn _repo, _changes ->
         note_attrs = %{
           id: Ecto.UUID.generate(),
+          user_id: user.id,
+          workspace_id: workspace_id,
           project_id: Map.get(attrs, :project_id)
         }
 
-        Notes.create_note(user, workspace_id, note_attrs)
+        NoteRepository.create(note_attrs)
       end)
       |> Multi.run(:document, fn _repo, _changes ->
         # Generate slug in use case (business logic)

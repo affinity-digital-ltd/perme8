@@ -1,4 +1,4 @@
-defmodule Jarga.Notes.Infrastructure.Repositories.AuthorizationRepository do
+defmodule Jarga.Documents.Notes.Infrastructure.Repositories.AuthorizationRepository do
   @moduledoc """
   Infrastructure repository for note authorization queries.
 
@@ -11,8 +11,8 @@ defmodule Jarga.Notes.Infrastructure.Repositories.AuthorizationRepository do
   alias Jarga.Repo
   alias Jarga.Accounts.Domain.Entities.User
   alias Jarga.Workspaces
-  alias Jarga.Notes.Infrastructure.Schemas.NoteSchema
-  alias Jarga.Notes.Infrastructure.Queries.Queries
+  alias Jarga.Documents.Notes.Infrastructure.Schemas.NoteSchema
+  alias Jarga.Documents.Notes.Infrastructure.Queries.Queries
   alias Jarga.Documents.Infrastructure.Schemas.DocumentComponentSchema
   alias Jarga.Documents.Infrastructure.Schemas.DocumentSchema
   alias Jarga.Workspaces.Domain.Entities.WorkspaceMember

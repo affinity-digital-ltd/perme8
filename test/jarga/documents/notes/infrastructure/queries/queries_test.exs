@@ -1,7 +1,7 @@
-defmodule Jarga.Notes.QueriesTest do
+defmodule Jarga.Documents.Notes.QueriesTest do
   use Jarga.DataCase, async: true
 
-  alias Jarga.Notes.Infrastructure.Queries.Queries
+  alias Jarga.Documents.Notes.Infrastructure.Queries.Queries
   alias Jarga.Repo
 
   import Jarga.AccountsFixtures

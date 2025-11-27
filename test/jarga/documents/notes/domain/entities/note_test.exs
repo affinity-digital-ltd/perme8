@@ -1,8 +1,8 @@
-defmodule Jarga.Notes.Domain.Entities.NoteTest do
+defmodule Jarga.Documents.Notes.Domain.Entities.NoteTest do
   use ExUnit.Case, async: true
 
-  alias Jarga.Notes.Domain.Entities.Note
-  alias Jarga.Notes.Infrastructure.Schemas.NoteSchema
+  alias Jarga.Documents.Notes.Domain.Entities.Note
+  alias Jarga.Documents.Notes.Infrastructure.Schemas.NoteSchema
 
   describe "new/1" do
     test "creates a new note entity from attributes" do

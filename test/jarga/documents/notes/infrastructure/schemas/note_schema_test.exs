@@ -1,7 +1,7 @@
-defmodule Jarga.Notes.NoteSchemaTest do
+defmodule Jarga.Documents.Notes.NoteSchemaTest do
   use Jarga.DataCase, async: true
 
-  alias Jarga.Notes.Infrastructure.Schemas.NoteSchema
+  alias Jarga.Documents.Notes.Infrastructure.Schemas.NoteSchema
 
   import Jarga.AccountsFixtures
   import Jarga.WorkspacesFixtures

@@ -23,9 +23,9 @@ defmodule Jarga.Documents.Application.Services.ComponentLoader do
   - Component migration/copying between documents
   """
 
-  alias Jarga.Notes
   alias Jarga.Documents.Domain.Entities.DocumentComponent
   alias Jarga.Documents.Infrastructure.Schemas.DocumentComponentSchema
+  alias Jarga.Documents.Notes.Infrastructure.Repositories.NoteRepository
 
   @doc """
   Loads the actual component record based on the polymorphic type.
@@ -45,7 +45,7 @@ defmodule Jarga.Documents.Application.Services.ComponentLoader do
 
   """
   def load_component(%DocumentComponentSchema{component_type: "note", component_id: id}) do
-    Notes.get_note_by_id(id)
+    NoteRepository.get_by_id(id)
   end
 
   def load_component(%DocumentComponentSchema{component_type: "task_list", component_id: _id}) do
@@ -59,7 +59,7 @@ defmodule Jarga.Documents.Application.Services.ComponentLoader do
   end
 
   def load_component(%DocumentComponent{component_type: "note", component_id: id}) do
-    Notes.get_note_by_id(id)
+    NoteRepository.get_by_id(id)
   end
 
   def load_component(%DocumentComponent{component_type: "task_list", component_id: _id}) do

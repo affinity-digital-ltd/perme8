@@ -4,21 +4,23 @@ defmodule Jarga.Notes do
 
   Handles note creation, management, and yjs collaborative state.
   Notes are private to the user who created them, regardless of workspace membership.
+
+  Notes are now a subdomain of Documents and exist only within documents.
+  This context provides a facade for backward compatibility.
   """
 
-  # Core context - cannot depend on JargaWeb (interface layer)
-  # Exports: Main context module and shared types (Note)
-  # Internal modules (Queries, Policies) remain private
+  # Core context - delegates to Documents.Notes subdomain
+  # Kept as a top-level boundary for backward compatibility
   use Boundary,
     top_level?: true,
-    deps: [Jarga.Accounts, Jarga.Workspaces, Jarga.Projects, Jarga.Repo],
-    exports: [{Domain.Entities.Note, []}]
+    deps: [Jarga.Documents, Jarga.Accounts, Jarga.Workspaces, Jarga.Projects, Jarga.Repo],
+    exports: []
 
   alias Jarga.Repo
   alias Jarga.Accounts.Domain.Entities.User
-  alias Jarga.Notes.Infrastructure.Schemas.NoteSchema
-  alias Jarga.Notes.Infrastructure.Queries.Queries
-  alias Jarga.Notes.Infrastructure.Repositories.AuthorizationRepository
+  alias Jarga.Documents.Notes.Infrastructure.Schemas.NoteSchema
+  alias Jarga.Documents.Notes.Infrastructure.Queries.Queries
+  alias Jarga.Documents.Notes.Infrastructure.Repositories.AuthorizationRepository
 
   @doc """
   Gets a single note by ID.

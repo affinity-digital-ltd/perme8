@@ -1,7 +1,7 @@
-defmodule Jarga.Notes.Infrastructure.AuthorizationRepositoryTest do
+defmodule Jarga.Documents.Notes.Infrastructure.AuthorizationRepositoryTest do
   use Jarga.DataCase, async: true
 
-  alias Jarga.Notes.Infrastructure.Repositories.AuthorizationRepository
+  alias Jarga.Documents.Notes.Infrastructure.Repositories.AuthorizationRepository
   alias Jarga.Documents
   alias Jarga.Documents.Infrastructure.Schemas.DocumentComponentSchema
   alias Jarga.Repo

@@ -8,24 +8,28 @@ defmodule Jarga.Documents do
   """
 
   # Core context - cannot depend on JargaWeb (interface layer)
-  # Exports: Main context module and shared types (Document, DocumentComponent)
+  # Exports: Main context module and shared types (Document, DocumentComponent, Notes subdomain)
   # Internal modules (Queries, Policies) remain private
-  # DocumentComponent is exported because Notes context uses it in queries to verify note access
+  # DocumentComponent is exported for document-note relationships
+  # Notes subdomain is exported for external access to note functionality
   use Boundary,
     top_level?: true,
     deps: [
       Jarga.Accounts,
       Jarga.Workspaces,
       Jarga.Projects,
-      Jarga.Notes,
       Jarga.Agents,
       Jarga.Repo
     ],
-    exports: [{Domain.Entities.Document, []}, {Domain.Entities.DocumentComponent, []}]
+    exports: [
+      {Domain.Entities.Document, []},
+      {Domain.Entities.DocumentComponent, []},
+      {Notes, []}
+    ]
 
   alias Jarga.Repo
   alias Jarga.Accounts.Domain.Entities.User
-  alias Jarga.Notes
+  alias Jarga.Documents.Notes.Infrastructure.Repositories.NoteRepository
   alias Jarga.Documents.Domain.Entities.Document
   alias Jarga.Documents.Infrastructure.Queries.DocumentQueries
   alias Jarga.Documents.Application.UseCases
@@ -285,7 +289,7 @@ defmodule Jarga.Documents do
   def get_document_note(%Document{document_components: document_components}) do
     case Enum.find(document_components, fn dc -> dc.component_type == "note" end) do
       %{component_id: note_id} ->
-        case Notes.get_note_by_id(note_id) do
+        case NoteRepository.get_by_id(note_id) do
           nil -> raise "Note not found: #{note_id}"
           note -> note
         end

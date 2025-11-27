@@ -1,11 +1,11 @@
-defmodule Jarga.Notes.Domain.Entities.Note do
+defmodule Jarga.Documents.Notes.Domain.Entities.Note do
   @moduledoc """
   Pure domain entity for notes.
 
   This is a value object representing a note in the business domain.
   It contains no infrastructure dependencies (no Ecto, no database concerns).
 
-  For database persistence, see Jarga.Notes.Infrastructure.Schemas.NoteSchema.
+  For database persistence, see Jarga.Documents.Notes.Infrastructure.Schemas.NoteSchema.
   """
 
   @type t :: %__MODULE__{
