@@ -17,7 +17,7 @@ defmodule Jarga.Agents.Infrastructure.Queries.Queries do
 
   import Ecto.Query
 
-  alias Jarga.Agents.Domain.Entities.{ChatSession, ChatMessage}
+  alias Jarga.Agents.Infrastructure.Schemas.{ChatSessionSchema, ChatMessageSchema}
 
   # ChatSession Queries
 
@@ -25,7 +25,7 @@ defmodule Jarga.Agents.Infrastructure.Queries.Queries do
   Base query for chat sessions.
   """
   def session_base do
-    from(s in ChatSession)
+    from(s in ChatSessionSchema)
   end
 
   @doc """
@@ -105,7 +105,7 @@ defmodule Jarga.Agents.Infrastructure.Queries.Queries do
   Base query for chat messages.
   """
   def message_base do
-    from(m in ChatMessage)
+    from(m in ChatMessageSchema)
   end
 
   @doc """
@@ -119,14 +119,14 @@ defmodule Jarga.Agents.Infrastructure.Queries.Queries do
   Orders messages chronologically (oldest first).
   """
   def messages_ordered do
-    from(m in ChatMessage, order_by: [asc: m.inserted_at])
+    from(m in ChatMessageSchema, order_by: [asc: m.inserted_at])
   end
 
   @doc """
   Gets the first message for a session (for preview).
   """
   def first_message_content(session_id) do
-    from(m in ChatMessage,
+    from(m in ChatMessageSchema,
       where: m.chat_session_id == ^session_id,
       order_by: [asc: m.inserted_at],
       limit: 1,
@@ -138,8 +138,8 @@ defmodule Jarga.Agents.Infrastructure.Queries.Queries do
   Gets a message by ID with user ownership verification through session.
   """
   def message_by_id_and_user(message_id, user_id) do
-    from(m in ChatMessage,
-      join: s in ChatSession,
+    from(m in ChatMessageSchema,
+      join: s in ChatSessionSchema,
       on: m.chat_session_id == s.id,
       where: m.id == ^message_id and s.user_id == ^user_id,
       select: m

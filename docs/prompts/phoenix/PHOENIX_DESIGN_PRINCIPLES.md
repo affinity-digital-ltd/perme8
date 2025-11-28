@@ -333,21 +333,66 @@ Shared Infrastructure (Repo, Mailer)
 The innermost layer containing pure business logic with **zero infrastructure dependencies**.
 
 **What belongs here:**
-- **Entities**: Ecto schemas as data structures (NO business logic in schemas)
+- **Entities**: Pure domain value objects (NO Ecto dependencies)
 - **Policies**: Pure business rules (NO Repo, NO Ecto.Query, NO I/O)
 - **Value Objects**: Domain-specific types (e.g., Scope, Money, Email)
 
-**Critical Violations to Avoid:**
-- ❌ Calling `Repo` directly in domain entities
-- ❌ Using `Ecto.Query` in domain modules
-- ❌ Performing side effects (email, HTTP calls, password hashing)
-- ❌ Accessing environment variables or configuration
-- ❌ Using `unsafe_validate_unique` or other DB-dependent validations
+**Domain Entities: Pure Structs**
 
-**What domain entities SHOULD do:**
-- ✅ Define Ecto schema structure (fields, types, relationships)
-- ✅ Provide changesets for data validation (format, length, required)
-- ✅ NO business logic - keep entities as data structures
+Domain entities are pure structs with NO Ecto dependencies:
+
+```elixir
+defmodule MyContext.Domain.Entities.MyEntity do
+  @moduledoc """
+  Pure domain entity with no infrastructure dependencies.
+  
+  For database persistence, see MyContext.Infrastructure.Schemas.MyEntitySchema.
+  """
+
+  @type t :: %__MODULE__{
+          id: String.t() | nil,
+          name: String.t(),
+          status: String.t(),
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+
+  defstruct [
+    :id,
+    :name,
+    :status,
+    :inserted_at,
+    :updated_at
+  ]
+
+  @doc "Creates a new entity from attributes"
+  def new(attrs) do
+    struct(__MODULE__, attrs)
+  end
+
+  @doc "Converts infrastructure schema to domain entity"
+  def from_schema(%{__struct__: _} = schema) do
+    %__MODULE__{
+      id: schema.id,
+      name: schema.name,
+      status: schema.status,
+      inserted_at: schema.inserted_at,
+      updated_at: schema.updated_at
+    }
+  end
+end
+```
+
+**Critical Rules:**
+- ❌ Domain entities NEVER use `use Ecto.Schema`
+- ❌ Domain entities NEVER call `Repo` directly
+- ❌ Domain entities NEVER use `Ecto.Query`
+- ❌ Domain entities NEVER perform side effects (email, HTTP, password hashing)
+- ❌ Domain entities NEVER access environment variables or configuration
+- ✅ Domain entities are ALWAYS pure structs with `defstruct`
+- ✅ Domain entities provide `new/1` to create from attributes
+- ✅ Domain entities provide `from_schema/1` to convert from infrastructure schemas
+- ✅ Domain entities are fast to construct and test (no database needed)
 
 **What domain policies SHOULD do:**
 - ✅ Pure functions that return boolean or validation results
@@ -378,24 +423,65 @@ Orchestrates business operations by coordinating domain policies and infrastruct
 
 #### 3. Infrastructure Layer
 
-Handles all I/O operations and external dependencies.
+Handles all I/O operations and external dependencies, including **Ecto schemas**.
 
 **What belongs here:**
+- **Schemas**: Ecto schemas for database persistence (`infrastructure/schemas/`)
 - **Queries**: Ecto query objects (composable, reusable)
 - **Repositories**: Data access abstraction (thin wrappers around `Repo`)
 - **Notifiers**: Email, SMS, push notification sending
 - **Services**: External API clients, file storage, etc.
 
+**Infrastructure Schemas Pattern**
+
+All Ecto schemas belong in `infrastructure/schemas/` with the `Schema` suffix:
+
+```elixir
+defmodule MyContext.Infrastructure.Schemas.MyEntitySchema do
+  @moduledoc """
+  Ecto schema for [entity] database persistence.
+  
+  This is the actual database schema. Domain entities in domain/entities/
+  are pure structs or wrappers around this schema.
+  """
+
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+
+  schema "my_entities" do
+    field(:name, :string)
+    # ... all database fields and associations
+    timestamps(type: :utc_datetime)
+  end
+
+  @doc "Changeset for validation and casting"
+  def changeset(entity, attrs) do
+    entity
+    |> cast(attrs, [:name, ...])
+    |> validate_required([:name])
+    |> validate_length(:name, max: 255)
+    # ... all Ecto validations
+  end
+end
+```
+
 **Characteristics:**
-- ✅ All database queries go here (using `Ecto.Query`)
-- ✅ All external I/O (email, HTTP, file system)
-- ✅ Depends on domain entities (schemas) but domain doesn't depend on it
+- ✅ All Ecto schemas live in `infrastructure/schemas/` (NOT in `domain/entities/`)
+- ✅ Schema modules have `Schema` suffix (e.g., `UserSchema`, `ChatSessionSchema`)
+- ✅ All database queries use these schemas directly
+- ✅ Repositories and queries reference infrastructure schemas
+- ✅ Domain entities are pure structs OR wrappers that delegate to schemas
+- ✅ All external I/O (email, HTTP, file system) goes here
 - ✅ Testable via dependency injection
 
 **Critical Rules:**
-- Infrastructure modules are PRIVATE to the context (not exported)
+- Infrastructure modules are PRIVATE to the context (not exported via Boundary)
 - Never access infrastructure directly from other contexts
 - Infrastructure depends on domain, never the reverse
+- Domain entities in `domain/entities/` are exported; schemas in `infrastructure/schemas/` are private
 
 #### 4. Interface Layer (Phoenix Web)
 
@@ -431,9 +517,10 @@ The context module (e.g., `Jarga.Accounts`) acts as a **thin facade** over inter
 - ❌ NO direct database queries (delegate to infrastructure)
 
 **Internal Organization (NOT exported):**
-- `domain/entities/` - Ecto schemas
+- `domain/entities/` - Pure domain entities (exported via Boundary)
 - `domain/policies/` - Pure business rules
 - `application/use_cases/` - Business operations
+- `infrastructure/schemas/` - Ecto schemas for database persistence
 - `infrastructure/queries/` - Query objects
 - `infrastructure/repositories/` - Data access
 - `infrastructure/notifiers/` - External communications
@@ -444,27 +531,103 @@ The context module (e.g., `Jarga.Accounts`) acts as a **thin facade** over inter
 
 ## Best Practices
 
-### 1. Domain Entities: Data Structures Only
+### 1. Domain Entities and Infrastructure Schemas
 
-**Critical Rule:** Ecto schemas in `domain/entities/` are **data structures**, not business logic containers.
+**Critical Separation:** Domain entities are pure structs in `domain/entities/`, Ecto schemas are in `infrastructure/schemas/`.
 
-**What domain entities SHOULD contain:**
-- ✅ Schema definition (`use Ecto.Schema`, field definitions)
+**Domain Entities (Pure Structs)**
+```elixir
+# lib/my_context/domain/entities/my_entity.ex
+defmodule MyContext.Domain.Entities.MyEntity do
+  @moduledoc """
+  Pure domain entity with no infrastructure dependencies.
+  
+  For database persistence, see MyContext.Infrastructure.Schemas.MyEntitySchema.
+  """
+
+  @type t :: %__MODULE__{
+          id: String.t() | nil,
+          name: String.t(),
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
+  
+  defstruct [:id, :name, :inserted_at, :updated_at]
+  
+  def new(attrs), do: struct(__MODULE__, attrs)
+  
+  def from_schema(%{__struct__: _} = schema) do
+    %__MODULE__{
+      id: schema.id,
+      name: schema.name,
+      inserted_at: schema.inserted_at,
+      updated_at: schema.updated_at
+    }
+  end
+end
+```
+
+**Infrastructure Schemas (Ecto)**
+```elixir
+# lib/my_context/infrastructure/schemas/my_entity_schema.ex
+defmodule MyContext.Infrastructure.Schemas.MyEntitySchema do
+  @moduledoc """
+  Ecto schema for [entity] database persistence.
+  
+  Domain entity: MyContext.Domain.Entities.MyEntity
+  """
+  
+  use Ecto.Schema
+  import Ecto.Changeset
+  
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
+  
+  schema "my_entities" do
+    field(:name, :string)
+    # ... all database fields and associations
+    timestamps(type: :utc_datetime)
+  end
+  
+  def changeset(entity, attrs) do
+    entity
+    |> cast(attrs, [:name])
+    |> validate_required([:name])
+    |> validate_length(:name, max: 255)
+  end
+end
+```
+
+**Critical Rules:**
+- ✅ Ecto schemas ALWAYS in `infrastructure/schemas/` with `Schema` suffix
+- ✅ Domain entities in `domain/entities/` are ALWAYS pure structs (use `defstruct`)
+- ✅ Infrastructure schemas handle ALL Ecto concerns (changesets, validations, associations)
+- ✅ Domain entities provide `new/1` and `from_schema/1` functions
+- ✅ Tests for schemas go in `test/context/infrastructure/schemas/`
+- ✅ Fixtures and repositories use infrastructure schemas directly
+- ❌ NEVER use `use Ecto.Schema` in domain entities
+- ❌ NEVER import `Ecto.Query` in domain layer
+- ❌ NEVER call `Repo` in domain layer
+
+**What infrastructure schemas SHOULD contain:**
+- ✅ Schema definition (`use Ecto.Schema`, field definitions, associations)
 - ✅ Changesets for data validation (format, length, required fields)
-- ✅ Simple data transformations (e.g., downcasing email)
+- ✅ Simple data transformations (e.g., downcasing email, trimming whitespace)
+- ✅ Foreign key constraints and database validations
 
-**What domain entities MUST NOT contain:**
-- ❌ `import Ecto.Query` - queries belong in infrastructure
-- ❌ Calls to `Repo` or `unsafe_validate_unique` - infrastructure concerns
-- ❌ Side effects (password hashing, email sending) - infrastructure concerns
+**What infrastructure schemas MUST NOT contain:**
+- ❌ `import Ecto.Query` - queries belong in `infrastructure/queries/`
+- ❌ Calls to `Repo` - belongs in repositories or use cases
+- ❌ `unsafe_validate_unique` - use in use cases with proper error handling
+- ❌ Side effects (password hashing, email sending) - use infrastructure services
 - ❌ `System.get_env` or configuration access - use dependency injection
 - ❌ Complex business logic - belongs in domain policies or use cases
 
 **Common Violations:**
 - Password hashing in changesets → Move to infrastructure service
-- `unsafe_validate_unique` in entity → Move to use case or infrastructure
-- Query building in entity → Move to infrastructure queries module
-- Token generation logic → Move to domain service or infrastructure
+- `unsafe_validate_unique` in schema → Move to use case with unique constraint error handling
+- Query building in schema → Move to `infrastructure/queries/` module
+- Token generation logic → Move to infrastructure service
 
 ### 2. Dependency Injection for Testability
 

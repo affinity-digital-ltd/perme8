@@ -1,9 +1,11 @@
-defmodule Jarga.Agents.Application.Services.LlmClient do
+defmodule Jarga.Agents.Infrastructure.Services.LlmClient do
   @moduledoc """
   Client for interacting with LLM APIs via OpenRouter.
 
   Uses Google Gemini Flash 2.0 Lite by default for fast, cost-effective responses.
   Supports both synchronous and streaming responses.
+
+  This is in the Infrastructure layer because it performs I/O operations (HTTP calls).
   """
 
   @behaviour Jarga.Agents.Infrastructure.Services.Behaviours.LlmClientBehaviour

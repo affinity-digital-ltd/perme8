@@ -39,7 +39,7 @@ defmodule Jarga.Agents do
       {Domain.Entities.ChatMessage, []}
     ]
 
-  alias Jarga.Agents.Application.Services.LlmClient
+  alias Jarga.Agents.Infrastructure.Services.LlmClient
 
   alias Jarga.Agents.Application.UseCases.{
     PrepareContext,

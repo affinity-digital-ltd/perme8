@@ -10,8 +10,6 @@ defmodule Jarga.Agents.Infrastructure.Notifiers.PubSubNotifier do
   This ensures all users see accurate agent lists in real-time.
   """
 
-  alias Jarga.Agents.Domain.Entities.Agent
-
   @doc """
   Notifies all affected workspaces when an agent is updated.
 
@@ -19,7 +17,8 @@ defmodule Jarga.Agents.Infrastructure.Notifiers.PubSubNotifier do
   - All workspaces the agent is currently in
   - User's personal agent topic (for non-workspace pages)
   """
-  def notify_agent_updated(%Agent{} = agent, workspace_ids) when is_list(workspace_ids) do
+  def notify_agent_updated(%{id: _, user_id: _} = agent, workspace_ids)
+      when is_list(workspace_ids) do
     # Broadcast to all workspaces that have this agent
     Enum.each(workspace_ids, fn workspace_id ->
       Phoenix.PubSub.broadcast(

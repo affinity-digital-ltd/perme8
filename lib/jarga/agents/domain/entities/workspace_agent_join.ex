@@ -1,50 +1,62 @@
 defmodule Jarga.Agents.Domain.Entities.WorkspaceAgentJoin do
   @moduledoc """
-  Join table schema for the many-to-many relationship between agents and workspaces.
+  Pure domain entity representing the relationship between agents and workspaces.
 
-  This schema represents which agents are available in which workspaces.
-  An agent can be added to multiple workspaces, and a workspace can have multiple agents.
+  This is a pure Elixir struct with no infrastructure dependencies (no Ecto).
+  For database operations, use Jarga.Agents.Infrastructure.Schemas.WorkspaceAgentJoinSchema.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
 
-  alias Jarga.Agents.Domain.Entities.Agent
-  alias Jarga.Workspaces.Infrastructure.Schemas.WorkspaceSchema
+  alias Jarga.Agents.Infrastructure.Schemas.WorkspaceAgentJoinSchema
 
   @type t :: %__MODULE__{
-          id: Ecto.UUID.t(),
-          workspace_id: Ecto.UUID.t(),
-          agent_id: Ecto.UUID.t(),
-          inserted_at: DateTime.t(),
-          updated_at: DateTime.t()
+          id: String.t() | nil,
+          workspace_id: String.t(),
+          agent_id: String.t(),
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
         }
 
-  @primary_key {:id, Ecto.UUID, autogenerate: true}
-  @foreign_key_type Ecto.UUID
-
-  schema "workspace_agents" do
-    belongs_to(:workspace, WorkspaceSchema)
-    belongs_to(:agent, Agent)
-
-    timestamps(type: :utc_datetime)
-  end
+  defstruct [
+    :id,
+    :workspace_id,
+    :agent_id,
+    :inserted_at,
+    :updated_at
+  ]
 
   @doc """
   Creates a changeset for workspace_agent join record.
-
-  ## Required Fields
-  - workspace_id
-  - agent_id
+  Delegates to WorkspaceAgentJoinSchema for Ecto operations.
   """
-  def changeset(workspace_agent_join, attrs) do
-    workspace_agent_join
-    |> cast(attrs, [:workspace_id, :agent_id])
-    |> validate_required([:workspace_id, :agent_id])
-    |> foreign_key_constraint(:workspace_id)
-    |> foreign_key_constraint(:agent_id)
-    |> unique_constraint([:workspace_id, :agent_id],
-      name: :workspace_agents_workspace_id_agent_id_index,
-      message: "has already been taken"
-    )
+  defdelegate changeset(workspace_agent_join, attrs), to: WorkspaceAgentJoinSchema
+
+  @doc """
+  Creates a new WorkspaceAgentJoin domain entity.
+
+  ## Examples
+
+      iex> new(%{workspace_id: "ws-1", agent_id: "ag-1"})
+      %WorkspaceAgentJoin{workspace_id: "ws-1", agent_id: "ag-1"}
+  """
+  def new(attrs) do
+    struct(__MODULE__, attrs)
+  end
+
+  @doc """
+  Converts an Ecto schema to a domain entity.
+
+  ## Examples
+
+      iex> from_schema(%WorkspaceAgentJoinSchema{...})
+      %WorkspaceAgentJoin{...}
+  """
+  def from_schema(%{__struct__: _} = schema) do
+    %__MODULE__{
+      id: schema.id,
+      workspace_id: schema.workspace_id,
+      agent_id: schema.agent_id,
+      inserted_at: schema.inserted_at,
+      updated_at: schema.updated_at
+    }
   end
 end

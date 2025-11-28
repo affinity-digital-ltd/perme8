@@ -75,21 +75,6 @@ defmodule Jarga.Agents.Application.UseCases.SyncAgentWorkspaces do
 
   # Apply workspace changes in a transaction
   defp apply_workspace_changes(agent_id, %{to_add: to_add, to_remove: to_remove}) do
-    Jarga.Repo.transaction(fn ->
-      add_to_workspaces(agent_id, to_add)
-      remove_from_workspaces(agent_id, to_remove)
-    end)
-  end
-
-  defp add_to_workspaces(agent_id, workspace_ids) do
-    Enum.each(workspace_ids, fn workspace_id ->
-      WorkspaceAgentRepository.add_to_workspace(workspace_id, agent_id)
-    end)
-  end
-
-  defp remove_from_workspaces(agent_id, workspace_ids) do
-    Enum.each(workspace_ids, fn workspace_id ->
-      WorkspaceAgentRepository.remove_from_workspace(workspace_id, agent_id)
-    end)
+    WorkspaceAgentRepository.sync_agent_workspaces(agent_id, to_add, to_remove)
   end
 end

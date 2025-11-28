@@ -280,10 +280,10 @@ defmodule AgentAssertionSteps do
   # Helper to update agent timestamp directly in DB
   defp update_agent_timestamp(agent, timestamp) do
     import Ecto.Query
-    alias Jarga.Agents.Domain.Entities.Agent
+    alias Jarga.Agents.Infrastructure.Schemas.AgentSchema
 
     Jarga.Repo.update_all(
-      from(a in Agent, where: a.id == ^agent.id),
+      from(a in AgentSchema, where: a.id == ^agent.id),
       set: [inserted_at: timestamp]
     )
 

@@ -21,7 +21,7 @@ defmodule Jarga.Test.Support.MockLlmClient do
 
   ## Interface
 
-  This module implements the same interface as Jarga.Agents.Application.Services.LlmClient:
+  This module implements the same interface as Jarga.Agents.Infrastructure.Services.LlmClient:
   - chat/2 - Returns immediate response
   - chat_stream/3 - Sends chunks to simulate streaming
   """

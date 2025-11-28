@@ -1,67 +1,52 @@
 defmodule Jarga.Agents.Domain.Entities.ChatMessage do
   @moduledoc """
-  Schema for chat messages within a session.
+  Pure domain entity for chat messages.
 
-  Each message represents a single turn in a conversation, either from
-  the user or the AI assistant. Messages can optionally reference document
-  chunks that were used as context.
+  This is a value object representing a chat message in the business domain.
+  It contains no infrastructure dependencies (no Ecto, no database concerns).
+
+  For database persistence, see Jarga.Agents.Infrastructure.Schemas.ChatMessageSchema.
   """
 
-  use Ecto.Schema
-  import Ecto.Changeset
+  @type t :: %__MODULE__{
+          id: String.t() | nil,
+          chat_session_id: String.t(),
+          role: String.t(),
+          content: String.t(),
+          context_chunks: list(String.t()),
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
+  defstruct [
+    :id,
+    :chat_session_id,
+    :role,
+    :content,
+    :inserted_at,
+    :updated_at,
+    context_chunks: []
+  ]
 
-  @valid_roles ~w(user assistant)
-
-  schema "chat_messages" do
-    field(:role, :string)
-    field(:content, :string)
-    field(:context_chunks, {:array, :binary_id}, default: [])
-
-    belongs_to(:chat_session, Jarga.Agents.Domain.Entities.ChatSession)
-
-    timestamps(type: :utc_datetime)
+  @doc """
+  Creates a new ChatMessage domain entity from attributes.
+  """
+  def new(attrs) do
+    struct(__MODULE__, attrs)
   end
 
   @doc """
-  Changeset for creating a new chat message.
-
-  Required fields:
-  - chat_session_id
-  - role (must be "user" or "assistant")
-  - content
-
-  Optional fields:
-  - context_chunks (array of document chunk IDs used as context)
+  Converts an infrastructure schema to a domain entity.
   """
-  def changeset(message, attrs) do
-    message
-    |> cast(attrs, [:chat_session_id, :role, :content, :context_chunks])
-    |> validate_required([:chat_session_id, :role, :content])
-    |> validate_inclusion(:role, @valid_roles)
-    |> trim_content()
-    |> validate_required([:content])
-    |> foreign_key_constraint(:chat_session_id)
-  end
-
-  defp trim_content(changeset) do
-    case get_change(changeset, :content) do
-      nil ->
-        changeset
-
-      content when is_binary(content) ->
-        trimmed = String.trim(content)
-
-        if trimmed == "" do
-          put_change(changeset, :content, nil)
-        else
-          put_change(changeset, :content, trimmed)
-        end
-
-      _ ->
-        changeset
-    end
+  def from_schema(%{__struct__: _} = schema) do
+    %__MODULE__{
+      id: schema.id,
+      chat_session_id: schema.chat_session_id,
+      role: schema.role,
+      content: schema.content,
+      context_chunks: schema.context_chunks || [],
+      inserted_at: schema.inserted_at,
+      updated_at: schema.updated_at
+    }
   end
 end

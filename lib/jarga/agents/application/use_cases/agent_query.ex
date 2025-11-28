@@ -43,7 +43,7 @@ defmodule Jarga.Agents.Application.UseCases.AgentQuery do
       end
   """
 
-  alias Jarga.Agents.Application.Services.LlmClient
+  alias Jarga.Agents.Infrastructure.Services.LlmClient
 
   @max_content_chars 3000
 

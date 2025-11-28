@@ -8,7 +8,7 @@ defmodule Jarga.Agents.UseCases.DeleteMessageTest do
 
   alias Jarga.Agents.Application.UseCases.DeleteMessage
   alias Jarga.Agents.Application.UseCases.SaveMessage
-  alias Jarga.Agents.Domain.Entities.ChatMessage
+  alias Jarga.Agents.Infrastructure.Schemas.ChatMessageSchema
   alias Jarga.Repo
 
   describe "execute/2" do
@@ -26,7 +26,7 @@ defmodule Jarga.Agents.UseCases.DeleteMessageTest do
       assert deleted.id == message.id
 
       # Verify it was deleted
-      assert Repo.get(ChatMessage, message.id) == nil
+      assert Repo.get(ChatMessageSchema, message.id) == nil
     end
 
     test "returns error when message does not exist" do
@@ -50,7 +50,7 @@ defmodule Jarga.Agents.UseCases.DeleteMessageTest do
       assert {:error, :not_found} = DeleteMessage.execute(message.id, other_user.id)
 
       # Verify message still exists
-      assert Repo.get(ChatMessage, message.id) != nil
+      assert Repo.get(ChatMessageSchema, message.id) != nil
     end
 
     test "deletes assistant message" do
@@ -64,7 +64,7 @@ defmodule Jarga.Agents.UseCases.DeleteMessageTest do
         })
 
       assert {:ok, _} = DeleteMessage.execute(message.id, session.user_id)
-      assert Repo.get(ChatMessage, message.id) == nil
+      assert Repo.get(ChatMessageSchema, message.id) == nil
     end
   end
 end

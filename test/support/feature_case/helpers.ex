@@ -83,31 +83,29 @@ defmodule JargaWeb.FeatureCase.Helpers do
   Retries several times with increasing delays to handle slow page loads.
   """
   def wait_for_editor_container(session, attempts \\ 5) do
-    try do
-      session
-      |> assert_has(css("#editor-container", visible: true))
-    rescue
-      Wallaby.ExpectationNotMetError ->
-        if attempts > 0 do
-          # Wait longer and retry
-          Process.sleep(1000)
-          wait_for_editor_container(session, attempts - 1)
-        else
-          # Take screenshot for debugging before re-raising
-          session |> take_screenshot(name: "editor_container_not_found")
+    session
+    |> assert_has(css("#editor-container", visible: true))
+  rescue
+    Wallaby.ExpectationNotMetError ->
+      if attempts > 0 do
+        # Wait longer and retry
+        Process.sleep(1000)
+        wait_for_editor_container(session, attempts - 1)
+      else
+        # Take screenshot for debugging before re-raising
+        session |> take_screenshot(name: "editor_container_not_found")
 
-          reraise Wallaby.ExpectationNotMetError,
-                  [message: "Expected to find #editor-container after multiple retries"],
-                  __STACKTRACE__
-        end
-    end
+        reraise Wallaby.ExpectationNotMetError,
+                [message: "Expected to find #editor-container after multiple retries"],
+                __STACKTRACE__
+      end
   end
 
   @doc """
   Waits for LiveView to be ready by checking for phx-socket connection.
   Uses simple polling instead of Promises for better compatibility.
   """
-  def wait_for_liveview_ready(session, timeout \\ 10000) do
+  def wait_for_liveview_ready(session, timeout \\ 10_000) do
     wait_until_ready(session, timeout, System.monotonic_time(:millisecond))
   end
 
@@ -152,7 +150,7 @@ defmodule JargaWeb.FeatureCase.Helpers do
   Milkdown initialization is async - after the hook mounts, it creates the Editor
   which adds the .milkdown class to the container. We poll for this class.
   """
-  def wait_for_milkdown_editor(session, timeout \\ 10000) do
+  def wait_for_milkdown_editor(session, timeout \\ 10_000) do
     session
     |> execute_script("""
       return new Promise((resolve, reject) => {

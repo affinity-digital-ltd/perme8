@@ -4,7 +4,7 @@ defmodule Jarga.Agents.UseCases.AgentQueryTest do
 
   import Mox
 
-  alias Jarga.Agents.Application.Services.LlmClientMock
+  alias Jarga.Agents.Infrastructure.Services.LlmClientMock
   alias Jarga.Agents.Application.UseCases.AgentQuery
 
   # Verify expectations are met after each test

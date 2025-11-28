@@ -7,6 +7,7 @@ defmodule Jarga.Agents.UseCases.SaveMessageTest do
   import Jarga.AgentsFixtures
 
   alias Jarga.Agents.Application.UseCases.SaveMessage
+  alias Jarga.Agents.Infrastructure.Schemas.ChatMessageSchema
   alias Jarga.Repo
 
   describe "execute/1" do
@@ -26,7 +27,7 @@ defmodule Jarga.Agents.UseCases.SaveMessageTest do
       assert message.context_chunks == []
 
       # Verify it was persisted
-      persisted = Repo.get(Jarga.Agents.Domain.Entities.ChatMessage, message.id)
+      persisted = Repo.get(ChatMessageSchema, message.id)
       assert persisted.id == message.id
     end
 
@@ -154,7 +155,7 @@ defmodule Jarga.Agents.UseCases.SaveMessageTest do
       # All three messages should exist for the session
       messages =
         Repo.all(
-          from(m in Jarga.Agents.Domain.Entities.ChatMessage,
+          from(m in ChatMessageSchema,
             where: m.chat_session_id == ^session.id,
             order_by: [asc: m.inserted_at]
           )

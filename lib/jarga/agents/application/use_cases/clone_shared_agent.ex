@@ -11,8 +11,6 @@ defmodule Jarga.Agents.Application.UseCases.CloneSharedAgent do
 
   alias Jarga.Agents.Domain.AgentCloner
   alias Jarga.Agents.Application.Policies.AgentPolicy
-  alias Jarga.Repo
-  alias Jarga.Agents.Domain.Entities.Agent
   alias Jarga.Agents.Infrastructure.Repositories.AgentRepository
   alias Jarga.Agents.Infrastructure.Repositories.WorkspaceAgentRepository
   alias Jarga.Workspaces
@@ -45,10 +43,7 @@ defmodule Jarga.Agents.Application.UseCases.CloneSharedAgent do
 
         if can_clone? and AgentPolicy.can_clone?(agent, user_id, workspace_member?) do
           clone_attrs = AgentCloner.clone_attrs(agent, user_id)
-
-          %Agent{}
-          |> Agent.changeset(clone_attrs)
-          |> Repo.insert()
+          AgentRepository.create_agent(clone_attrs)
         else
           {:error, :forbidden}
         end

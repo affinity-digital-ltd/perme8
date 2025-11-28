@@ -18,7 +18,6 @@ defmodule Jarga.Agents.Application.UseCases.DeleteSession do
       {:error, :not_found}
   """
 
-  alias Jarga.Repo
   alias Jarga.Agents.Infrastructure.Repositories.SessionRepository
 
   @doc """
@@ -39,10 +38,7 @@ defmodule Jarga.Agents.Application.UseCases.DeleteSession do
         {:error, :not_found}
 
       session ->
-        case Repo.delete(session) do
-          {:ok, deleted_session} -> {:ok, deleted_session}
-          {:error, changeset} -> {:error, changeset}
-        end
+        SessionRepository.delete_session(session)
     end
   end
 end

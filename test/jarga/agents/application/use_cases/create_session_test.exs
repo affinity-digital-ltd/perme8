@@ -9,6 +9,7 @@ defmodule Jarga.Agents.UseCases.CreateSessionTest do
   import Jarga.ProjectsFixtures
 
   alias Jarga.Agents.Application.UseCases.CreateSession
+  alias Jarga.Agents.Infrastructure.Schemas.ChatSessionSchema
   alias Jarga.Repo
 
   describe "execute/1" do
@@ -22,7 +23,7 @@ defmodule Jarga.Agents.UseCases.CreateSessionTest do
       assert session.title == nil
 
       # Verify it was persisted
-      persisted = Repo.get(Jarga.Agents.Domain.Entities.ChatSession, session.id)
+      persisted = Repo.get(ChatSessionSchema, session.id)
       assert persisted.id == session.id
     end
 

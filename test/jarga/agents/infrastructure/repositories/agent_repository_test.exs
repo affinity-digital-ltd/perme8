@@ -2,8 +2,8 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
   use Jarga.DataCase, async: true
 
   alias Jarga.Agents.Infrastructure.Repositories.AgentRepository
-  alias Jarga.Agents.Domain.Entities.Agent
-  alias Jarga.Agents.Domain.Entities.WorkspaceAgentJoin
+  alias Jarga.Agents.Infrastructure.Schemas.AgentSchema
+  alias Jarga.Agents.Infrastructure.Schemas.WorkspaceAgentJoinSchema
   alias Jarga.Repo
 
   import Jarga.AccountsFixtures
@@ -14,8 +14,8 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
       user = user_fixture()
 
       agent =
-        %Agent{}
-        |> Agent.changeset(%{
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{
           user_id: user.id,
           name: "My Agent",
           visibility: "PRIVATE"
@@ -23,7 +23,7 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
         |> Repo.insert!()
 
       agent_id = agent.id
-      assert %Agent{id: ^agent_id} = AgentRepository.get_agent_for_user(user.id, agent.id)
+      assert %AgentSchema{id: ^agent_id} = AgentRepository.get_agent_for_user(user.id, agent.id)
     end
 
     test "returns nil for agent owned by other user" do
@@ -31,8 +31,8 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
       other_user = user_fixture()
 
       agent =
-        %Agent{}
-        |> Agent.changeset(%{
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{
           user_id: other_user.id,
           name: "Other User's Agent",
           visibility: "PRIVATE"
@@ -56,8 +56,8 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
       other_user = user_fixture()
 
       agent1 =
-        %Agent{}
-        |> Agent.changeset(%{
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{
           user_id: user.id,
           name: "Agent 1",
           visibility: "PRIVATE"
@@ -65,8 +65,8 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
         |> Repo.insert!()
 
       agent2 =
-        %Agent{}
-        |> Agent.changeset(%{
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{
           user_id: user.id,
           name: "Agent 2",
           visibility: "SHARED"
@@ -74,8 +74,8 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
         |> Repo.insert!()
 
       _other_agent =
-        %Agent{}
-        |> Agent.changeset(%{
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{
           user_id: other_user.id,
           name: "Other Agent",
           visibility: "SHARED"
@@ -110,7 +110,7 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
         visibility: "PRIVATE"
       }
 
-      assert {:ok, %Agent{} = agent} = AgentRepository.create_agent(attrs)
+      assert {:ok, %AgentSchema{} = agent} = AgentRepository.create_agent(attrs)
       assert agent.user_id == user.id
       assert agent.name == "Test Agent"
       assert agent.description == "Test description"
@@ -146,8 +146,8 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
       user = user_fixture()
 
       agent =
-        %Agent{}
-        |> Agent.changeset(%{
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{
           user_id: user.id,
           name: "Original Name",
           visibility: "PRIVATE"
@@ -159,7 +159,7 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
         visibility: "SHARED"
       }
 
-      assert {:ok, %Agent{} = updated_agent} =
+      assert {:ok, %AgentSchema{} = updated_agent} =
                AgentRepository.update_agent(agent, update_attrs)
 
       assert updated_agent.id == agent.id
@@ -171,8 +171,8 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
       user = user_fixture()
 
       agent =
-        %Agent{}
-        |> Agent.changeset(%{
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{
           user_id: user.id,
           name: "Test Agent",
           visibility: "PRIVATE"
@@ -195,16 +195,16 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
       user = user_fixture()
 
       agent =
-        %Agent{}
-        |> Agent.changeset(%{
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{
           user_id: user.id,
           name: "Test Agent",
           visibility: "PRIVATE"
         })
         |> Repo.insert!()
 
-      assert {:ok, %Agent{}} = AgentRepository.delete_agent(agent)
-      assert nil == Repo.get(Agent, agent.id)
+      assert {:ok, %AgentSchema{}} = AgentRepository.delete_agent(agent)
+      assert nil == Repo.get(AgentSchema, agent.id)
     end
 
     test "cascade deletes workspace_agents entries" do
@@ -212,8 +212,8 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
       workspace = workspace_fixture(user)
 
       agent =
-        %Agent{}
-        |> Agent.changeset(%{
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{
           user_id: user.id,
           name: "Test Agent",
           visibility: "PRIVATE"
@@ -221,16 +221,16 @@ defmodule Jarga.Agents.Infrastructure.AgentRepositoryTest do
         |> Repo.insert!()
 
       workspace_agent =
-        %WorkspaceAgentJoin{}
-        |> WorkspaceAgentJoin.changeset(%{
+        %WorkspaceAgentJoinSchema{}
+        |> WorkspaceAgentJoinSchema.changeset(%{
           workspace_id: workspace.id,
           agent_id: agent.id
         })
         |> Repo.insert!()
 
-      assert {:ok, %Agent{}} = AgentRepository.delete_agent(agent)
-      assert nil == Repo.get(Agent, agent.id)
-      assert nil == Repo.get(WorkspaceAgentJoin, workspace_agent.id)
+      assert {:ok, %AgentSchema{}} = AgentRepository.delete_agent(agent)
+      assert nil == Repo.get(AgentSchema, agent.id)
+      assert nil == Repo.get(WorkspaceAgentJoinSchema, workspace_agent.id)
     end
   end
 end

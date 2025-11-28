@@ -1,66 +1,65 @@
 defmodule Jarga.Agents.Domain.Entities.ChatSession do
   @moduledoc """
-  Schema for chat sessions.
+  Pure domain entity for chat sessions.
 
-  A chat session represents a conversation thread with the AI assistant.
-  Sessions can be scoped to a workspace or project and belong to a user.
+  This is a value object representing a chat session in the business domain.
+  It contains no infrastructure dependencies (no Ecto, no database concerns).
+
+  For database persistence, see Jarga.Agents.Infrastructure.Schemas.ChatSessionSchema.
   """
 
-  use Ecto.Schema
-  import Ecto.Changeset
+  @type t :: %__MODULE__{
+          id: String.t() | nil,
+          title: String.t() | nil,
+          user_id: String.t(),
+          workspace_id: String.t() | nil,
+          project_id: String.t() | nil,
+          messages: list(any()),
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
+  defstruct [
+    :id,
+    :title,
+    :user_id,
+    :workspace_id,
+    :project_id,
+    :inserted_at,
+    :updated_at,
+    messages: []
+  ]
 
-  schema "chat_sessions" do
-    field(:title, :string)
-
-    belongs_to(:user, Jarga.Accounts.Infrastructure.Schemas.UserSchema)
-    belongs_to(:workspace, Jarga.Workspaces.Infrastructure.Schemas.WorkspaceSchema)
-    belongs_to(:project, Jarga.Projects.Infrastructure.Schemas.ProjectSchema)
-
-    has_many(:messages, Jarga.Agents.Domain.Entities.ChatMessage)
-
-    timestamps(type: :utc_datetime)
+  @doc """
+  Creates a new ChatSession domain entity from attributes.
+  """
+  def new(attrs) do
+    struct(__MODULE__, attrs)
   end
 
   @doc """
-  Changeset for creating a new chat session.
-
-  Required fields:
-  - user_id
-
-  Optional fields:
-  - title
-  - workspace_id
-  - project_id
+  Converts an infrastructure schema to a domain entity.
+  Also converts nested messages to domain entities.
   """
-  def changeset(session, attrs) do
-    session
-    |> cast(attrs, [:title, :user_id, :workspace_id, :project_id])
-    |> validate_required([:user_id])
-    |> trim_title()
-    |> validate_length(:title, max: 255)
-    |> foreign_key_constraint(:user_id)
-    |> foreign_key_constraint(:workspace_id)
-    |> foreign_key_constraint(:project_id)
-  end
+  def from_schema(%{__struct__: _} = schema) do
+    alias Jarga.Agents.Domain.Entities.ChatMessage
 
-  @doc """
-  Changeset for updating the title of an existing session.
-  """
-  def title_changeset(session, attrs) do
-    session
-    |> cast(attrs, [:title])
-    |> trim_title()
-    |> validate_length(:title, max: 255)
-  end
+    messages =
+      case schema.messages do
+        nil -> []
+        %Ecto.Association.NotLoaded{} -> []
+        messages -> Enum.map(messages, &ChatMessage.from_schema/1)
+      end
 
-  defp trim_title(changeset) do
-    case get_change(changeset, :title) do
-      nil -> changeset
-      title when is_binary(title) -> put_change(changeset, :title, String.trim(title))
-      _ -> changeset
-    end
+    %__MODULE__{
+      id: schema.id,
+      title: schema.title,
+      user_id: schema.user_id,
+      workspace_id: schema.workspace_id,
+      project_id: schema.project_id,
+      messages: messages,
+      inserted_at: schema.inserted_at,
+      updated_at: schema.updated_at
+    }
   end
 end

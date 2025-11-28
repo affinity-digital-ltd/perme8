@@ -5,7 +5,7 @@ defmodule Jarga.AgentsTest do
   import Jarga.WorkspacesFixtures
 
   alias Jarga.Agents
-  alias Jarga.Agents.Domain.Entities.{Agent, WorkspaceAgentJoin}
+  alias Jarga.Agents.Infrastructure.Schemas.{AgentSchema, WorkspaceAgentJoinSchema}
   alias Jarga.Repo
 
   describe "list_user_agents/1" do
@@ -47,7 +47,7 @@ defmodule Jarga.AgentsTest do
         visibility: "PRIVATE"
       }
 
-      assert {:ok, %Agent{} = agent} = Agents.create_user_agent(attrs)
+      assert {:ok, %AgentSchema{} = agent} = Agents.create_user_agent(attrs)
       assert agent.user_id == user.id
       assert agent.name == "Test Agent"
       assert agent.visibility == "PRIVATE"
@@ -89,7 +89,7 @@ defmodule Jarga.AgentsTest do
 
       assert {:ok, deleted} = Agents.delete_user_agent(agent.id, user.id)
       assert deleted.id == agent.id
-      assert nil == Repo.get(Agent, agent.id)
+      assert nil == Repo.get(AgentSchema, agent.id)
     end
 
     test "returns error when user is not owner" do
@@ -98,7 +98,7 @@ defmodule Jarga.AgentsTest do
       {:ok, agent} = Agents.create_user_agent(%{user_id: user.id, name: "Agent"})
 
       assert {:error, :not_found} = Agents.delete_user_agent(agent.id, other_user.id)
-      assert Repo.get(Agent, agent.id) != nil
+      assert Repo.get(AgentSchema, agent.id) != nil
     end
   end
 
@@ -438,8 +438,8 @@ defmodule Jarga.AgentsTest do
 
   # Helper functions
   defp add_agent_to_workspace(agent_id, workspace_id) do
-    %WorkspaceAgentJoin{}
-    |> WorkspaceAgentJoin.changeset(%{
+    %WorkspaceAgentJoinSchema{}
+    |> WorkspaceAgentJoinSchema.changeset(%{
       agent_id: agent_id,
       workspace_id: workspace_id
     })

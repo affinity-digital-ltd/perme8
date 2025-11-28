@@ -77,4 +77,38 @@ defmodule Jarga.Agents.Infrastructure.Repositories.SessionRepository do
     |> Queries.message_by_id_and_user(user_id)
     |> repo.one()
   end
+
+  @doc """
+  Creates a new chat session.
+
+  ## Parameters
+    - attrs: Map with the following keys:
+      - user_id: (required) ID of the user creating the session
+      - workspace_id: (optional) ID of the workspace
+      - project_id: (optional) ID of the project
+      - title: (optional) Title of the session
+
+  Returns `{:ok, session}` if successful, or `{:error, changeset}` if validation fails.
+  """
+  def create_session(attrs, repo \\ Repo) do
+    alias Jarga.Agents.Infrastructure.Schemas.ChatSessionSchema
+
+    %ChatSessionSchema{}
+    |> ChatSessionSchema.changeset(attrs)
+    |> repo.insert()
+  end
+
+  @doc """
+  Deletes a chat session.
+
+  Messages are automatically deleted via database cascade.
+
+  ## Examples
+
+      iex> delete_session(session)
+      {:ok, %ChatSession{}}
+  """
+  def delete_session(session, repo \\ Repo) do
+    repo.delete(session)
+  end
 end

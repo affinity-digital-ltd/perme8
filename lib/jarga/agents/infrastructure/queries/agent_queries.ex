@@ -7,8 +7,8 @@ defmodule Jarga.Agents.Infrastructure.Queries.AgentQueries do
 
   import Ecto.Query, warn: false
 
-  alias Jarga.Agents.Domain.Entities.Agent
-  alias Jarga.Agents.Domain.Entities.WorkspaceAgentJoin
+  alias Jarga.Agents.Infrastructure.Schemas.AgentSchema
+  alias Jarga.Agents.Infrastructure.Schemas.WorkspaceAgentJoinSchema
 
   @doc """
   Returns the base query for agents.
@@ -20,7 +20,7 @@ defmodule Jarga.Agents.Infrastructure.Queries.AgentQueries do
   """
   @spec base() :: Ecto.Query.t()
   def base do
-    from(a in Agent)
+    from(a in AgentSchema)
   end
 
   @doc """
@@ -65,7 +65,7 @@ defmodule Jarga.Agents.Infrastructure.Queries.AgentQueries do
   @spec in_workspace(Ecto.Query.t(), Ecto.UUID.t()) :: Ecto.Query.t()
   def in_workspace(query \\ base(), workspace_id) do
     query
-    |> join(:inner, [a], wa in WorkspaceAgentJoin, on: wa.agent_id == a.id)
+    |> join(:inner, [a], wa in WorkspaceAgentJoinSchema, on: wa.agent_id == a.id)
     |> where([a, wa], wa.workspace_id == ^workspace_id)
   end
 

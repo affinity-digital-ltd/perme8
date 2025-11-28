@@ -14,8 +14,8 @@ defmodule Jarga.Agents.Application.UseCases.DeleteMessage do
       {:error, :not_found}
   """
 
-  alias Jarga.Repo
   alias Jarga.Agents.Infrastructure.Repositories.SessionRepository
+  alias Jarga.Agents.Infrastructure.Repositories.ChatMessageRepository
 
   @doc """
   Deletes a message by ID, verifying the user owns the session.
@@ -30,7 +30,7 @@ defmodule Jarga.Agents.Application.UseCases.DeleteMessage do
   def execute(message_id, user_id) do
     case SessionRepository.get_message_by_id_and_user(message_id, user_id) do
       nil -> {:error, :not_found}
-      message -> Repo.delete(message)
+      message -> ChatMessageRepository.delete_message(message)
     end
   end
 end

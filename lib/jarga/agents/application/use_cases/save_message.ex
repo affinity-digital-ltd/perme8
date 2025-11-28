@@ -20,8 +20,7 @@ defmodule Jarga.Agents.Application.UseCases.SaveMessage do
       {:ok, %ChatMessage{}}
   """
 
-  alias Jarga.Repo
-  alias Jarga.Agents.Domain.Entities.ChatMessage
+  alias Jarga.Agents.Infrastructure.Repositories.ChatMessageRepository
 
   @doc """
   Saves a new message to a chat session.
@@ -36,8 +35,6 @@ defmodule Jarga.Agents.Application.UseCases.SaveMessage do
   Returns `{:ok, message}` if successful, or `{:error, changeset}` if validation fails.
   """
   def execute(attrs) do
-    %ChatMessage{}
-    |> ChatMessage.changeset(attrs)
-    |> Repo.insert()
+    ChatMessageRepository.create_message(attrs)
   end
 end

@@ -6,15 +6,11 @@ defmodule Jarga.AgentsFixtures do
 
   use Boundary,
     top_level?: true,
-    deps: [Jarga.Agents, Jarga.Repo, Jarga.AccountsFixtures, Jarga.WorkspacesFixtures],
+    deps: [Jarga.Agents, Jarga.AccountsFixtures, Jarga.WorkspacesFixtures],
     exports: []
 
   import Jarga.AccountsFixtures
   import Jarga.WorkspacesFixtures
-
-  alias Jarga.Repo
-  alias Jarga.Agents.Domain.Entities.ChatSession
-  alias Jarga.Agents.Domain.Entities.ChatMessage
 
   @doc """
   Generate a user agent.
@@ -58,14 +54,12 @@ defmodule Jarga.AgentsFixtures do
     workspace = attrs[:workspace] || workspace_fixture(user)
 
     {:ok, session} =
-      %ChatSession{}
-      |> ChatSession.changeset(%{
+      Jarga.Agents.create_session(%{
         user_id: user.id,
         workspace_id: workspace.id,
         title: attrs[:title],
         project_id: attrs[:project_id]
       })
-      |> Repo.insert()
 
     session
   end
@@ -77,14 +71,12 @@ defmodule Jarga.AgentsFixtures do
     session = attrs[:chat_session] || chat_session_fixture()
 
     {:ok, message} =
-      %ChatMessage{}
-      |> ChatMessage.changeset(%{
+      Jarga.Agents.save_message(%{
         chat_session_id: session.id,
         role: attrs[:role] || "user",
         content: attrs[:content] || "Test message content",
         context_chunks: attrs[:context_chunks] || []
       })
-      |> Repo.insert()
 
     message
   end

@@ -1,7 +1,7 @@
 defmodule Jarga.Agents.Infrastructure.AgentQueriesTest do
   use Jarga.DataCase, async: true
 
-  alias Jarga.Agents.Domain.Entities.{Agent, WorkspaceAgentJoin}
+  alias Jarga.Agents.Infrastructure.Schemas.{AgentSchema, WorkspaceAgentJoinSchema}
   alias Jarga.Agents.Infrastructure.Queries.AgentQueries
   alias Jarga.Repo
 
@@ -14,22 +14,22 @@ defmodule Jarga.Agents.Infrastructure.AgentQueriesTest do
       user2 = user_fixture()
 
       agent1 =
-        %Agent{}
-        |> Agent.changeset(%{user_id: user1.id, name: "Agent 1", visibility: "PRIVATE"})
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{user_id: user1.id, name: "Agent 1", visibility: "PRIVATE"})
         |> Repo.insert!()
 
       agent2 =
-        %Agent{}
-        |> Agent.changeset(%{user_id: user1.id, name: "Agent 2", visibility: "SHARED"})
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{user_id: user1.id, name: "Agent 2", visibility: "SHARED"})
         |> Repo.insert!()
 
       _agent3 =
-        %Agent{}
-        |> Agent.changeset(%{user_id: user2.id, name: "Agent 3", visibility: "PRIVATE"})
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{user_id: user2.id, name: "Agent 3", visibility: "PRIVATE"})
         |> Repo.insert!()
 
       agents =
-        Agent
+        AgentSchema
         |> AgentQueries.for_user(user1.id)
         |> Repo.all()
 
@@ -45,18 +45,18 @@ defmodule Jarga.Agents.Infrastructure.AgentQueriesTest do
       user = user_fixture()
 
       private_agent =
-        %Agent{}
-        |> Agent.changeset(%{user_id: user.id, name: "Private", visibility: "PRIVATE"})
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{user_id: user.id, name: "Private", visibility: "PRIVATE"})
         |> Repo.insert!()
 
       shared_agent =
-        %Agent{}
-        |> Agent.changeset(%{user_id: user.id, name: "Shared", visibility: "SHARED"})
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{user_id: user.id, name: "Shared", visibility: "SHARED"})
         |> Repo.insert!()
 
       # Filter for PRIVATE
       private_agents =
-        Agent
+        AgentSchema
         |> AgentQueries.by_visibility("PRIVATE")
         |> Repo.all()
 
@@ -65,7 +65,7 @@ defmodule Jarga.Agents.Infrastructure.AgentQueriesTest do
 
       # Filter for SHARED
       shared_agents =
-        Agent
+        AgentSchema
         |> AgentQueries.by_visibility("SHARED")
         |> Repo.all()
 
@@ -81,37 +81,37 @@ defmodule Jarga.Agents.Infrastructure.AgentQueriesTest do
       workspace2 = workspace_fixture(user)
 
       agent1 =
-        %Agent{}
-        |> Agent.changeset(%{user_id: user.id, name: "Agent 1", visibility: "PRIVATE"})
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{user_id: user.id, name: "Agent 1", visibility: "PRIVATE"})
         |> Repo.insert!()
 
       agent2 =
-        %Agent{}
-        |> Agent.changeset(%{user_id: user.id, name: "Agent 2", visibility: "SHARED"})
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{user_id: user.id, name: "Agent 2", visibility: "SHARED"})
         |> Repo.insert!()
 
       agent3 =
-        %Agent{}
-        |> Agent.changeset(%{user_id: user.id, name: "Agent 3", visibility: "PRIVATE"})
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{user_id: user.id, name: "Agent 3", visibility: "PRIVATE"})
         |> Repo.insert!()
 
       # Add agent1 and agent2 to workspace1
-      %WorkspaceAgentJoin{}
-      |> WorkspaceAgentJoin.changeset(%{workspace_id: workspace1.id, agent_id: agent1.id})
+      %WorkspaceAgentJoinSchema{}
+      |> WorkspaceAgentJoinSchema.changeset(%{workspace_id: workspace1.id, agent_id: agent1.id})
       |> Repo.insert!()
 
-      %WorkspaceAgentJoin{}
-      |> WorkspaceAgentJoin.changeset(%{workspace_id: workspace1.id, agent_id: agent2.id})
+      %WorkspaceAgentJoinSchema{}
+      |> WorkspaceAgentJoinSchema.changeset(%{workspace_id: workspace1.id, agent_id: agent2.id})
       |> Repo.insert!()
 
       # Add agent3 to workspace2
-      %WorkspaceAgentJoin{}
-      |> WorkspaceAgentJoin.changeset(%{workspace_id: workspace2.id, agent_id: agent3.id})
+      %WorkspaceAgentJoinSchema{}
+      |> WorkspaceAgentJoinSchema.changeset(%{workspace_id: workspace2.id, agent_id: agent3.id})
       |> Repo.insert!()
 
       # Query agents in workspace1
       agents_in_workspace1 =
-        Agent
+        AgentSchema
         |> AgentQueries.in_workspace(workspace1.id)
         |> Repo.all()
 
@@ -146,38 +146,42 @@ defmodule Jarga.Agents.Infrastructure.AgentQueriesTest do
 
       # user1's SHARED agent in workspace
       agent1 =
-        %Agent{}
-        |> Agent.changeset(%{user_id: user1.id, name: "User1 Shared", visibility: "SHARED"})
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{user_id: user1.id, name: "User1 Shared", visibility: "SHARED"})
         |> Repo.insert!()
 
       # user1's PRIVATE agent in workspace
       agent2 =
-        %Agent{}
-        |> Agent.changeset(%{user_id: user1.id, name: "User1 Private", visibility: "PRIVATE"})
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{
+          user_id: user1.id,
+          name: "User1 Private",
+          visibility: "PRIVATE"
+        })
         |> Repo.insert!()
 
       # user2's SHARED agent in workspace
       agent3 =
-        %Agent{}
-        |> Agent.changeset(%{user_id: user2.id, name: "User2 Shared", visibility: "SHARED"})
+        %AgentSchema{}
+        |> AgentSchema.changeset(%{user_id: user2.id, name: "User2 Shared", visibility: "SHARED"})
         |> Repo.insert!()
 
       # Add agents to workspace
-      %WorkspaceAgentJoin{}
-      |> WorkspaceAgentJoin.changeset(%{workspace_id: workspace.id, agent_id: agent1.id})
+      %WorkspaceAgentJoinSchema{}
+      |> WorkspaceAgentJoinSchema.changeset(%{workspace_id: workspace.id, agent_id: agent1.id})
       |> Repo.insert!()
 
-      %WorkspaceAgentJoin{}
-      |> WorkspaceAgentJoin.changeset(%{workspace_id: workspace.id, agent_id: agent2.id})
+      %WorkspaceAgentJoinSchema{}
+      |> WorkspaceAgentJoinSchema.changeset(%{workspace_id: workspace.id, agent_id: agent2.id})
       |> Repo.insert!()
 
-      %WorkspaceAgentJoin{}
-      |> WorkspaceAgentJoin.changeset(%{workspace_id: workspace.id, agent_id: agent3.id})
+      %WorkspaceAgentJoinSchema{}
+      |> WorkspaceAgentJoinSchema.changeset(%{workspace_id: workspace.id, agent_id: agent3.id})
       |> Repo.insert!()
 
       # Compose: user1's SHARED agents in workspace
       agents =
-        Agent
+        AgentSchema
         |> AgentQueries.for_user(user1.id)
         |> AgentQueries.by_visibility("SHARED")
         |> AgentQueries.in_workspace(workspace.id)

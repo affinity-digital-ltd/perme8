@@ -97,7 +97,7 @@ defmodule AgentPolicySteps do
     {:ok,
      context
      |> Map.put(:viewed_agents, all_agents)
-     |> Map.put(:last_html, "Agents: #{Enum.map(all_agents, & &1.name) |> Enum.join(", ")}")}
+     |> Map.put(:last_html, "Agents: #{Enum.map_join(all_agents, ", ", & &1.name)}")}
   end
 
   # ============================================================================

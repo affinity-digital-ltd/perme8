@@ -9,7 +9,7 @@ defmodule Jarga.Agents.Infrastructure.Services.LlmClientTest do
 
   import ExUnit.CaptureLog
 
-  alias Jarga.Agents.Application.Services.LlmClient
+  alias Jarga.Agents.Infrastructure.Services.LlmClient
 
   # Setup a test bypass server for mocking HTTP responses
   setup do

@@ -506,7 +506,7 @@ defmodule ChatPanelUISteps do
       refute html =~ ~r/^#+\s/m
       # No bold markers
       refute html =~ ~r/\*\*/
-      # No list markers  
+      # No list markers
       refute html =~ ~r/^\*\s/m
       # No code fence markers
       refute html =~ ~r/```/

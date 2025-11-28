@@ -24,11 +24,11 @@ defmodule Jarga.Agents.UseCases.DeleteSessionTest do
       assert deleted_session.id == session.id
 
       # Session should be deleted
-      assert Repo.get(Jarga.Agents.Domain.Entities.ChatSession, session.id) == nil
+      assert Repo.get(Jarga.Agents.Infrastructure.Schemas.ChatSessionSchema, session.id) == nil
 
       # Messages should be deleted (cascade)
-      assert Repo.get(Jarga.Agents.Domain.Entities.ChatMessage, msg1.id) == nil
-      assert Repo.get(Jarga.Agents.Domain.Entities.ChatMessage, msg2.id) == nil
+      assert Repo.get(Jarga.Agents.Infrastructure.Schemas.ChatMessageSchema, msg1.id) == nil
+      assert Repo.get(Jarga.Agents.Infrastructure.Schemas.ChatMessageSchema, msg2.id) == nil
     end
 
     test "returns error when session does not exist" do
@@ -48,7 +48,7 @@ defmodule Jarga.Agents.UseCases.DeleteSessionTest do
       assert {:error, :not_found} = DeleteSession.execute(session.id, user2.id)
 
       # Session should still exist
-      assert Repo.get(Jarga.Agents.Domain.Entities.ChatSession, session.id) != nil
+      assert Repo.get(Jarga.Agents.Infrastructure.Schemas.ChatSessionSchema, session.id) != nil
     end
 
     test "only deletes messages from the specified session" do
@@ -63,12 +63,12 @@ defmodule Jarga.Agents.UseCases.DeleteSessionTest do
       assert {:ok, _} = DeleteSession.execute(session1.id, user.id)
 
       # Session1 and its message should be deleted
-      assert Repo.get(Jarga.Agents.Domain.Entities.ChatSession, session1.id) == nil
-      assert Repo.get(Jarga.Agents.Domain.Entities.ChatMessage, msg1.id) == nil
+      assert Repo.get(Jarga.Agents.Infrastructure.Schemas.ChatSessionSchema, session1.id) == nil
+      assert Repo.get(Jarga.Agents.Infrastructure.Schemas.ChatMessageSchema, msg1.id) == nil
 
       # Session2 and its message should still exist
-      assert Repo.get(Jarga.Agents.Domain.Entities.ChatSession, session2.id) != nil
-      assert Repo.get(Jarga.Agents.Domain.Entities.ChatMessage, msg2.id) != nil
+      assert Repo.get(Jarga.Agents.Infrastructure.Schemas.ChatSessionSchema, session2.id) != nil
+      assert Repo.get(Jarga.Agents.Infrastructure.Schemas.ChatMessageSchema, msg2.id) != nil
     end
   end
 end

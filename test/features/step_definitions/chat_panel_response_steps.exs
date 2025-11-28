@@ -437,11 +437,11 @@ defmodule ChatPanelResponseSteps do
 
           # If still not found, try once more with even longer wait
           html =
-            if not (html =~ chunk_escaped) do
+            if html =~ chunk_escaped do
+              html
+            else
               Process.sleep(2000)
               Wallaby.Browser.page_source(session)
-            else
-              html
             end
 
           # Make this more lenient for now - streaming in browser tests might be tricky

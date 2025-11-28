@@ -50,15 +50,17 @@ defmodule AgentWorkspaceSteps do
     _workspace_owners = Map.get(context, :workspace_owners, %{})
 
     Enum.reduce(workspace_data, context, fn {name, workspace, owner}, ctx ->
-      ctx
-      |> Map.put(:workspaces, Map.put(Map.get(ctx, :workspaces, %{}), name, workspace))
-      |> then(fn c ->
-        if owner do
-          Map.put(c, :workspace_owners, Map.put(Map.get(c, :workspace_owners, %{}), name, owner))
-        else
-          c
-        end
-      end)
+      ctx = Map.put(ctx, :workspaces, Map.put(Map.get(ctx, :workspaces, %{}), name, workspace))
+
+      if owner do
+        Map.put(
+          ctx,
+          :workspace_owners,
+          Map.put(Map.get(ctx, :workspace_owners, %{}), name, owner)
+        )
+      else
+        ctx
+      end
     end)
   end
 
@@ -378,9 +380,9 @@ defmodule AgentWorkspaceSteps do
         # Success, continue
         :ok
 
-      error ->
-        # Log the error for debugging
-        IO.inspect("Sync result: #{inspect(error)}")
+      _error ->
+        # Error case - result will be stored in context for assertion
+        :ok
     end
 
     {:ok, Map.put(context, :last_result, result)}

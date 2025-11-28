@@ -22,8 +22,7 @@ defmodule Jarga.Agents.Application.UseCases.CreateSession do
       {:ok, %ChatSession{title: "Hello?"}}
   """
 
-  alias Jarga.Repo
-  alias Jarga.Agents.Domain.Entities.ChatSession
+  alias Jarga.Agents.Infrastructure.Repositories.SessionRepository
 
   @max_auto_title_length 50
 
@@ -42,10 +41,7 @@ defmodule Jarga.Agents.Application.UseCases.CreateSession do
   """
   def execute(attrs) do
     attrs = maybe_generate_title(attrs)
-
-    %ChatSession{}
-    |> ChatSession.changeset(attrs)
-    |> Repo.insert()
+    SessionRepository.create_session(attrs)
   end
 
   defp maybe_generate_title(%{title: title} = attrs) when not is_nil(title) do

@@ -19,16 +19,7 @@ defmodule JargaWeb.Live.Hooks.AllowEctoSandbox do
   defp allow_ecto_sandbox(socket) do
     %{assigns: %{phoenix_ecto_sandbox: metadata}} =
       assign_new(socket, :phoenix_ecto_sandbox, fn ->
-        # Get sandbox metadata from x_headers
-        # The Phoenix.Ecto.SQL.Sandbox plug sets this header
-        if connected?(socket) do
-          get_connect_info(socket, :x_headers)
-          |> List.keyfind("x-session-id", 0)
-          |> case do
-            {_, metadata} -> metadata
-            nil -> nil
-          end
-        end
+        get_sandbox_metadata(socket)
       end)
 
     # Only allow sandbox access if metadata exists and we're in test environment
@@ -39,5 +30,16 @@ defmodule JargaWeb.Live.Hooks.AllowEctoSandbox do
     end
 
     socket
+  end
+
+  # Get sandbox metadata from x_headers
+  # The Phoenix.Ecto.SQL.Sandbox plug sets this header
+  defp get_sandbox_metadata(socket) do
+    if connected?(socket) do
+      case List.keyfind(get_connect_info(socket, :x_headers), "x-session-id", 0) do
+        {_, metadata} -> metadata
+        nil -> nil
+      end
+    end
   end
 end
