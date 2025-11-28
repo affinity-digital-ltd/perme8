@@ -11,6 +11,7 @@ defmodule CommonSteps do
   import Phoenix.ConnTest
   import Jarga.AccountsFixtures
   import Jarga.WorkspacesFixtures
+  import Ecto.Query
 
   alias Ecto.Adapters.SQL.Sandbox
 
@@ -64,18 +65,44 @@ defmodule CommonSteps do
   # ============================================================================
 
   step "a user {string} exists as {word} of workspace {string}",
-       %{args: [email, role, _workspace_slug]} = context do
-    workspace = context[:workspace]
+       %{args: [email, role, workspace_slug]} = context do
+    # Get the workspace from context (could be primary or additional)
+    workspace =
+      if workspace_slug == "product-team" do
+        context[:workspace]
+      else
+        Map.get(context[:additional_workspaces] || %{}, workspace_slug)
+      end
 
-    # Create user
-    user = user_fixture(%{email: email})
+    # Check if user already exists in context
+    users = Map.get(context, :users, %{})
 
-    # Add membership based on role
+    user =
+      case Map.get(users, email) do
+        nil ->
+          # Only create user if not already exists
+          user_fixture(%{email: email})
+
+        existing_user ->
+          existing_user
+      end
+
+    # Add membership based on role (only if not already a member)
     role_atom = String.to_existing_atom(role)
-    add_workspace_member_fixture(workspace.id, user, role_atom)
+
+    # Check if membership already exists to avoid constraint violation
+    existing_member =
+      Jarga.Repo.one(
+        from(m in Jarga.Workspaces.Domain.Entities.WorkspaceMember,
+          where: m.workspace_id == ^workspace.id and m.user_id == ^user.id
+        )
+      )
+
+    unless existing_member do
+      add_workspace_member_fixture(workspace.id, user, role_atom)
+    end
 
     # Store user in context by email for easy lookup
-    users = Map.get(context, :users, %{})
     {:ok, Map.put(context, :users, Map.put(users, email, user))}
   end
 

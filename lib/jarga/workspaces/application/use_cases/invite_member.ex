@@ -28,6 +28,7 @@ defmodule Jarga.Workspaces.Application.UseCases.InviteMember do
   alias Jarga.Accounts
   alias Jarga.Workspaces.Domain.Entities.WorkspaceMember
   alias Jarga.Workspaces.Application.Policies.MembershipPolicy
+  alias Jarga.Workspaces.Application.Policies.PermissionsPolicy
   alias Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository
   alias Jarga.Workspaces.Infrastructure.Notifiers.PubSubNotifier
 
@@ -66,6 +67,8 @@ defmodule Jarga.Workspaces.Application.UseCases.InviteMember do
 
     with :ok <- validate_role(role),
          {:ok, workspace} <- verify_inviter_membership(inviter, workspace_id),
+         {:ok, inviter_member} <- get_inviter_member(inviter, workspace_id),
+         :ok <- check_inviter_permission(inviter_member),
          :ok <- check_not_already_member(workspace_id, email),
          user <- find_user_by_email_case_insensitive(email) do
       # Always create pending invitation (requires acceptance via notification)
@@ -95,6 +98,23 @@ defmodule Jarga.Workspaces.Application.UseCases.InviteMember do
 
       workspace ->
         {:ok, workspace}
+    end
+  end
+
+  # Get inviter's membership record
+  defp get_inviter_member(inviter, workspace_id) do
+    case MembershipRepository.get_member(inviter, workspace_id) do
+      nil -> {:error, :unauthorized}
+      member -> {:ok, member}
+    end
+  end
+
+  # Check if inviter has permission to invite members
+  defp check_inviter_permission(inviter_member) do
+    if PermissionsPolicy.can?(inviter_member.role, :invite_member) do
+      :ok
+    else
+      {:error, :forbidden}
     end
   end
 

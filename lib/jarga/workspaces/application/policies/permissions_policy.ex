@@ -46,6 +46,11 @@ defmodule Jarga.Workspaces.Application.Policies.PermissionsPolicy do
 
   def can?(:owner, :delete_workspace, _context), do: true
 
+  # Member management permissions
+  def can?(role, :invite_member, _context)
+      when role in [:admin, :owner],
+      do: true
+
   # Project permissions - viewing
   def can?(_role, :view_project, _context), do: true
 
