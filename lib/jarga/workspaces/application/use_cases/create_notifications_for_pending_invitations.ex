@@ -66,15 +66,15 @@ defmodule Jarga.Workspaces.Application.UseCases.CreateNotificationsForPendingInv
     end
   end
 
-  defp broadcast_invitation_notification(user, invitation, pubsub_notifier) do
-    inviter_name = get_inviter_name(invitation.inviter)
+  defp broadcast_invitation_notification(user, invitation_schema, pubsub_notifier) do
+    inviter_name = get_inviter_name(invitation_schema.inviter)
 
     pubsub_notifier.broadcast_invitation_created(
       user.id,
-      invitation.workspace_id,
-      invitation.workspace.name,
+      invitation_schema.workspace_id,
+      invitation_schema.workspace.name,
       inviter_name,
-      to_string(invitation.role)
+      to_string(invitation_schema.role)
     )
   end
 

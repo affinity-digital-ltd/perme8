@@ -22,11 +22,7 @@ defmodule Jarga.Workspaces.Application.UseCases.InviteMember do
 
   @behaviour Jarga.Workspaces.Application.UseCases.UseCase
 
-  import Ecto.Query, warn: false
-
-  alias Jarga.Repo
   alias Jarga.Accounts
-  alias Jarga.Workspaces.Domain.Entities.WorkspaceMember
   alias Jarga.Workspaces.Application.Policies.MembershipPolicy
   alias Jarga.Workspaces.Application.Policies.PermissionsPolicy
   alias Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository
@@ -134,7 +130,7 @@ defmodule Jarga.Workspaces.Application.UseCases.InviteMember do
 
   defp create_pending_invitation(workspace, email, role, inviter, user, notifier, pubsub_notifier) do
     result =
-      Repo.transact(fn ->
+      MembershipRepository.transact(fn ->
         # Create workspace_member record (pending invitation)
         attrs = %{
           workspace_id: workspace.id,
@@ -170,9 +166,7 @@ defmodule Jarga.Workspaces.Application.UseCases.InviteMember do
   end
 
   defp create_workspace_member(attrs) do
-    %WorkspaceMember{}
-    |> WorkspaceMember.changeset(attrs)
-    |> Repo.insert()
+    MembershipRepository.create_member(attrs)
   end
 
   defp maybe_create_notification(nil, _workspace, _role, _inviter, _pubsub_notifier),

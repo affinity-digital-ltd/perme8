@@ -2,11 +2,86 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
   use Jarga.DataCase, async: true
 
   alias Jarga.Workspaces.Domain.Entities.WorkspaceMember
+  alias Jarga.Workspaces.Infrastructure.Schemas.WorkspaceMemberSchema
 
   import Jarga.AccountsFixtures
   import Jarga.WorkspacesFixtures
 
-  describe "changeset/2" do
+  describe "domain entity" do
+    test "new/1 creates a workspace member entity" do
+      attrs = %{
+        workspace_id: Ecto.UUID.generate(),
+        email: "member@example.com",
+        role: :member
+      }
+
+      member = WorkspaceMember.new(attrs)
+
+      assert member.email == "member@example.com"
+      assert member.role == :member
+    end
+
+    test "from_schema/1 converts schema to entity" do
+      schema = %WorkspaceMemberSchema{
+        id: "test-id",
+        workspace_id: Ecto.UUID.generate(),
+        user_id: Ecto.UUID.generate(),
+        email: "member@example.com",
+        role: :member,
+        invited_at: ~U[2025-01-01 10:00:00Z],
+        joined_at: ~U[2025-01-02 10:00:00Z],
+        invited_by: Ecto.UUID.generate(),
+        inserted_at: ~U[2025-01-01 10:00:00Z],
+        updated_at: ~U[2025-01-01 10:00:00Z]
+      }
+
+      entity = WorkspaceMember.from_schema(schema)
+
+      assert entity.id == "test-id"
+      assert entity.email == "member@example.com"
+      assert entity.role == :member
+    end
+
+    test "accepted?/1 checks if member has accepted invitation" do
+      accepted = %WorkspaceMember{joined_at: ~U[2025-01-01 10:00:00Z]}
+      pending = %WorkspaceMember{joined_at: nil}
+
+      assert WorkspaceMember.accepted?(accepted) == true
+      assert WorkspaceMember.accepted?(pending) == false
+    end
+
+    test "pending?/1 checks if member is pending invitation" do
+      accepted = %WorkspaceMember{joined_at: ~U[2025-01-01 10:00:00Z]}
+      pending = %WorkspaceMember{joined_at: nil}
+
+      assert WorkspaceMember.pending?(pending) == true
+      assert WorkspaceMember.pending?(accepted) == false
+    end
+
+    test "owner?/1 checks if member is owner" do
+      owner = %WorkspaceMember{role: :owner}
+      admin = %WorkspaceMember{role: :admin}
+      member = %WorkspaceMember{role: :member}
+
+      assert WorkspaceMember.owner?(owner) == true
+      assert WorkspaceMember.owner?(admin) == false
+      assert WorkspaceMember.owner?(member) == false
+    end
+
+    test "admin_or_owner?/1 checks if member is admin or owner" do
+      owner = %WorkspaceMember{role: :owner}
+      admin = %WorkspaceMember{role: :admin}
+      member = %WorkspaceMember{role: :member}
+      guest = %WorkspaceMember{role: :guest}
+
+      assert WorkspaceMember.admin_or_owner?(owner) == true
+      assert WorkspaceMember.admin_or_owner?(admin) == true
+      assert WorkspaceMember.admin_or_owner?(member) == false
+      assert WorkspaceMember.admin_or_owner?(guest) == false
+    end
+  end
+
+  describe "schema changeset/2" do
     setup do
       user = user_fixture()
       workspace = workspace_fixture(user)
@@ -20,7 +95,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         role: :member
       }
 
-      changeset = WorkspaceMember.changeset(%WorkspaceMember{}, attrs)
+      changeset = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs)
 
       assert changeset.valid?
     end
@@ -31,7 +106,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         role: :member
       }
 
-      changeset = WorkspaceMember.changeset(%WorkspaceMember{}, attrs)
+      changeset = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs)
 
       assert "can't be blank" in errors_on(changeset).workspace_id
     end
@@ -44,7 +119,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         role: :member
       }
 
-      changeset = WorkspaceMember.changeset(%WorkspaceMember{}, attrs)
+      changeset = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs)
 
       assert "can't be blank" in errors_on(changeset).email
     end
@@ -57,7 +132,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         email: "member@example.com"
       }
 
-      changeset = WorkspaceMember.changeset(%WorkspaceMember{}, attrs)
+      changeset = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs)
 
       assert "can't be blank" in errors_on(changeset).role
     end
@@ -77,7 +152,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
           role: role
         }
 
-        changeset = WorkspaceMember.changeset(%WorkspaceMember{}, attrs)
+        changeset = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs)
         assert changeset.valid?
         assert Ecto.Changeset.get_change(changeset, :role) == role
       end
@@ -91,7 +166,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         role: :member
       }
 
-      changeset = WorkspaceMember.changeset(%WorkspaceMember{}, attrs)
+      changeset = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs)
 
       assert changeset.valid?
       assert Ecto.Changeset.get_change(changeset, :user_id) == user.id
@@ -107,7 +182,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         invited_by: inviter.id
       }
 
-      changeset = WorkspaceMember.changeset(%WorkspaceMember{}, attrs)
+      changeset = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs)
 
       assert changeset.valid?
       assert Ecto.Changeset.get_change(changeset, :invited_by) == inviter.id
@@ -123,7 +198,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         invited_at: invited_at
       }
 
-      changeset = WorkspaceMember.changeset(%WorkspaceMember{}, attrs)
+      changeset = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs)
 
       assert changeset.valid?
       assert Ecto.Changeset.get_change(changeset, :invited_at) == invited_at
@@ -139,7 +214,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         joined_at: joined_at
       }
 
-      changeset = WorkspaceMember.changeset(%WorkspaceMember{}, attrs)
+      changeset = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs)
 
       assert changeset.valid?
       assert Ecto.Changeset.get_change(changeset, :joined_at) == joined_at
@@ -154,7 +229,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         role: :member
       }
 
-      changeset = WorkspaceMember.changeset(%WorkspaceMember{}, attrs)
+      changeset = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs)
 
       assert {:error, changeset} = Repo.insert(changeset)
       assert "does not exist" in errors_on(changeset).workspace_id
@@ -170,7 +245,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         role: :member
       }
 
-      changeset = WorkspaceMember.changeset(%WorkspaceMember{}, attrs)
+      changeset = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs)
 
       assert {:error, changeset} = Repo.insert(changeset)
       assert "does not exist" in errors_on(changeset).user_id
@@ -186,7 +261,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         invited_by: fake_inviter_id
       }
 
-      changeset = WorkspaceMember.changeset(%WorkspaceMember{}, attrs)
+      changeset = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs)
 
       assert {:error, changeset} = Repo.insert(changeset)
       assert "does not exist" in errors_on(changeset).invited_by
@@ -200,7 +275,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         role: :member
       }
 
-      changeset1 = WorkspaceMember.changeset(%WorkspaceMember{}, attrs1)
+      changeset1 = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs1)
       {:ok, _member1} = Repo.insert(changeset1)
 
       # Try to create second member with same workspace_id and email
@@ -210,7 +285,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         role: :admin
       }
 
-      changeset2 = WorkspaceMember.changeset(%WorkspaceMember{}, attrs2)
+      changeset2 = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs2)
       assert {:error, changeset} = Repo.insert(changeset2)
       assert "has already been taken" in errors_on(changeset).workspace_id
     end
@@ -226,7 +301,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         role: :member
       }
 
-      changeset1 = WorkspaceMember.changeset(%WorkspaceMember{}, attrs1)
+      changeset1 = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs1)
       {:ok, _member1} = Repo.insert(changeset1)
 
       # Create member with same email in workspace2
@@ -236,7 +311,7 @@ defmodule Jarga.Workspaces.WorkspaceMemberTest do
         role: :member
       }
 
-      changeset2 = WorkspaceMember.changeset(%WorkspaceMember{}, attrs2)
+      changeset2 = WorkspaceMemberSchema.changeset(%WorkspaceMemberSchema{}, attrs2)
       assert {:ok, _member2} = Repo.insert(changeset2)
     end
   end

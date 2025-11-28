@@ -17,7 +17,8 @@ defmodule Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository do
   alias Jarga.Repo
   alias Jarga.Accounts.Domain.Entities.User
   alias Jarga.Workspaces.Infrastructure.Queries.Queries
-  alias Jarga.Workspaces.Domain.Entities.WorkspaceMember
+  alias Jarga.Workspaces.Domain.Entities.{Workspace, WorkspaceMember}
+  alias Jarga.Workspaces.Infrastructure.Schemas.{WorkspaceSchema, WorkspaceMemberSchema}
 
   @doc """
   Finds a workspace and verifies the user is a member.
@@ -34,8 +35,10 @@ defmodule Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository do
 
   """
   def get_workspace_for_user(%User{} = user, workspace_id, repo \\ Repo) do
-    Queries.for_user_by_id(user, workspace_id)
-    |> repo.one()
+    case Queries.for_user_by_id(user, workspace_id) |> repo.one() do
+      nil -> nil
+      schema -> Workspace.from_schema(schema)
+    end
   end
 
   @doc """
@@ -53,8 +56,10 @@ defmodule Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository do
 
   """
   def get_workspace_for_user_by_slug(%User{} = user, slug, repo \\ Repo) do
-    Queries.for_user_by_slug(user, slug)
-    |> repo.one()
+    case Queries.for_user_by_slug(user, slug) |> repo.one() do
+      nil -> nil
+      schema -> Workspace.from_schema(schema)
+    end
   end
 
   @doc """
@@ -78,10 +83,12 @@ defmodule Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository do
       nil ->
         nil
 
-      workspace ->
-        # workspace_members will contain only the current user's member record
-        # because the join filtered by user_id
-        member = List.first(workspace.workspace_members)
+      schema ->
+        # Convert workspace to domain entity
+        workspace = Workspace.from_schema(schema)
+        # Member conversion
+        member_schema = List.first(schema.workspace_members)
+        member = if member_schema, do: WorkspaceMember.from_schema(member_schema), else: nil
         {workspace, member}
     end
   end
@@ -118,8 +125,10 @@ defmodule Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository do
 
   """
   def get_member(%User{} = user, workspace_id, repo \\ Repo) do
-    Queries.get_member(user, workspace_id)
-    |> repo.one()
+    case Queries.get_member(user, workspace_id) |> repo.one() do
+      nil -> nil
+      schema -> WorkspaceMember.from_schema(schema)
+    end
   end
 
   @doc """
@@ -135,8 +144,10 @@ defmodule Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository do
 
   """
   def find_member_by_email(workspace_id, email, repo \\ Repo) do
-    Queries.find_member_by_email(workspace_id, email)
-    |> repo.one()
+    case Queries.find_member_by_email(workspace_id, email) |> repo.one() do
+      nil -> nil
+      schema -> WorkspaceMember.from_schema(schema)
+    end
   end
 
   @doc """
@@ -170,6 +181,7 @@ defmodule Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository do
   def list_members(workspace_id, repo \\ Repo) do
     Queries.list_members(workspace_id)
     |> repo.all()
+    |> Enum.map(&WorkspaceMember.from_schema/1)
   end
 
   @doc """
@@ -188,7 +200,7 @@ defmodule Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository do
     import Ecto.Query
 
     query =
-      from(w in Jarga.Workspaces.Domain.Entities.Workspace,
+      from(w in WorkspaceSchema,
         where: w.slug == ^slug
       )
 
@@ -222,14 +234,18 @@ defmodule Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository do
 
   """
   def add_member(workspace_id, user_id, email, role, repo \\ Repo) do
-    %WorkspaceMember{}
-    |> WorkspaceMember.changeset(%{
+    %WorkspaceMemberSchema{}
+    |> WorkspaceMemberSchema.changeset(%{
       workspace_id: workspace_id,
       user_id: user_id,
       email: email,
       role: role
     })
     |> repo.insert()
+    |> case do
+      {:ok, schema} -> {:ok, WorkspaceMember.from_schema(schema)}
+      {:error, changeset} -> {:error, changeset}
+    end
   end
 
   @doc """
@@ -246,11 +262,78 @@ defmodule Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository do
   """
   def member?(user_id, workspace_id, repo \\ Repo) do
     query =
-      from(wm in WorkspaceMember,
+      from(wm in WorkspaceMemberSchema,
         where: wm.user_id == ^user_id and wm.workspace_id == ^workspace_id
       )
 
     repo.exists?(query)
+  end
+
+  @doc """
+  Creates a new workspace member.
+
+  ## Examples
+
+      iex> create_member(%{workspace_id: id, email: "user@example.com", role: :member})
+      {:ok, %WorkspaceMember{}}
+
+      iex> create_member(%{})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_member(attrs, repo \\ Repo) do
+    %WorkspaceMemberSchema{}
+    |> WorkspaceMemberSchema.changeset(attrs)
+    |> repo.insert()
+    |> case do
+      {:ok, schema} -> {:ok, WorkspaceMember.from_schema(schema)}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Updates a workspace member.
+
+  ## Examples
+
+      iex> update_member(member, %{role: :admin})
+      {:ok, %WorkspaceMember{}}
+
+      iex> update_member(member, %{role: :invalid})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_member(%WorkspaceMember{} = member, attrs, repo \\ Repo) do
+    member
+    |> WorkspaceMemberSchema.to_schema()
+    |> WorkspaceMemberSchema.changeset(attrs)
+    |> repo.update()
+    |> case do
+      {:ok, schema} -> {:ok, WorkspaceMember.from_schema(schema)}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Deletes a workspace member.
+
+  ## Examples
+
+      iex> delete_member(member)
+      {:ok, %WorkspaceMember{}}
+
+      iex> delete_member(invalid_member)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_member(%WorkspaceMember{} = member, repo \\ Repo) do
+    member
+    |> WorkspaceMemberSchema.to_schema()
+    |> repo.delete()
+    |> case do
+      {:ok, schema} -> {:ok, WorkspaceMember.from_schema(schema)}
+      {:error, changeset} -> {:error, changeset}
+    end
   end
 
   @doc """

@@ -1,49 +1,85 @@
 defmodule Jarga.Workspaces.Domain.Entities.WorkspaceMember do
   @moduledoc """
-  Schema for workspace membership with roles and invitation tracking.
+  Pure domain entity for workspace membership.
+
+  This is a value object representing a user's membership in a workspace.
+  It contains no infrastructure dependencies (no Ecto, no database concerns).
+
+  For database persistence, see Jarga.Workspaces.Infrastructure.Schemas.WorkspaceMemberSchema.
   """
 
-  use Ecto.Schema
-  import Ecto.Changeset
+  @type role :: :owner | :admin | :member | :guest
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
+  @type t :: %__MODULE__{
+          id: String.t() | nil,
+          email: String.t(),
+          role: role(),
+          invited_at: DateTime.t() | nil,
+          joined_at: DateTime.t() | nil,
+          workspace_id: String.t(),
+          user_id: String.t() | nil,
+          invited_by: String.t() | nil,
+          inserted_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
+        }
 
-  schema "workspace_members" do
-    field(:email, :string)
-    field(:role, Ecto.Enum, values: [:owner, :admin, :member, :guest])
-    field(:invited_at, :utc_datetime)
-    field(:joined_at, :utc_datetime)
+  defstruct [
+    :id,
+    :email,
+    :role,
+    :invited_at,
+    :joined_at,
+    :workspace_id,
+    :user_id,
+    :invited_by,
+    :inserted_at,
+    :updated_at
+  ]
 
-    belongs_to(:workspace, Jarga.Workspaces.Domain.Entities.Workspace)
-    belongs_to(:user, Jarga.Accounts.Infrastructure.Schemas.UserSchema)
-
-    belongs_to(:inviter, Jarga.Accounts.Infrastructure.Schemas.UserSchema,
-      foreign_key: :invited_by
-    )
-
-    timestamps(type: :utc_datetime)
-  end
-
-  @doc false
-  def changeset(workspace_member, attrs) do
-    workspace_member
-    |> cast(attrs, [:workspace_id, :user_id, :email, :role, :invited_by, :invited_at, :joined_at])
-    |> validate_required([:workspace_id, :email, :role])
-    |> foreign_key_constraint(:workspace_id)
-    |> foreign_key_constraint(:user_id)
-    |> foreign_key_constraint(:invited_by)
-    |> unique_constraint([:workspace_id, :email])
+  @doc """
+  Creates a new WorkspaceMember domain entity from attributes.
+  """
+  def new(attrs) do
+    struct(__MODULE__, attrs)
   end
 
   @doc """
-  Changeset for accepting a workspace invitation.
-  Updates the user_id and joined_at fields to mark the invitation as accepted.
+  Converts an infrastructure schema to a domain entity.
   """
-  def accept_invitation_changeset(workspace_member, attrs) do
-    workspace_member
-    |> cast(attrs, [:user_id, :joined_at])
-    |> validate_required([:user_id, :joined_at])
-    |> foreign_key_constraint(:user_id)
+  def from_schema(%{__struct__: _} = schema) do
+    %__MODULE__{
+      id: schema.id,
+      email: schema.email,
+      role: schema.role,
+      invited_at: schema.invited_at,
+      joined_at: schema.joined_at,
+      workspace_id: schema.workspace_id,
+      user_id: schema.user_id,
+      invited_by: schema.invited_by,
+      inserted_at: schema.inserted_at,
+      updated_at: schema.updated_at
+    }
   end
+
+  @doc """
+  Checks if member has accepted invitation (business rule).
+  """
+  def accepted?(%__MODULE__{joined_at: joined_at}), do: !is_nil(joined_at)
+
+  @doc """
+  Checks if member is pending invitation (business rule).
+  """
+  def pending?(%__MODULE__{joined_at: joined_at}), do: is_nil(joined_at)
+
+  @doc """
+  Checks if member has owner role (business rule).
+  """
+  def owner?(%__MODULE__{role: :owner}), do: true
+  def owner?(_), do: false
+
+  @doc """
+  Checks if member has admin or owner role (business rule).
+  """
+  def admin_or_owner?(%__MODULE__{role: role}) when role in [:owner, :admin], do: true
+  def admin_or_owner?(_), do: false
 end

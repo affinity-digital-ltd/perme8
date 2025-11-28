@@ -15,7 +15,7 @@ defmodule Jarga.Documents.Notes.Infrastructure.Repositories.AuthorizationReposit
   alias Jarga.Documents.Notes.Infrastructure.Queries.Queries
   alias Jarga.Documents.Infrastructure.Schemas.DocumentComponentSchema
   alias Jarga.Documents.Infrastructure.Schemas.DocumentSchema
-  alias Jarga.Workspaces.Domain.Entities.WorkspaceMember
+  alias Jarga.Workspaces.Infrastructure.Schemas.WorkspaceMemberSchema
   import Ecto.Query
 
   @doc """
@@ -64,7 +64,7 @@ defmodule Jarga.Documents.Notes.Infrastructure.Repositories.AuthorizationReposit
         on: dc.component_id == n.id and dc.component_type == "note",
         join: d in DocumentSchema,
         on: d.id == dc.document_id,
-        left_join: wm in WorkspaceMember,
+        left_join: wm in WorkspaceMemberSchema,
         on: wm.workspace_id == d.workspace_id and wm.user_id == ^user.id,
         where: n.id == ^note_id,
         where: d.user_id == ^user.id or (d.is_public == true and not is_nil(wm.id)),

@@ -19,7 +19,6 @@ defmodule Jarga.Workspaces.Application.UseCases.ChangeMemberRole do
 
   @behaviour Jarga.Workspaces.Application.UseCases.UseCase
 
-  alias Jarga.Repo
   alias Jarga.Workspaces.Domain.Entities.WorkspaceMember
   alias Jarga.Workspaces.Application.Policies.MembershipPolicy
   alias Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository
@@ -101,8 +100,6 @@ defmodule Jarga.Workspaces.Application.UseCases.ChangeMemberRole do
   end
 
   defp update_member_role(member, new_role) do
-    member
-    |> WorkspaceMember.changeset(%{role: new_role})
-    |> Repo.update()
+    MembershipRepository.update_member(member, %{role: new_role})
   end
 end

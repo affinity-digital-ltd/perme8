@@ -3,82 +3,17 @@ defmodule Jarga.Workspaces.WorkspaceTest do
 
   alias Jarga.Workspaces.Domain.Entities.Workspace
 
-  describe "changeset/2" do
-    test "valid changeset with required fields" do
+  describe "domain entity" do
+    test "new/1 creates a workspace entity" do
       attrs = %{
         name: "Test Workspace",
         slug: "test-workspace"
       }
 
-      changeset = Workspace.changeset(%Workspace{}, attrs)
+      workspace = Workspace.new(attrs)
 
-      assert changeset.valid?
-    end
-
-    test "requires name" do
-      attrs = %{slug: "test-workspace"}
-
-      changeset = Workspace.changeset(%Workspace{}, attrs)
-
-      assert "can't be blank" in errors_on(changeset).name
-    end
-
-    test "requires slug" do
-      attrs = %{name: "Test Workspace"}
-
-      changeset = Workspace.changeset(%Workspace{}, attrs)
-
-      assert "can't be blank" in errors_on(changeset).slug
-    end
-
-    test "validates name minimum length" do
-      attrs = %{
-        name: "",
-        slug: "test-workspace"
-      }
-
-      changeset = Workspace.changeset(%Workspace{}, attrs)
-
-      assert "can't be blank" in errors_on(changeset).name
-    end
-
-    test "allows optional description" do
-      attrs = %{
-        name: "Test Workspace",
-        slug: "test-workspace",
-        description: "A test workspace description"
-      }
-
-      changeset = Workspace.changeset(%Workspace{}, attrs)
-
-      assert changeset.valid?
-      assert Ecto.Changeset.get_change(changeset, :description) == "A test workspace description"
-    end
-
-    test "allows optional color" do
-      attrs = %{
-        name: "Test Workspace",
-        slug: "test-workspace",
-        color: "#3B82F6"
-      }
-
-      changeset = Workspace.changeset(%Workspace{}, attrs)
-
-      assert changeset.valid?
-      assert Ecto.Changeset.get_change(changeset, :color) == "#3B82F6"
-    end
-
-    test "allows optional is_archived flag" do
-      attrs = %{
-        name: "Archived Workspace",
-        slug: "archived-workspace",
-        is_archived: true
-      }
-
-      changeset = Workspace.changeset(%Workspace{}, attrs)
-
-      assert changeset.valid?
-      assert Ecto.Changeset.get_change(changeset, :is_archived) == true
+      assert workspace.name == "Test Workspace"
+      assert workspace.slug == "test-workspace"
     end
 
     test "defaults is_archived to false" do
@@ -86,44 +21,42 @@ defmodule Jarga.Workspaces.WorkspaceTest do
       assert workspace.is_archived == false
     end
 
-    test "validates slug uniqueness" do
-      # Create first workspace
-      attrs1 = %{
-        name: "Workspace 1",
-        slug: "duplicate-slug"
+    test "from_schema/1 converts schema to entity" do
+      alias Jarga.Workspaces.Infrastructure.Schemas.WorkspaceSchema
+
+      schema = %WorkspaceSchema{
+        id: "test-id",
+        name: "Test Workspace",
+        slug: "test-workspace",
+        description: "Description",
+        color: "#3B82F6",
+        is_archived: false,
+        inserted_at: ~U[2025-01-01 10:00:00Z],
+        updated_at: ~U[2025-01-01 10:00:00Z]
       }
 
-      changeset1 = Workspace.changeset(%Workspace{}, attrs1)
-      {:ok, _workspace1} = Repo.insert(changeset1)
+      entity = Workspace.from_schema(schema)
 
-      # Try to create second workspace with same slug
-      attrs2 = %{
-        name: "Workspace 2",
-        slug: "duplicate-slug"
-      }
-
-      changeset2 = Workspace.changeset(%Workspace{}, attrs2)
-      assert {:error, changeset} = Repo.insert(changeset2)
-      assert "has already been taken" in errors_on(changeset).slug
+      assert entity.id == "test-id"
+      assert entity.name == "Test Workspace"
+      assert entity.slug == "test-workspace"
+      assert entity.description == "Description"
+      assert entity.color == "#3B82F6"
+      assert entity.is_archived == false
     end
 
-    test "casts all fields correctly" do
-      attrs = %{
-        name: "Full Workspace",
-        slug: "full-workspace",
-        description: "Full description",
-        color: "#EF4444",
-        is_archived: true
-      }
+    test "validate_name/1 validates business rules" do
+      assert Workspace.validate_name("Valid Name") == :ok
+      assert Workspace.validate_name("") == {:error, :invalid_name}
+      assert Workspace.validate_name(nil) == {:error, :invalid_name}
+    end
 
-      changeset = Workspace.changeset(%Workspace{}, attrs)
+    test "archived?/1 checks archived status" do
+      archived = %Workspace{is_archived: true}
+      active = %Workspace{is_archived: false}
 
-      assert changeset.valid?
-      assert Ecto.Changeset.get_change(changeset, :name) == "Full Workspace"
-      assert Ecto.Changeset.get_change(changeset, :slug) == "full-workspace"
-      assert Ecto.Changeset.get_change(changeset, :description) == "Full description"
-      assert Ecto.Changeset.get_change(changeset, :color) == "#EF4444"
-      assert Ecto.Changeset.get_change(changeset, :is_archived) == true
+      assert Workspace.archived?(archived) == true
+      assert Workspace.archived?(active) == false
     end
   end
 end

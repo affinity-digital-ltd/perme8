@@ -9,13 +9,13 @@ defmodule Jarga.Workspaces.Infrastructure.Queries.Queries do
   import Ecto.Query, warn: false
 
   alias Jarga.Accounts.Domain.Entities.User
-  alias Jarga.Workspaces.Domain.Entities.{Workspace, WorkspaceMember}
+  alias Jarga.Workspaces.Infrastructure.Schemas.{WorkspaceSchema, WorkspaceMemberSchema}
 
   @doc """
   Base query for workspaces.
   """
   def base do
-    Workspace
+    WorkspaceSchema
   end
 
   @doc """
@@ -31,7 +31,7 @@ defmodule Jarga.Workspaces.Infrastructure.Queries.Queries do
   """
   def for_user(query \\ base(), %User{} = user) do
     from(w in query,
-      join: wm in WorkspaceMember,
+      join: wm in WorkspaceMemberSchema,
       as: :member,
       on: wm.workspace_id == w.id,
       where: wm.user_id == ^user.id
@@ -165,7 +165,7 @@ defmodule Jarga.Workspaces.Infrastructure.Queries.Queries do
 
   """
   def find_member_by_email(workspace_id, email) do
-    from(wm in WorkspaceMember,
+    from(wm in WorkspaceMemberSchema,
       where: wm.workspace_id == ^workspace_id,
       where: fragment("LOWER(?)", wm.email) == ^String.downcase(email),
       preload: [:user, :workspace]
@@ -182,7 +182,7 @@ defmodule Jarga.Workspaces.Infrastructure.Queries.Queries do
 
   """
   def list_members(workspace_id) do
-    from(wm in WorkspaceMember,
+    from(wm in WorkspaceMemberSchema,
       where: wm.workspace_id == ^workspace_id,
       order_by: [asc: wm.joined_at, asc: wm.invited_at]
     )
@@ -198,7 +198,7 @@ defmodule Jarga.Workspaces.Infrastructure.Queries.Queries do
 
   """
   def get_member(%User{} = user, workspace_id) do
-    from(wm in WorkspaceMember,
+    from(wm in WorkspaceMemberSchema,
       where: wm.workspace_id == ^workspace_id,
       where: wm.user_id == ^user.id
     )
@@ -217,7 +217,7 @@ defmodule Jarga.Workspaces.Infrastructure.Queries.Queries do
 
   """
   def find_pending_invitation(workspace_id, user_id) do
-    from(wm in WorkspaceMember,
+    from(wm in WorkspaceMemberSchema,
       where: wm.workspace_id == ^workspace_id,
       where: is_nil(wm.joined_at),
       where: wm.user_id == ^user_id or is_nil(wm.user_id)
@@ -237,7 +237,7 @@ defmodule Jarga.Workspaces.Infrastructure.Queries.Queries do
 
   """
   def find_pending_invitations_by_email(email) do
-    from(wm in WorkspaceMember,
+    from(wm in WorkspaceMemberSchema,
       where: is_nil(wm.user_id),
       where: is_nil(wm.joined_at),
       where: fragment("LOWER(?)", wm.email) == ^String.downcase(email)

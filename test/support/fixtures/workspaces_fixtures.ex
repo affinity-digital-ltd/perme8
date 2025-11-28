@@ -11,6 +11,8 @@ defmodule Jarga.WorkspacesFixtures do
     exports: []
 
   alias Jarga.Workspaces
+  alias Jarga.Workspaces.Domain.Entities.WorkspaceMember
+  alias Jarga.Workspaces.Infrastructure.Schemas.WorkspaceMemberSchema
   alias Jarga.Notifications
 
   def valid_workspace_attributes(attrs \\ %{}) do
@@ -37,7 +39,8 @@ defmodule Jarga.WorkspacesFixtures do
   def add_workspace_member_fixture(workspace_id, user, role) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-    Jarga.Repo.insert!(%Jarga.Workspaces.Domain.Entities.WorkspaceMember{
+    %WorkspaceMemberSchema{}
+    |> WorkspaceMemberSchema.changeset(%{
       workspace_id: workspace_id,
       user_id: user.id,
       email: user.email,
@@ -45,6 +48,8 @@ defmodule Jarga.WorkspacesFixtures do
       invited_at: now,
       joined_at: now
     })
+    |> Jarga.Repo.insert!()
+    |> WorkspaceMember.from_schema()
   end
 
   @doc """

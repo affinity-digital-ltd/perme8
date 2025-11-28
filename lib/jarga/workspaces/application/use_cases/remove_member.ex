@@ -17,12 +17,8 @@ defmodule Jarga.Workspaces.Application.UseCases.RemoveMember do
 
   @behaviour Jarga.Workspaces.Application.UseCases.UseCase
 
-  alias Jarga.Accounts.Domain.Entities.User
   alias Jarga.Workspaces.Domain.Entities.WorkspaceMember
   alias Jarga.Workspaces.Domain.Policies.MembershipPolicy
-  alias Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository
-  alias Jarga.Repo
-  alias Jarga.Workspaces.Domain.Entities.WorkspaceMember
   alias Jarga.Workspaces.Application.Policies.MembershipPolicy
   alias Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository
   alias Jarga.Workspaces.Infrastructure.Notifiers.EmailAndPubSubNotifier
@@ -97,19 +93,21 @@ defmodule Jarga.Workspaces.Application.UseCases.RemoveMember do
   end
 
   defp delete_member(member) do
-    Repo.delete(member)
+    MembershipRepository.delete_member(member)
   end
 
   # Notify user if they had already joined (not just a pending invitation)
   defp notify_user_if_joined(
-         %WorkspaceMember{user: user_schema, joined_at: joined_at},
+         %WorkspaceMember{user_id: user_id, joined_at: joined_at},
          workspace,
          notifier
        )
-       when not is_nil(user_schema) and not is_nil(joined_at) do
-    # Convert UserSchema to domain User before passing to notifier
-    user = User.from_schema(user_schema)
+       when not is_nil(user_id) and not is_nil(joined_at) do
+    # Fetch the user and notify (don't fail if user not found)
+    user = Jarga.Accounts.get_user!(user_id)
     notifier.notify_user_removed(user, workspace)
+  rescue
+    Ecto.NoResultsError -> :ok
   end
 
   defp notify_user_if_joined(_member, _workspace, _notifier), do: :ok

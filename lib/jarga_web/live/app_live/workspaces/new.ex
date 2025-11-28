@@ -8,7 +8,6 @@ defmodule JargaWeb.AppLive.Workspaces.New do
   import JargaWeb.ChatLive.MessageHandlers
 
   alias Jarga.Workspaces
-  alias Jarga.Workspaces.Domain.Entities.Workspace
   alias JargaWeb.Layouts
 
   @impl true
@@ -69,11 +68,11 @@ defmodule JargaWeb.AppLive.Workspaces.New do
 
   @impl true
   def mount(_params, _session, socket) do
-    changeset = Workspace.changeset(%Workspace{}, %{})
+    changeset = Workspaces.change_workspace()
 
     {:ok,
      socket
-     |> assign(:form, to_form(changeset))}
+     |> assign(:form, to_form(changeset, as: :workspace))}
   end
 
   @impl true
@@ -88,7 +87,7 @@ defmodule JargaWeb.AppLive.Workspaces.New do
          |> push_navigate(to: ~p"/app/workspaces")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply, assign(socket, form: to_form(changeset, as: :workspace))}
     end
   end
 

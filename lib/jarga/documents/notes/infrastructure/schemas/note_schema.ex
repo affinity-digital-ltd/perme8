@@ -15,7 +15,11 @@ defmodule Jarga.Documents.Notes.Infrastructure.Schemas.NoteSchema do
     field(:yjs_state, :binary)
 
     belongs_to(:user, Jarga.Accounts.Infrastructure.Schemas.UserSchema)
-    belongs_to(:workspace, Jarga.Workspaces.Domain.Entities.Workspace, type: Ecto.UUID)
+
+    belongs_to(:workspace, Jarga.Workspaces.Infrastructure.Schemas.WorkspaceSchema,
+      type: Ecto.UUID
+    )
+
     belongs_to(:project, Jarga.Projects.Infrastructure.Schemas.ProjectSchema, type: Ecto.UUID)
 
     timestamps(type: :utc_datetime)

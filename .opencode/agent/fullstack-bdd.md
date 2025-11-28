@@ -2,7 +2,6 @@
 name: fullstack-bdd
 description: Implements full-stack integration tests using Cucumber BDD that verify the entire application stack from HTTP request to HTML response, serving as executable documentation
 mode: subagent
-model: zai-coding-plan/glm-4.6
 tools:
   read: true
   write: true

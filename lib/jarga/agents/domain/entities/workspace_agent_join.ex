@@ -9,7 +9,7 @@ defmodule Jarga.Agents.Domain.Entities.WorkspaceAgentJoin do
   import Ecto.Changeset
 
   alias Jarga.Agents.Domain.Entities.Agent
-  alias Jarga.Workspaces.Domain.Entities.Workspace
+  alias Jarga.Workspaces.Infrastructure.Schemas.WorkspaceSchema
 
   @type t :: %__MODULE__{
           id: Ecto.UUID.t(),
@@ -23,7 +23,7 @@ defmodule Jarga.Agents.Domain.Entities.WorkspaceAgentJoin do
   @foreign_key_type Ecto.UUID
 
   schema "workspace_agents" do
-    belongs_to(:workspace, Workspace)
+    belongs_to(:workspace, WorkspaceSchema)
     belongs_to(:agent, Agent)
 
     timestamps(type: :utc_datetime)

@@ -8,7 +8,6 @@ defmodule JargaWeb.AppLive.Workspaces.Edit do
   import JargaWeb.ChatLive.MessageHandlers
 
   alias Jarga.Workspaces
-  alias Jarga.Workspaces.Domain.Entities.Workspace
   alias JargaWeb.Layouts
 
   @impl true
@@ -78,12 +77,12 @@ defmodule JargaWeb.AppLive.Workspaces.Edit do
 
     # This will raise if user is not a member
     workspace = Workspaces.get_workspace_by_slug!(user, workspace_slug)
-    changeset = Workspace.changeset(workspace, %{})
+    changeset = Workspaces.change_workspace(workspace)
 
     {:ok,
      socket
      |> assign(:workspace, workspace)
-     |> assign(:form, to_form(changeset))}
+     |> assign(:form, to_form(changeset, as: :workspace))}
   end
 
   @impl true
@@ -99,7 +98,7 @@ defmodule JargaWeb.AppLive.Workspaces.Edit do
          |> push_navigate(to: ~p"/app/workspaces/#{workspace.slug}")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+        {:noreply, assign(socket, form: to_form(changeset, as: :workspace))}
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, "Failed to update workspace")}

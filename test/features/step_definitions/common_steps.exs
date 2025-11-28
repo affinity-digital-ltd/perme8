@@ -93,7 +93,7 @@ defmodule CommonSteps do
     # Check if membership already exists to avoid constraint violation
     existing_member =
       Jarga.Repo.one(
-        from(m in Jarga.Workspaces.Domain.Entities.WorkspaceMember,
+        from(m in Jarga.Workspaces.Infrastructure.Schemas.WorkspaceMemberSchema,
           where: m.workspace_id == ^workspace.id and m.user_id == ^user.id
         )
       )

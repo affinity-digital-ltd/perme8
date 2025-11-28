@@ -9,18 +9,24 @@ defmodule Jarga.Workspaces do
   """
 
   # Core context - cannot depend on JargaWeb (interface layer)
-  # Exports: Main context module, shared types (Workspace), and PermissionsPolicy for use by other contexts
-  # Internal modules (WorkspaceMember, Queries, other Policies) remain private
+  # Exports: Main context module, shared types (Workspace, WorkspaceMember), schemas for queries and test fixtures, and PermissionsPolicy for use by other contexts
   use Boundary,
     top_level?: true,
     deps: [Jarga.Accounts, Jarga.Repo, Jarga.Mailer],
-    exports: [{Domain.Entities.Workspace, []}, {Application.Policies.PermissionsPolicy, []}]
+    exports: [
+      {Domain.Entities.Workspace, []},
+      {Domain.Entities.WorkspaceMember, []},
+      {Infrastructure.Schemas.WorkspaceSchema, []},
+      {Infrastructure.Schemas.WorkspaceMemberSchema, []},
+      {Application.Policies.PermissionsPolicy, []}
+    ]
 
   import Ecto.Query, warn: false
 
   alias Jarga.Repo
   alias Jarga.Accounts.Domain.Entities.User
   alias Jarga.Workspaces.Domain.Entities.{Workspace, WorkspaceMember}
+  alias Jarga.Workspaces.Infrastructure.Schemas.{WorkspaceSchema, WorkspaceMemberSchema}
   alias Jarga.Workspaces.Infrastructure.Queries.Queries
   alias Jarga.Workspaces.Domain.SlugGenerator
   alias Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository
@@ -52,6 +58,7 @@ defmodule Jarga.Workspaces do
     |> Queries.active()
     |> Queries.ordered()
     |> Repo.all()
+    |> Enum.map(&Workspace.from_schema/1)
   end
 
   @doc """
@@ -94,16 +101,20 @@ defmodule Jarga.Workspaces do
         end
       end)
 
-    %Workspace{}
-    |> Workspace.changeset(attrs_with_slug)
+    %WorkspaceSchema{}
+    |> WorkspaceSchema.changeset(attrs_with_slug)
     |> Repo.insert()
+    |> case do
+      {:ok, schema} -> {:ok, Workspace.from_schema(schema)}
+      {:error, changeset} -> {:error, changeset}
+    end
   end
 
   defp add_member_as_owner(workspace, user) do
     now = DateTime.utc_now()
 
-    %WorkspaceMember{}
-    |> WorkspaceMember.changeset(%{
+    %WorkspaceMemberSchema{}
+    |> WorkspaceMemberSchema.changeset(%{
       workspace_id: workspace.id,
       user_id: user.id,
       email: user.email,
@@ -112,6 +123,10 @@ defmodule Jarga.Workspaces do
       joined_at: now
     })
     |> Repo.insert()
+    |> case do
+      {:ok, schema} -> {:ok, WorkspaceMember.from_schema(schema)}
+      {:error, changeset} -> {:error, changeset}
+    end
   end
 
   @doc """
@@ -169,6 +184,7 @@ defmodule Jarga.Workspaces do
   def get_workspace!(%User{} = user, id) do
     Queries.for_user_by_id(user, id)
     |> Repo.one!()
+    |> Workspace.from_schema()
   end
 
   @doc """
@@ -252,6 +268,7 @@ defmodule Jarga.Workspaces do
   def get_workspace_by_slug!(%User{} = user, slug) do
     Queries.for_user_by_slug(user, slug)
     |> Repo.one!()
+    |> Workspace.from_schema()
   end
 
   @doc """
@@ -285,12 +302,14 @@ defmodule Jarga.Workspaces do
         {:ok, workspace} ->
           result =
             workspace
-            |> Workspace.changeset(attrs)
+            |> WorkspaceSchema.to_schema()
+            |> WorkspaceSchema.changeset(attrs)
             |> Repo.update()
 
           # Notify workspace members via injected notifier
           case result do
-            {:ok, updated_workspace} ->
+            {:ok, schema} ->
+              updated_workspace = Workspace.from_schema(schema)
               notifier.notify_workspace_updated(updated_workspace)
               {:ok, updated_workspace}
 
@@ -336,7 +355,13 @@ defmodule Jarga.Workspaces do
          :ok <- authorize_delete_workspace(member.role) do
       case get_workspace(user, workspace_id) do
         {:ok, workspace} ->
-          Repo.delete(workspace)
+          workspace
+          |> WorkspaceSchema.to_schema()
+          |> Repo.delete()
+          |> case do
+            {:ok, schema} -> {:ok, Workspace.from_schema(schema)}
+            {:error, changeset} -> {:error, changeset}
+          end
 
         {:error, reason} ->
           {:error, reason}
@@ -516,11 +541,12 @@ defmodule Jarga.Workspaces do
       accepted =
         Enum.map(pending_invitations, fn invitation ->
           invitation
-          |> WorkspaceMember.changeset(%{
+          |> WorkspaceMemberSchema.changeset(%{
             user_id: user.id,
             joined_at: now
           })
           |> Repo.update!()
+          |> WorkspaceMember.from_schema()
         end)
 
       {:ok, accepted}
@@ -546,22 +572,33 @@ defmodule Jarga.Workspaces do
   """
   def accept_invitation_by_workspace(workspace_id, user_id) do
     Repo.transact(fn ->
-      # Find the pending workspace_member record by workspace_id and user_id
-      case Queries.find_pending_invitation(workspace_id, user_id) |> Repo.one() do
-        nil ->
-          {:error, :invitation_not_found}
-
-        workspace_member ->
-          now = DateTime.utc_now() |> DateTime.truncate(:second)
-
-          workspace_member
-          |> WorkspaceMember.accept_invitation_changeset(%{
-            user_id: user_id,
-            joined_at: now
-          })
-          |> Repo.update()
+      case find_pending_invitation(workspace_id, user_id) do
+        {:error, reason} -> {:error, reason}
+        {:ok, workspace_member} -> accept_invitation(workspace_member, user_id)
       end
     end)
+  end
+
+  defp find_pending_invitation(workspace_id, user_id) do
+    case Queries.find_pending_invitation(workspace_id, user_id) |> Repo.one() do
+      nil -> {:error, :invitation_not_found}
+      workspace_member -> {:ok, workspace_member}
+    end
+  end
+
+  defp accept_invitation(workspace_member, user_id) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    workspace_member
+    |> WorkspaceMemberSchema.accept_invitation_changeset(%{
+      user_id: user_id,
+      joined_at: now
+    })
+    |> Repo.update()
+    |> case do
+      {:ok, schema} -> {:ok, WorkspaceMember.from_schema(schema)}
+      {:error, changeset} -> {:error, changeset}
+    end
   end
 
   @doc """
@@ -610,6 +647,9 @@ defmodule Jarga.Workspaces do
     Queries.find_pending_invitations_by_email(email)
     |> Queries.with_workspace_and_inviter()
     |> Repo.all()
+
+    # Return schemas directly to preserve workspace and inviter associations
+    # These are needed for notification creation
   end
 
   @doc """
@@ -691,5 +731,21 @@ defmodule Jarga.Workspaces do
     }
 
     RemoveMember.execute(params)
+  end
+
+  @doc """
+  Creates a changeset for a new workspace (for form validation).
+  """
+  def change_workspace do
+    WorkspaceSchema.changeset(%WorkspaceSchema{}, %{})
+  end
+
+  @doc """
+  Creates a changeset for editing a workspace (for form validation).
+  """
+  def change_workspace(%Workspace{} = workspace, attrs \\ %{}) do
+    workspace
+    |> WorkspaceSchema.to_schema()
+    |> WorkspaceSchema.changeset(attrs)
   end
 end

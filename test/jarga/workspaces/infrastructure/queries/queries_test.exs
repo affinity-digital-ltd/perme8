@@ -32,12 +32,16 @@ defmodule Jarga.Workspaces.QueriesTest do
       import Ecto.Query
 
       Repo.update_all(
-        from(w in Jarga.Workspaces.Domain.Entities.Workspace, where: w.id == ^workspace1.id),
+        from(w in Jarga.Workspaces.Infrastructure.Schemas.WorkspaceSchema,
+          where: w.id == ^workspace1.id
+        ),
         set: [inserted_at: ~U[2025-01-01 10:00:00Z]]
       )
 
       Repo.update_all(
-        from(w in Jarga.Workspaces.Domain.Entities.Workspace, where: w.id == ^workspace2.id),
+        from(w in Jarga.Workspaces.Infrastructure.Schemas.WorkspaceSchema,
+          where: w.id == ^workspace2.id
+        ),
         set: [inserted_at: ~U[2025-01-02 10:00:00Z]]
       )
 

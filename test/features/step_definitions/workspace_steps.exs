@@ -12,8 +12,8 @@ defmodule WorkspaceSteps do
   import Phoenix.ConnTest
   import Jarga.AccountsFixtures
   import Jarga.WorkspacesFixtures
-  import Ecto.Query
 
+  alias Ecto.Adapters.SQL.Sandbox
   alias Jarga.Workspaces
 
   # ============================================================================
@@ -324,7 +324,7 @@ defmodule WorkspaceSteps do
       {:ok, _workspace} ->
         # This shouldn't happen for unauthorized users, but if it does, try to access delete
         try do
-          {:ok, view, html} = live(context[:conn], ~p"/app/workspaces/#{workspace.slug}")
+          {:ok, view, _html} = live(context[:conn], ~p"/app/workspaces/#{workspace.slug}")
           # Try to trigger delete
           html =
             view
@@ -445,7 +445,7 @@ defmodule WorkspaceSteps do
   end
 
   step "I change {string}'s role to {string}", %{args: [email, new_role]} = context do
-    # Use the LiveView to trigger role change event  
+    # Use the LiveView to trigger role change event
     view = context[:view]
 
     html =
@@ -935,7 +935,7 @@ defmodule WorkspaceSteps do
 
         # Check if expected is contained in reason OR reason is contained in expected
         # This handles cases like:
-        #   reason: "cannot remove owner" 
+        #   reason: "cannot remove owner"
         #   expected: "cannot remove workspace owner"
         matches =
           String.contains?(normalized_reason, normalized_expected) or
@@ -1083,9 +1083,9 @@ defmodule WorkspaceSteps do
        %{args: [name, slug, color]} = context do
     # Only checkout sandbox if not already checked out
     unless context[:workspace] do
-      case Ecto.Adapters.SQL.Sandbox.checkout(Jarga.Repo) do
+      case Sandbox.checkout(Jarga.Repo) do
         :ok ->
-          Ecto.Adapters.SQL.Sandbox.mode(Jarga.Repo, {:shared, self()})
+          Sandbox.mode(Jarga.Repo, {:shared, self()})
 
         {:already, _owner} ->
           :ok

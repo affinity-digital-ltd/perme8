@@ -10,7 +10,7 @@ defmodule Jarga.Projects.Infrastructure.Queries.Queries do
 
   alias Jarga.Accounts.Domain.Entities.User
   alias Jarga.Projects.Infrastructure.Schemas.ProjectSchema
-  alias Jarga.Workspaces.Domain.Entities.{Workspace, WorkspaceMember}
+  alias Jarga.Workspaces.Infrastructure.Schemas.{WorkspaceSchema, WorkspaceMemberSchema}
 
   @doc """
   Base query for projects.
@@ -47,9 +47,9 @@ defmodule Jarga.Projects.Infrastructure.Queries.Queries do
   """
   def for_user(query \\ base(), %User{} = user) do
     from(p in query,
-      join: w in Workspace,
+      join: w in WorkspaceSchema,
       on: p.workspace_id == w.id,
-      join: wm in WorkspaceMember,
+      join: wm in WorkspaceMemberSchema,
       on: wm.workspace_id == w.id,
       where: wm.user_id == ^user.id
     )
