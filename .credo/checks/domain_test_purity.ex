@@ -8,7 +8,6 @@ defmodule Jarga.Credo.Check.Testing.DomainTestPurity do
   They should use `ExUnit.Case` (not `DataCase` or `ConnCase`) and run
   in milliseconds with `async: true`.
 
-  Per CLAUDE.md lines 454-467:
   ```
   1. Domain layer (Start Here):
      - Write tests first using ExUnit.Case
@@ -17,7 +16,7 @@ defmodule Jarga.Credo.Check.Testing.DomainTestPurity do
      - Tests should run in milliseconds
   ```
 
-  Per CLAUDE.md lines 512-555 (Test Organization):
+  (Test Organization):
   ```
   test/
   ├── my_app/

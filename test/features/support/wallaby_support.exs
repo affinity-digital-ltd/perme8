@@ -10,49 +10,8 @@ defmodule WallabySupport do
   use Wallaby.DSL
   import Wallaby.Query
 
-    :ok
-  end
-
-  # Ensure all Wallaby sessions are cleaned up after each feature
-  after_feature context do
-    # Kill any remaining ChromeDriver processes
-    # This is a safety net to prevent orphaned Chromium instances
-    try do
-      # More aggressive cleanup
-      System.cmd("pkill", ["-9", "-f", "chromedriver"], stderr_to_stdout: true)
-      System.cmd("pkill", ["-9", "-f", "chrome.*--remote-debugging"], stderr_to_stdout: true)
-      System.cmd("pkill", ["-9", "-f", "wallaby_chromedriver"], stderr_to_stdout: true)
-      System.cmd("pkill", ["-9", "-f", "chrome.*--test-type"], stderr_to_stdout: true)
-    rescue
-      _ -> :ok
-    end
-
-    :ok
-  end
-
-  # Final cleanup after all tests
-  after_all context do
-    # Kill any remaining ChromeDriver processes
-    try do
-      System.cmd("pkill", ["-9", "-f", "chromedriver"], stderr_to_stdout: true)
-      System.cmd("pkill", ["-9", "-f", "chrome.*--remote-debugging"], stderr_to_stdout: true)
-      System.cmd("pkill", ["-9", "-f", "wallaby_chromedriver"], stderr_to_stdout: true)
-      System.cmd("pkill", ["-9", "-f", "chrome.*--test-type"], stderr_to_stdout: true)
-      # Wait for processes to fully terminate
-      Process.sleep(1000)
-    rescue
-      _ -> :ok
-    end
-
-    # Also try to end any existing sessions
-    try do
-      Wallaby.end_session(nil)
-    rescue
-      _ -> :ok
-    end
-
-    :ok
-  end
+  # NOTE: after_feature and after_all hooks are not supported by Cucumber.Hooks
+  # Cleanup is handled by after_scenario hook instead
 
   # Set up Ecto Sandbox and browser session for @javascript scenarios
   before_scenario "@javascript", context do

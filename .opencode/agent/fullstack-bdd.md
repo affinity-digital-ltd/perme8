@@ -625,6 +625,7 @@ mcp__context7__get-library-docs("/elixir-wallaby/wallaby")
 - **Routes must match** - Check `router.ex` for exact patterns
 - **Schema fields must match** - Use actual Ecto schema field names
 - **PubSub testing** - Subscribe BEFORE action, verify message format matches notifier code
+- **NO BRANCHING in step definitions** - Run `mix step_linter` to check
 
 ## PubSub Testing Quick Tips
 
@@ -637,6 +638,93 @@ When testing real-time features with Phoenix PubSub:
 5. **Match tuple format**: `{:event_name, arg1, arg2}` not `{:event_name, %{...}}`
 
 See `docs/prompts/architect/PUBSUB_TESTING_GUIDE.md` for complete examples and patterns.
+
+## Step Definition Linter
+
+A linter is available to detect problematic patterns in step definitions that cause flaky tests, invalid tests, or silent failures.
+
+### Usage
+
+```bash
+# Lint all step definitions
+mix step_linter
+
+# Lint specific file
+mix step_linter test/features/step_definitions/document_steps.exs
+
+# Run specific rule only
+mix step_linter --rule no_branching
+
+# JSON output for tooling
+mix step_linter --format json
+```
+
+### Rules
+
+#### `no_branching` (Error)
+
+**No branching allowed in step definitions.** Steps with `if`/`case`/`cond` that check context state cause:
+
+- **Flaky tests** - Different behavior based on hidden state
+- **Silent failures** - Some branches may not assert properly
+- **Hidden logic** - Test behavior not visible in feature file
+
+**Bad - Context-dependent branching:**
+
+```elixir
+step "I confirm deletion", context do
+  cond do
+    context[:workspace] -> delete_workspace(context)
+    context[:document] -> delete_document(context)
+    true -> flunk("No deletion context")
+  end
+end
+```
+
+**Good - Separate step definitions:**
+
+```elixir
+step "I confirm workspace deletion", context do
+  delete_workspace(context)
+end
+
+step "I confirm document deletion", context do
+  delete_document(context)
+end
+```
+
+**Acceptable branching** (not flagged):
+
+- `case` on function return values: `case Documents.create(...) do {:ok, doc} -> ... end`
+- `with` statements for pattern matching on results
+- Branching that doesn't check `context[:key]`
+
+### Adding New Rules
+
+To add a new linting rule:
+
+1. Create a module in `lib/mix/tasks/step_linter/rules/` implementing the `Mix.Tasks.StepLinter.Rule` behaviour:
+
+```elixir
+defmodule Mix.Tasks.StepLinter.Rules.MyRule do
+  @behaviour Mix.Tasks.StepLinter.Rule
+
+  @impl true
+  def name, do: "my_rule"
+
+  @impl true
+  def description, do: "Checks for something specific"
+
+  @impl true
+  def check(%{body_ast: body_ast, pattern: pattern, line: line}) do
+    # Analyze body_ast and return list of issues
+    # Each issue is a map with: rule, message, severity, line, details
+    []
+  end
+end
+```
+
+2. Add the module to `@rules` list in `lib/mix/tasks/step_linter/rule_runner.ex`
 
 ---
 

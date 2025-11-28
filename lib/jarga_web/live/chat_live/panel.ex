@@ -110,9 +110,19 @@ defmodule JargaWeb.ChatLive.Panel do
   end
 
   # Auto-selects the first agent if no agent is currently selected
+  # Also persists the selection to user preferences
   defp auto_select_first_agent(socket, agents) do
     if socket.assigns.selected_agent_id == nil && !Enum.empty?(agents) do
       [first_agent | _] = agents
+
+      # Persist auto-selection to user preferences
+      workspace_id = get_nested(socket.assigns, [:current_workspace, :id])
+      current_user = get_nested(socket.assigns, [:current_user])
+
+      if workspace_id && current_user do
+        Jarga.Accounts.set_selected_agent_id(current_user.id, workspace_id, first_agent.id)
+      end
+
       assign(socket, :selected_agent_id, first_agent.id)
     else
       socket

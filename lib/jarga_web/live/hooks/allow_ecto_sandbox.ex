@@ -36,10 +36,14 @@ defmodule JargaWeb.Live.Hooks.AllowEctoSandbox do
   # The Phoenix.Ecto.SQL.Sandbox plug sets this header
   defp get_sandbox_metadata(socket) do
     if connected?(socket) do
-      case List.keyfind(get_connect_info(socket, :x_headers), "x-session-id", 0) do
+      x_headers = get_connect_info(socket, :x_headers) || []
+
+      case List.keyfind(x_headers, "x-session-id", 0) do
         {_, metadata} -> metadata
         nil -> nil
       end
+    else
+      nil
     end
   end
 end

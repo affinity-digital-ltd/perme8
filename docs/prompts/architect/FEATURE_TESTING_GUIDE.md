@@ -21,16 +21,19 @@ Feature tests in Jarga are **full-stack integration tests** that verify the enti
 **Purpose**: Business-facing acceptance tests written in Gherkin
 
 **When to use**:
+
 - Complex user workflows
 - Permission matrices
 - Multi-step business processes
 - Documentation of business requirements
 
 **Technology**:
+
 - Non-JavaScript scenarios: `ConnCase` + `Phoenix.LiveViewTest`
 - JavaScript scenarios: `Wallaby` (browser automation)
 
 **Example**:
+
 ```gherkin
 Scenario: Member creates a document in workspace
   Given I am logged in as "charlie@example.com"
@@ -44,18 +47,21 @@ Scenario: Member creates a document in workspace
 **Purpose**: Technical integration tests for complex UI interactions
 
 **When to use**:
+
 - Rich text editor features (undo/redo, markdown)
 - Real-time collaboration
 - Complex UI state machines
 - Performance-sensitive interactions
 
-**Technology**: 
+**Technology**:
+
 - Always use `Wallaby` for these (they need real browser)
-- Tagged with `@tag :wallaby`
+- Tagged with `@tag :javascript`
 
 **Example**:
+
 ```elixir
-@tag :wallaby
+@tag :javascript
 test "undo and redo in editor", %{session: session} do
   session
   |> visit("/app/workspace/document")
@@ -77,14 +83,14 @@ Step definitions live in `test/features/step_definitions/*_steps.exs`:
 defmodule DocumentSteps do
   use Cucumber.StepDefinition  # New API (v0.4+)
   use JargaWeb.ConnCase        # For non-JavaScript scenarios
-  
+
   import Phoenix.LiveViewTest
-  
+
   # Steps use `step "pattern", %{args: [...]} = context do`
   step "I am logged in as {string}", %{args: [email]} = context do
     user = get_user_by_email(email)
     conn = build_conn() |> log_in_user(user)
-    
+
     {:ok, context |> Map.put(:conn, conn) |> Map.put(:user, user)}
   end
 end
@@ -93,20 +99,22 @@ end
 ### Step Definition Syntax
 
 **Pattern Matching**:
+
 - `{string}` - Matches quoted strings: `"hello"`
 - `{int}` - Matches integers: `42`
 - `{float}` - Matches floats: `3.14`
 - `{word}` - Matches single word: `admin`
 
 **Context Parameter**:
+
 ```elixir
 step "I create a document with title {string}", %{args: [title]} = context do
   # args[0] contains the matched string
   # context contains state from previous steps
-  
+
   user = context[:current_user]
   conn = context[:conn]
-  
+
   # Return updated context
   {:ok, Map.put(context, :document, document)}
 end
@@ -115,38 +123,40 @@ end
 ### ConnCase vs Wallaby
 
 **Use ConnCase** (default):
+
 ```elixir
 defmodule MySteps do
   use Cucumber.StepDefinition
   use JargaWeb.ConnCase
-  
+
   import Phoenix.LiveViewTest
-  
+
   step "I click {string}", %{args: [button_text]} = context do
     {:ok, view, _html} = live(context[:conn], ~p"/app/documents")
-    
+
     html = view
     |> element("button", button_text)
     |> render_click()
-    
+
     {:ok, Map.put(context, :last_html, html)}
   end
 end
 ```
 
 **Use Wallaby** (only for @javascript):
+
 ```elixir
 defmodule CollaborationSteps do
   use Cucumber.StepDefinition
   use JargaWeb.FeatureCase
-  
+
   step "I type in the editor", context do
     session = context[:session]
-    
+
     session
     |> fill_in(Query.css("#editor"), with: "Hello")
     |> assert_has(Query.css("#editor", text: "Hello"))
-    
+
     {:ok, context}
   end
 end
@@ -178,7 +188,7 @@ step "the following documents exist in workspace {string}:",
      %{args: [workspace_slug]} = context do
   workspace = context[:workspace]
   users = context[:users]
-  
+
   # Access data table using dot notation
   table_data = context.datatable.maps
   # Returns: [
@@ -186,18 +196,18 @@ step "the following documents exist in workspace {string}:",
   #   %{"Title" => "Private Notes", "Owner" => "alice@example.com", "Visibility" => "Private"},
   #   ...
   # ]
-  
+
   # Process each row
   documents =
     Enum.map(table_data, fn row ->
       owner = users[row["Owner"]]
-      
+
       document_fixture(owner, workspace, nil, %{
         title: row["Title"],
         is_public: row["Visibility"] == "Public"
       })
     end)
-  
+
   # Return context directly (no {:ok, }) for data table steps
   Map.put(context, :documents, documents)
 end
@@ -252,6 +262,7 @@ end
 ### Always Assert on HTML
 
 **❌ WRONG - Backend only**:
+
 ```elixir
 step "the document should be created", context do
   assert context[:document] != nil
@@ -260,16 +271,17 @@ end
 ```
 
 **✅ RIGHT - Full stack**:
+
 ```elixir
 step "the document should be created", context do
   # Check database
   assert context[:document] != nil
-  
+
   # Check HTML rendering
   html = context[:last_html]
   assert html =~ context[:document].title
   assert html =~ "Document created successfully"
-  
+
   {:ok, context}
 end
 ```
@@ -281,26 +293,27 @@ When testing titles or content with special characters (`&`, `<`, `>`, quotes), 
 ```elixir
 step "I create a document with title {string}", %{args: [title]} = context do
   # title = "Product & Services (2024)"
-  
+
   result = Documents.create_document(user, workspace.id, %{title: title})
-  
+
   case result do
     {:ok, document} ->
       {:ok, _view, html} = live(conn, ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
-      
-      # ❌ WRONG - Won't find "Product & Services (2024)" 
+
+      # ❌ WRONG - Won't find "Product & Services (2024)"
       # assert html =~ title
-      
+
       # ✅ RIGHT - Encode special characters for HTML
       html_encoded_title = Phoenix.HTML.html_escape(title) |> Phoenix.HTML.safe_to_string()
       assert html =~ html_encoded_title  # Matches "Product &amp; Services (2024)"
-      
+
       {:ok, Map.put(context, :document, document)}
   end
 end
 ```
 
 **Common HTML Entities**:
+
 - `&` becomes `&amp;`
 - `<` becomes `&lt;`
 - `>` becomes `&gt;`
@@ -310,55 +323,59 @@ end
 ### LiveView Testing Patterns
 
 **Mount and render**:
+
 ```elixir
 step "I view the document list", context do
   {:ok, view, html} = live(context[:conn], ~p"/app/workspaces/#{context[:workspace].slug}/documents")
-  
+
   assert html =~ "Documents"
-  
+
   {:ok, context |> Map.put(:view, view) |> Map.put(:last_html, html)}
 end
 ```
 
 **Click buttons**:
+
 ```elixir
 step "I click {string}", %{args: [button_text]} = context do
   html = context[:view]
   |> element("button", button_text)
   |> render_click()
-  
+
   assert html =~ "Create Document"
-  
+
   {:ok, Map.put(context, :last_html, html)}
 end
 ```
 
 **Submit forms**:
+
 ```elixir
 step "I submit the document form", context do
   document = context[:document]
-  
+
   html = context[:view]
   |> form("#document-form", document: %{title: document.title})
   |> render_submit()
-  
+
   assert html =~ "Document created"
-  
+
   {:ok, Map.put(context, :last_html, html)}
 end
 ```
 
 **Navigate to LiveView routes**:
+
 ```elixir
-step "I view document {string} in workspace {string}", 
+step "I view document {string} in workspace {string}",
      %{args: [title, workspace_slug]} = context do
   workspace = context[:workspace]
   document = context[:document]
-  
+
   # Use verified route helper with full path
-  {:ok, view, html} = 
+  {:ok, view, html} =
     live(context[:conn], ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
-  
+
   {:ok, context |> Map.put(:view, view) |> Map.put(:last_html, html)}
 end
 ```
@@ -366,31 +383,33 @@ end
 ### Wallaby Testing Patterns
 
 **Navigate and interact**:
+
 ```elixir
-@tag :wallaby
+@tag :javascript
 defwhen ~r/^I navigate to documents$/, _vars, state do
   session = state[:session]
-  
+
   session
   |> visit("/app/documents")
   |> assert_has(Query.text("Documents"))
-  
+
   {:ok, state}
 end
 ```
 
 **Fill forms**:
+
 ```elixir
-@tag :wallaby
+@tag :javascript
 defwhen ~r/^I create a document$/, _vars, state do
   session = state[:session]
-  
+
   session
   |> click(Query.button("New Document"))
   |> fill_in(Query.text_field("Title"), with: "My Doc")
   |> click(Query.button("Create"))
   |> assert_has(Query.text("Document created"))
-  
+
   {:ok, state}
 end
 ```
@@ -400,6 +419,7 @@ end
 ### Setup Mocks
 
 In `test/test_helper.exs`:
+
 ```elixir
 Mox.defmock(Jarga.LlmClientMock, for: Jarga.LlmClientBehaviour)
 ```
@@ -411,7 +431,7 @@ defgiven ~r/^the AI service is available$/, _vars, state do
   Mox.expect(Jarga.LlmClientMock, :complete, fn _prompt ->
     {:ok, "AI generated response"}
   end)
-  
+
   {:ok, state}
 end
 ```
@@ -419,12 +439,14 @@ end
 ### What to Mock
 
 **Mock**:
+
 - LLM APIs (OpenAI, Anthropic)
 - Payment providers (Stripe)
 - Email services (SendGrid, Postmark)
 - External APIs (GitHub, Slack)
 
 **Don't Mock**:
+
 - Database (use real DB with Ecto Sandbox)
 - Phoenix framework (use real LiveView/conn)
 - Internal application code (test real implementations)
@@ -438,7 +460,7 @@ Cucumber maintains state between steps in a context map that flows through all s
 step "I am logged in as {string}", %{args: [email]} = _context do
   user = user_fixture(%{email: email})
   conn = build_conn() |> log_in_user(user)
-  
+
   {:ok, %{user: user, current_user: user, conn: conn}}
 end
 
@@ -447,7 +469,7 @@ step "I create a document with title {string}", %{args: [title]} = context do
   conn = context[:conn]        # Get conn from previous step
   user = context[:current_user] # Get user from previous step
   workspace = context[:workspace]
-  
+
   result = Documents.create_document(user, workspace.id, %{title: title})
   # ... rest of step
 end
@@ -455,7 +477,7 @@ end
 # Update context for next steps
 step "the document should be created", context do
   document = context[:document]
-  
+
   {:ok, Map.put(context, :document_created, true)}
 end
 ```
@@ -463,6 +485,7 @@ end
 ### Context Conventions
 
 **Standard keys**:
+
 - `context[:conn]` - Current Phoenix connection
 - `context[:current_user]` - Currently logged in user
 - `context[:users]` - Map of all users by email: `%{"alice@example.com" => %User{}}`
@@ -476,6 +499,7 @@ end
 - `context[:session]` - Wallaby session (for `@javascript` scenarios)
 
 **Data table keys**:
+
 - `context.datatable` - Data table from step (use dot notation, not bracket)
 - `context.datatable.maps` - Rows as list of maps
 - `context.datatable.headers` - Column headers
@@ -497,11 +521,11 @@ step "a workspace exists with name {string} and slug {string}",
   # First step in Background - checkout sandbox
   :ok = Ecto.Adapters.SQL.Sandbox.checkout(Jarga.Repo)
   Ecto.Adapters.SQL.Sandbox.mode(Jarga.Repo, {:shared, self()})
-  
+
   # Now safe to access database
   owner = user_fixture()
   workspace = workspace_fixture(owner, %{name: name, slug: slug})
-  
+
   {:ok, %{workspace: workspace, workspace_owner: owner}}
 end
 ```
@@ -514,7 +538,7 @@ Cucumber hooks run **after** Background steps, so they can't set up the sandbox:
 # In test/features/support/hooks.exs
 defmodule CucumberHooks do
   use Cucumber.Hooks
-  
+
   before_scenario context do
     # This runs AFTER Background, so check if already checked out
     case Sandbox.checkout(Jarga.Repo) do
@@ -524,7 +548,7 @@ defmodule CucumberHooks do
         # Background already checked out - this is normal
         :ok
     end
-    
+
     {:ok, context}
   end
 end
@@ -551,21 +575,21 @@ Scenario: Create document
 step "I should receive a forbidden error", context do
   # Check the result
   case context[:last_result] do
-    {:error, :forbidden} -> 
+    {:error, :forbidden} ->
       {:ok, context}
-    _ -> 
+    _ ->
       flunk("Expected {:error, :forbidden}, got: #{inspect(context[:last_result])}")
   end
 end
 
 step "I should see an error message", context do
   html = context[:last_html]
-  
+
   # Verify error message is displayed to user
-  assert html =~ "You don't have permission" or 
+  assert html =~ "You don't have permission" or
          html =~ "Access denied" or
          html =~ "error"
-  
+
   {:ok, context}
 end
 ```
@@ -576,12 +600,12 @@ end
 step "I attempt to view document {string}", %{args: [title]} = context do
   workspace = context[:workspace]
   document = context[:document]
-  
+
   # Try to access - may raise or redirect
   try do
-    {:ok, _view, html} = 
+    {:ok, _view, html} =
       live(context[:conn], ~p"/app/workspaces/#{workspace.slug}/documents/#{document.slug}")
-    
+
     {:ok, Map.put(context, :last_html, html) |> Map.put(:last_error, nil)}
   rescue
     error ->
@@ -652,11 +676,11 @@ defthen ~r/^document exists$/, _vars, state do
   # Backend check
   document = Documents.get_document(id)
   assert document != nil
-  
+
   # Frontend check
   {:ok, _view, html} = live(state[:conn], ~p"/documents")
   assert html =~ document.title
-  
+
   {:ok, Map.put(state, :document, document)}
 end
 ```
@@ -665,7 +689,7 @@ end
 
 ```elixir
 # WRONG - Wallaby for simple form submission
-@tag :wallaby
+@tag :javascript
 defwhen ~r/^I submit form$/, _vars, state do
   session = state[:session]
   session |> click(Query.button("Submit"))
@@ -681,7 +705,7 @@ defwhen ~r/^I submit form$/, _vars, state do
   html = state[:view]
   |> form("#my-form")
   |> render_submit()
-  
+
   {:ok, Map.put(state, :html, html)}
 end
 ```
@@ -711,51 +735,51 @@ Step definitions:
 defmodule DocumentSteps do
   use Cucumber.StepDefinition  # New API
   use JargaWeb.ConnCase
-  
+
   import Phoenix.LiveViewTest
-  
+
   step "I am logged in as {string}", %{args: [email]} = _context do
     user = user_fixture(%{email: email})
     conn = build_conn() |> log_in_user(user)
     {:ok, %{conn: conn, current_user: user}}
   end
-  
+
   step "a workspace {string} exists", %{args: [name]} = context do
     workspace = workspace_fixture(%{name: name})
     {:ok, Map.put(context, :workspace, workspace)}
   end
-  
+
   step "I visit the documents page", context do
     workspace = context[:workspace]
     {:ok, view, html} = live(context[:conn], ~p"/app/workspaces/#{workspace.slug}/documents")
-    
+
     assert html =~ "Documents"
-    
+
     {:ok, context |> Map.put(:view, view) |> Map.put(:last_html, html)}
   end
-  
+
   step "I click {string}", %{args: [text]} = context do
     html = context[:view]
     |> element("button", text)
     |> render_click()
-    
+
     {:ok, Map.put(context, :last_html, html)}
   end
-  
+
   step "I fill in title with {string}", %{args: [value]} = context do
     # Store for later form submission
     attrs = Map.get(context, :form_attrs, %{})
     {:ok, Map.put(context, :form_attrs, Map.put(attrs, :title, value))}
   end
-  
+
   step "I submit the form", context do
     html = context[:view]
     |> form("#document-form", document: context[:form_attrs])
     |> render_submit()
-    
+
     {:ok, Map.put(context, :last_html, html)}
   end
-  
+
   step "I should see {string}", %{args: [text]} = context do
     # HTML-encode the text to match rendered output
     html_text = Phoenix.HTML.html_escape(text) |> Phoenix.HTML.safe_to_string()
@@ -834,7 +858,7 @@ step "a workspace exists with name {string}", %{args: [name]} = _context do
   # First step - checkout sandbox
   :ok = Ecto.Adapters.SQL.Sandbox.checkout(Jarga.Repo)
   Ecto.Adapters.SQL.Sandbox.mode(Jarga.Repo, {:shared, self()})
-  
+
   # Now safe to query
   workspace = workspace_fixture(%{name: name})
   {:ok, %{workspace: workspace}}
@@ -861,26 +885,31 @@ end
 ## Running Tests
 
 ### All Feature Tests
+
 ```bash
 mix test test/features/
 ```
 
 ### Specific Feature
+
 ```bash
 mix test test/features/documents.feature
 ```
 
 ### Specific Scenario (by line number)
+
 ```bash
 mix test test/features/documents.feature:16
 ```
 
 ### Include JavaScript Tests
+
 ```bash
 mix test --include wallaby test/features/
 ```
 
 ### Watch Mode
+
 ```bash
 mix test.watch test/features/
 ```

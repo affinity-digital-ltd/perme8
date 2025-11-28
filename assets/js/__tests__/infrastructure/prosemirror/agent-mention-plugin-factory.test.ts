@@ -161,7 +161,7 @@ describe('Agent Mention Plugin - Command Detection', () => {
     view.dom.dispatchEvent(event)
 
     // Should replace with agent_response node
-    const nodes = []
+    const nodes: string[] = []
     view.state.doc.descendants((node) => {
       nodes.push(node.type.name)
     })

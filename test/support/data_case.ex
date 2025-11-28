@@ -16,7 +16,10 @@ defmodule Jarga.DataCase do
 
   # Test support module - top-level boundary for test infrastructure
   # Needs access to Jarga.Notifications for integration test setup
-  use Boundary, top_level?: true, deps: [Jarga.Repo, Jarga.Notifications], exports: []
+  use Boundary,
+    top_level?: true,
+    deps: [Jarga.Repo, Jarga.Notifications, Jarga.Test.SandboxHelper],
+    exports: []
 
   use ExUnit.CaseTemplate
 
@@ -73,7 +76,7 @@ defmodule Jarga.DataCase do
       end
 
     # Allow the subscriber to access the database
-    Sandbox.allow(Jarga.Repo, self(), subscriber_pid)
+    Jarga.Test.SandboxHelper.allow_process(subscriber_pid)
 
     # Restore original config on test exit
     on_exit(fn ->

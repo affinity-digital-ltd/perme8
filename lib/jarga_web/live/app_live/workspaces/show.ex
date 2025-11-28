@@ -680,6 +680,17 @@ defmodule JargaWeb.AppLive.Workspaces.Show do
   end
 
   @impl true
+  def handle_event("select_agent", %{"agent_id" => agent_id}, socket) do
+    # Forward agent selection to the chat panel component
+    send_update(JargaWeb.ChatLive.Panel,
+      id: "global-chat-panel",
+      selected_agent_id: agent_id
+    )
+
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event("show_document_modal", _params, socket) do
     {:noreply, assign(socket, show_document_modal: true)}
   end

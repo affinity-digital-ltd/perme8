@@ -76,6 +76,39 @@ defmodule JargaWeb.ChatLive.MessageHandlers do
       end
 
       @impl true
+      def handle_info({:llm_done, full_response}, socket) do
+        # Test helper message - equivalent to :done
+        Phoenix.LiveView.send_update(JargaWeb.ChatLive.Panel,
+          id: "global-chat-panel",
+          done: full_response
+        )
+
+        {:noreply, socket}
+      end
+
+      @impl true
+      def handle_info({:llm_chunk, chunk}, socket) do
+        # Test helper message - equivalent to :chunk
+        Phoenix.LiveView.send_update(JargaWeb.ChatLive.Panel,
+          id: "global-chat-panel",
+          chunk: chunk
+        )
+
+        {:noreply, socket}
+      end
+
+      @impl true
+      def handle_info({:llm_error, reason}, socket) do
+        # Test helper message - equivalent to :error
+        Phoenix.LiveView.send_update(JargaWeb.ChatLive.Panel,
+          id: "global-chat-panel",
+          error: reason
+        )
+
+        {:noreply, socket}
+      end
+
+      @impl true
       def handle_info({:new_notification, _notification}, socket) do
         # Notification received - update the NotificationBell LiveComponent
         Phoenix.LiveView.send_update(JargaWeb.NotificationsLive.NotificationBell,

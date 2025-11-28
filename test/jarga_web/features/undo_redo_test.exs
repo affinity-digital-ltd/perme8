@@ -110,6 +110,7 @@ defmodule JargaWeb.Features.UndoRedoTest do
     end
 
     @tag :javascript
+    @tag :fix11
     test "undo does not affect other users' undo stacks", %{
       session: session_a,
       user_a: user_a,

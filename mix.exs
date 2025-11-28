@@ -77,7 +77,9 @@ defmodule Jarga.MixProject do
             {:mix, :relaxed}
           ]
         ]
-      ]
+      ],
+      # Ignore test helper modules from boundary checks
+      ignore: [~r/\.Test\./]
     ]
   end
 

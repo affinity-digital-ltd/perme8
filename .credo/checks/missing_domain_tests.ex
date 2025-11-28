@@ -4,13 +4,12 @@ defmodule Jarga.Credo.Check.Testing.MissingDomainTests do
 
   ## TDD Principle Violation
 
-  Per CLAUDE.md: "Always write tests BEFORE implementation code."
+  "Always write tests BEFORE implementation code."
 
   Domain layer modules contain pure business logic and should be the most
   thoroughly tested part of your application. These are the fastest tests
   to run (no database, no I/O) and provide the foundation of the test pyramid.
 
-  Per CLAUDE.md lines 454-467:
   ```
   1. Domain layer (Start Here):
      - Write tests first using ExUnit.Case
@@ -139,7 +138,7 @@ defmodule Jarga.Credo.Check.Testing.MissingDomainTests do
         "Domain module missing test coverage (#{module_type}). " <>
           "Create test file: #{test_path}. " <>
           "Domain tests should be pure ExUnit.Case tests with no database access. " <>
-          "Write tests FIRST following TDD (CLAUDE.md). " <>
+          "Write tests FIRST following TDD (AGENTS.md). " <>
           "Domain tests are the fastest and most important layer of the test pyramid.",
       filename: source_path,
       line_no: 1,

@@ -8,7 +8,6 @@ defmodule JargaWeb.AppLive.Documents.Show do
   import JargaWeb.ChatLive.MessageHandlers
 
   alias Jarga.{Documents, Notes, Workspaces, Projects, Agents}
-  alias Ecto.Adapters.SQL.Sandbox
 
   @impl true
   def mount(
@@ -84,19 +83,13 @@ defmodule JargaWeb.AppLive.Documents.Show do
     # 2. Send to debouncer for eventual database save (server-side debouncing)
     complete_state_binary = Base.decode64!(complete_state)
 
-    debouncer_pid =
-      JargaWeb.DocumentSaveDebouncer.request_save(
-        document.id,
-        current_user,
-        note.id,
-        complete_state_binary,
-        markdown
-      )
-
-    # In test mode, allow the debouncer to access the database
-    if Application.get_env(:jarga, :sql_sandbox) && debouncer_pid do
-      Sandbox.allow(Jarga.Repo, self(), debouncer_pid)
-    end
+    JargaWeb.DocumentSaveDebouncer.request_save(
+      document.id,
+      current_user,
+      note.id,
+      complete_state_binary,
+      markdown
+    )
 
     # 3. Update socket assigns with latest state so get_current_yjs_state returns fresh data
     # This prevents false "out of sync" warnings before the debouncer saves to DB

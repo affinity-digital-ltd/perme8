@@ -14,7 +14,8 @@ defmodule JargaWeb.FeatureCase do
       Jarga.Workspaces,
       Jarga.Projects,
       Jarga.Documents,
-      Jarga.TestUsers
+      Jarga.TestUsers,
+      Jarga.Test.SandboxHelper
     ],
     exports: []
 
@@ -43,18 +44,45 @@ defmodule JargaWeb.FeatureCase do
     end
   end
 
-  setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Jarga.Repo)
-
-    unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Jarga.Repo, {:shared, self()})
-    end
+  setup _tags do
+    Jarga.Test.SandboxHelper.setup_test_sandbox()
 
     # Ensure test users exist (idempotent)
     Jarga.TestUsers.ensure_test_users_exist()
 
+    # Allow the DocumentSaveDebouncerSupervisor and its children to access the sandbox
+    # The supervisor spawns DocumentSaveDebouncer processes dynamically during tests
+    allow_debouncer_supervisor()
+
     metadata = Phoenix.Ecto.SQL.Sandbox.metadata_for(Jarga.Repo, self())
     {:ok, session} = Wallaby.start_session(metadata: metadata)
+
+    # Periodically allow any new debouncer processes that get spawned
+    # This handles the case where DocumentSaveDebouncer processes are created
+    # during the test execution (e.g., when editing a document)
+    task_pid = spawn_link(fn -> periodically_allow_debouncers() end)
+
+    on_exit(fn ->
+      # Clean up the periodic task
+      if Process.alive?(task_pid), do: Process.exit(task_pid, :normal)
+    end)
+
     {:ok, session: session}
+  end
+
+  defp allow_debouncer_supervisor do
+    case Process.whereis(JargaWeb.DocumentSaveDebouncerSupervisor) do
+      nil -> :ok
+      pid -> Jarga.Test.SandboxHelper.allow_process_with_children(pid)
+    end
+  end
+
+  defp periodically_allow_debouncers do
+    # Allow the supervisor and all its current children
+    allow_debouncer_supervisor()
+
+    # Wait a bit and repeat
+    Process.sleep(100)
+    periodically_allow_debouncers()
   end
 end
