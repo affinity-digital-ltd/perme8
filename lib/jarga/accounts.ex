@@ -22,25 +22,35 @@ defmodule Jarga.Accounts do
   - `UseCases.DeliverLoginInstructions` - Magic link email delivery
   - `UseCases.DeliverUserUpdateEmailInstructions` - Email change verification
 
+  - `UseCases.CreateApiKey` - API key creation with token generation
+  - `UseCases.ListApiKeys` - List user's API keys
+  - `UseCases.UpdateApiKey` - Update API key properties
+  - `UseCases.RevokeApiKey` - Deactivate API key
+  - `UseCases.VerifyApiKey` - Verify API key token
+
   ## Domain Policies
 
   - `AuthenticationPolicy` - Authentication business rules (sudo mode)
   - `TokenPolicy` - Token expiration and validity rules
+  - `ApiKeyPolicy` - API key ownership and management permissions
+  - `WorkspaceAccessPolicy` - Workspace access validation for API keys
   """
 
   # Core context - cannot depend on JargaWeb (interface layer)
-  # Exports: Main context module and shared types (User, Scope)
+  # Exports: Main context module and shared types (User, Scope, ApiKey)
   # Internal modules (UserToken, UserNotifier) remain private
   use Boundary,
     top_level?: true,
-    deps: [Jarga.Repo, Jarga.Mailer],
+    deps: [Jarga.Repo, Jarga.Mailer, Jarga.Workspaces],
     exports: [
       {Domain.Entities.User, []},
+      {Domain.Entities.ApiKey, []},
       {Domain.Scope, []},
       {Application.Services.PasswordService, []},
       {Domain.Services.TokenBuilder, []},
       {Infrastructure.Schemas.UserSchema, []},
-      {Infrastructure.Schemas.UserTokenSchema, []}
+      {Infrastructure.Schemas.UserTokenSchema, []},
+      {Infrastructure.Schemas.ApiKeySchema, []}
     ]
 
   import Ecto.Query, warn: false
@@ -322,5 +332,101 @@ defmodule Jarga.Accounts do
           {:error, changeset} -> {:error, changeset}
         end
     end
+  end
+
+  ## API Keys
+
+  @doc """
+  Creates a new API key for the user.
+
+  ## Parameters
+
+    - `user_id` - The user ID to create the API key for
+    - `attrs` - Map with API key attributes (name, description, workspace_access)
+
+  ## Returns
+
+    `{:ok, {api_key, plain_token}}` on success - plain token shown only once
+    `{:error, :forbidden}` if user doesn't have access to specified workspaces
+
+  """
+  def create_api_key(user_id, attrs) when is_binary(user_id) and is_map(attrs) do
+    UseCases.CreateApiKey.execute(user_id, attrs)
+  end
+
+  @doc """
+  Lists API keys for a user.
+
+  ## Parameters
+
+    - `user_id` - The user ID to list API keys for
+    - `opts` - Options (is_active: true/false/nil to filter by status)
+
+  ## Returns
+
+    `{:ok, api_keys}` on success
+
+  """
+  def list_api_keys(user_id, opts \\ []) when is_binary(user_id) do
+    UseCases.ListApiKeys.execute(user_id, opts)
+  end
+
+  @doc """
+  Updates an existing API key.
+
+  ## Parameters
+
+    - `user_id` - The user ID performing the update
+    - `api_key_id` - The API key ID to update
+    - `attrs` - Map with fields to update (name, description, workspace_access)
+
+  ## Returns
+
+    `{:ok, api_key}` on success
+    `{:error, :not_found}` if API key doesn't exist
+    `{:error, :forbidden}` if user doesn't own the API key or lacks workspace access
+
+  """
+  def update_api_key(user_id, api_key_id, attrs)
+      when is_binary(user_id) and is_binary(api_key_id) and is_map(attrs) do
+    UseCases.UpdateApiKey.execute(user_id, api_key_id, attrs)
+  end
+
+  @doc """
+  Revokes (deactivates) an API key.
+
+  ## Parameters
+
+    - `user_id` - The user ID performing the revoke
+    - `api_key_id` - The API key ID to revoke
+
+  ## Returns
+
+    `{:ok, api_key}` on success
+    `{:error, :not_found}` if API key doesn't exist
+    `{:error, :forbidden}` if user doesn't own the API key
+
+  """
+  def revoke_api_key(user_id, api_key_id)
+      when is_binary(user_id) and is_binary(api_key_id) do
+    UseCases.RevokeApiKey.execute(user_id, api_key_id)
+  end
+
+  @doc """
+  Verifies an API key token.
+
+  ## Parameters
+
+    - `plain_token` - The plain API key token to verify
+
+  ## Returns
+
+    `{:ok, api_key}` on success
+    `{:error, :invalid}` if token doesn't match or key doesn't exist
+    `{:error, :inactive}` if key exists but is inactive
+
+  """
+  def verify_api_key(plain_token) when is_binary(plain_token) do
+    UseCases.VerifyApiKey.execute(plain_token)
   end
 end

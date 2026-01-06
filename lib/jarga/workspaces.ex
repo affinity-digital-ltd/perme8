@@ -402,7 +402,7 @@ defmodule Jarga.Workspaces do
   end
 
   @doc """
-  Checks if a user is a member of a workspace.
+  Checks if a user is a member of a workspace by workspace ID.
 
   ## Examples
 
@@ -415,6 +415,25 @@ defmodule Jarga.Workspaces do
   """
   def member?(user_id, workspace_id) do
     MembershipRepository.member?(user_id, workspace_id)
+  end
+
+  @doc """
+  Checks if a user is a member of a workspace by workspace slug.
+
+  This function is useful for API key validation where workspace access
+  is stored by slug rather than ID.
+
+  ## Examples
+
+      iex> member_by_slug?(user_id, "product-team")
+      true
+
+      iex> member_by_slug?(user_id, "other-workspace")
+      false
+
+  """
+  def member_by_slug?(user_id, workspace_slug) do
+    MembershipRepository.member_by_slug?(user_id, workspace_slug)
   end
 
   @doc """

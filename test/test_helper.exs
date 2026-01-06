@@ -7,12 +7,13 @@ Application.put_env(:wallaby, :base_url, JargaWeb.Endpoint.url())
 # Cucumber will auto-discover features and steps based on config in test.exs
 Cucumber.compile_features!()
 
-# Exclude evaluation tests and browser-based tests by default
+# Exclude evaluation tests, browser-based tests, and WIP features by default
 # All browser tests (both Cucumber features and ExUnit tests) use @javascript tag
 # To run browser tests: mix test --include javascript
 # To run evaluation tests: mix test --include evaluation
+# To run WIP features: mix test --include wip
 # Capture log output to suppress expected error messages in tests
-ExUnit.start(exclude: [:evaluation, :javascript], capture_log: true)
+ExUnit.start(exclude: [:evaluation, :javascript, :wip], capture_log: true)
 
 Ecto.Adapters.SQL.Sandbox.mode(Jarga.Repo, :manual)
 

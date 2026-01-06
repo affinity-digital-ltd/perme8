@@ -19,6 +19,7 @@ defmodule Mix.Tasks.StepLinter do
   - `step_too_long` - Flags steps over 25 lines (extract helper functions)
   - `unused_context_parameter` - Detects unused context params (use _context instead)
   - `file_too_long` - Flags files over 300 lines (split into smaller logical groupings)
+  - `use_liveview_testing` - Enforces LiveView testing instead of direct backend calls
 
   ## Adding New Rules
 

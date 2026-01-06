@@ -36,7 +36,10 @@ defmodule AgentAuthorizeSteps do
     try do
       add_workspace_member_fixture(workspace.id, user, :member)
     rescue
+      # Handle both Ecto.ConstraintError and Ecto.InvalidChangesetError
+      # when user is already a member (e.g., as owner)
       Ecto.ConstraintError -> :ok
+      Ecto.InvalidChangesetError -> :ok
     end
 
     users = Map.get(context, :users, %{})

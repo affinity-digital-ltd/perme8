@@ -112,6 +112,7 @@ defmodule JargaWeb.Router do
       ] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
+      live "/users/settings/api-keys", ApiKeysLive, :index
     end
 
     post "/users/update-password", UserSessionController, :update_password

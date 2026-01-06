@@ -153,6 +153,7 @@ defmodule Jarga.MixProject do
         "deps.unlock --unused",
         "format",
         "credo --strict",
+        "step_linter",
         "cmd npm run lint --prefix assets",
         "cmd npm test --prefix assets",
         "assets.deploy",

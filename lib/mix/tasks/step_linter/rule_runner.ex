@@ -13,7 +13,8 @@ defmodule Mix.Tasks.StepLinter.RuleRunner do
     NoSleepCalls,
     NoStubs,
     StepTooLong,
-    UnusedContextParameter
+    UnusedContextParameter,
+    UseLiveviewTesting
   }
 
   # Rules that check individual steps
@@ -22,7 +23,8 @@ defmodule Mix.Tasks.StepLinter.RuleRunner do
     NoSleepCalls,
     NoStubs,
     StepTooLong,
-    UnusedContextParameter
+    UnusedContextParameter,
+    UseLiveviewTesting
   ]
 
   # Rules that check at the file level

@@ -80,5 +80,7 @@ config :jarga, :sandbox, Ecto.Adapters.SQL.Sandbox
 config :jarga, :llm_client, Jarga.Test.Support.MockLlmClient
 # Configure Cucumber for BDD feature testing
 config :cucumber,
-  features: ["test/features/**/*.feature"],
+  features: [
+    "test/features/**/*.feature"
+  ],
   steps: ["test/features/step_definitions/**/*.exs"]

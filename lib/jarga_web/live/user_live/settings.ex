@@ -12,7 +12,7 @@ defmodule JargaWeb.UserLive.Settings do
   def render(assigns) do
     ~H"""
     <Layouts.admin flash={@flash} current_scope={@current_scope}>
-      <div class="mx-auto max-w-sm space-y-4">
+      <div class="mx-auto max-w-sm space-y-6">
         <div class="text-center">
           <.header>
             Account Settings
@@ -68,6 +68,24 @@ defmodule JargaWeb.UserLive.Settings do
             Save Password
           </.button>
         </.form>
+
+        <div class="divider">Developer</div>
+
+        <.link
+          navigate={~p"/users/settings/api-keys"}
+          class="flex items-center justify-between p-4 rounded-lg bg-base-200 hover:bg-base-300 transition-colors"
+        >
+          <div class="flex items-center gap-3">
+            <.icon name="hero-key" class="size-5 text-base-content/70" />
+            <div>
+              <div class="font-medium">API Keys</div>
+              <div class="text-sm text-base-content/70">
+                Manage API keys for external integrations
+              </div>
+            </div>
+          </div>
+          <.icon name="hero-chevron-right" class="size-5 text-base-content/50" />
+        </.link>
       </div>
     </Layouts.admin>
     """

@@ -249,7 +249,7 @@ defmodule Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository do
   end
 
   @doc """
-  Checks if a user is a member of a workspace.
+  Checks if a user is a member of a workspace by workspace ID.
 
   ## Examples
 
@@ -264,6 +264,29 @@ defmodule Jarga.Workspaces.Infrastructure.Repositories.MembershipRepository do
     query =
       from(wm in WorkspaceMemberSchema,
         where: wm.user_id == ^user_id and wm.workspace_id == ^workspace_id
+      )
+
+    repo.exists?(query)
+  end
+
+  @doc """
+  Checks if a user is a member of a workspace by workspace slug.
+
+  ## Examples
+
+      iex> member_by_slug?(user_id, "product-team")
+      true
+
+      iex> member_by_slug?(user_id, "other-workspace")
+      false
+
+  """
+  def member_by_slug?(user_id, workspace_slug, repo \\ Repo) do
+    query =
+      from(wm in WorkspaceMemberSchema,
+        join: w in WorkspaceSchema,
+        on: w.id == wm.workspace_id,
+        where: wm.user_id == ^user_id and w.slug == ^workspace_slug
       )
 
     repo.exists?(query)

@@ -24,23 +24,29 @@ defmodule Workspaces.SetupSteps do
 
     users =
       Enum.reduce(table_data, %{}, fn row, acc ->
-        email = row["Email"]
-        role = String.to_existing_atom(row["Role"])
-
-        # Create user
-        user = user_fixture(%{email: email})
-
-        # Add to workspace if workspace exists in context
-        case workspace do
-          nil -> :ok
-          ws -> add_workspace_member_fixture(ws.id, user, role)
-        end
-
-        Map.put(acc, email, user)
+        user = create_user_from_row(row)
+        maybe_add_to_workspace(workspace, user, row["Role"])
+        Map.put(acc, row["Email"], user)
       end)
 
     # Return context directly (no {:ok, }) for data table steps
     Map.put(context, :users, users)
+  end
+
+  defp create_user_from_row(row) do
+    attrs = %{email: row["Email"]}
+    attrs = maybe_add_name(attrs, row["Name"])
+    user_fixture(attrs)
+  end
+
+  defp maybe_add_name(attrs, nil), do: attrs
+  defp maybe_add_name(attrs, name), do: Map.put(attrs, :name, name)
+
+  defp maybe_add_to_workspace(nil, _user, _role), do: :ok
+  defp maybe_add_to_workspace(_workspace, _user, nil), do: :ok
+
+  defp maybe_add_to_workspace(workspace, user, role) do
+    add_workspace_member_fixture(workspace.id, user, String.to_existing_atom(role))
   end
 
   # ============================================================================
