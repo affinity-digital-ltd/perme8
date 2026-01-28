@@ -299,11 +299,10 @@ defmodule Alkali.Application.UseCases.BuildSite do
 
       duplicates ->
         duplicate_info =
-          Enum.map(duplicates, fn {slug, pages} ->
-            files = Enum.map(pages, & &1.file_path) |> Enum.join(", ")
+          Enum.map_join(duplicates, "\n", fn {slug, pages} ->
+            files = Enum.map_join(pages, ", ", & &1.file_path)
             "  - '#{slug}': #{files}"
           end)
-          |> Enum.join("\n")
 
         message = "Duplicate slug detected:\n#{duplicate_info}"
 
@@ -337,10 +336,7 @@ defmodule Alkali.Application.UseCases.BuildSite do
     # Check if RSS generation is enabled (default: true)
     generate_rss = Keyword.get(opts, :generate_rss, true)
 
-    if not generate_rss do
-      if verbose, do: IO.puts("Skipping RSS feed generation (disabled)")
-      0
-    else
+    if generate_rss do
       if verbose, do: IO.puts("Generating RSS feed...")
 
       # Check if site_url is configured
@@ -396,6 +392,9 @@ defmodule Alkali.Application.UseCases.BuildSite do
             0
         end
       end
+    else
+      if verbose, do: IO.puts("Skipping RSS feed generation (disabled)")
+      0
     end
   end
 
@@ -761,8 +760,7 @@ defmodule Alkali.Application.UseCases.BuildSite do
     # Create a simple HTML page listing all posts in the collection
     # Convert absolute URLs to relative URLs (collections are one level deep)
     posts_html =
-      collection.pages
-      |> Enum.map(fn page ->
+      Enum.map_join(collection.pages, "\n", fn page ->
         # Convert /posts/welcome.html to ../posts/welcome.html
         relative_url = String.trim_leading(page.url, "/")
         relative_url = if relative_url != "", do: "../#{relative_url}", else: "../index.html"
@@ -792,15 +790,21 @@ defmodule Alkali.Application.UseCases.BuildSite do
             ""
           end
 
+        date_html =
+          if formatted_date != "" do
+            ~s(<time class="post-date">#{formatted_date}</time>)
+          else
+            ""
+          end
+
         """
         <article class="post-item">
           <h3 class="post-title"><a href="#{relative_url}">#{page.title}</a></h3>
           #{intro_html}
-          #{if formatted_date != "", do: "<time class=\"post-date\">#{formatted_date}</time>", else: ""}
+          #{date_html}
         </article>
         """
       end)
-      |> Enum.join("\n")
 
     # Build pagination HTML if pagination metadata provided
     pagination_html =
@@ -947,7 +951,7 @@ defmodule Alkali.Application.UseCases.BuildSite do
 
     # Build page number links
     page_links =
-      Enum.map(pagination.page_numbers, fn page_num ->
+      Enum.map_join(pagination.page_numbers, " ", fn page_num ->
         url = if page_num == 1, do: "../index.html", else: "../page/#{page_num}.html"
 
         if page_num == pagination.current_page do
@@ -956,7 +960,6 @@ defmodule Alkali.Application.UseCases.BuildSite do
           ~s(<a href="#{url}" class="pagination-page">#{page_num}</a>)
         end
       end)
-      |> Enum.join(" ")
 
     """
     <nav class="pagination">

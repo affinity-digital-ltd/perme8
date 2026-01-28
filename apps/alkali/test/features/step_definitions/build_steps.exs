@@ -195,8 +195,7 @@ defmodule Alkali.BuildSteps do
                   slug
                   |> String.replace("-", " ")
                   |> String.split()
-                  |> Enum.map(&String.capitalize/1)
-                  |> Enum.join(" ")
+                  |> Enum.map_join(" ", &String.capitalize/1)
 
                 {title, date_str}
 
@@ -205,8 +204,7 @@ defmodule Alkali.BuildSteps do
                   filename
                   |> String.replace("-", " ")
                   |> String.split()
-                  |> Enum.map(&String.capitalize/1)
-                  |> Enum.join(" ")
+                  |> Enum.map_join(" ", &String.capitalize/1)
 
                 {title, Date.utc_today() |> Date.to_iso8601()}
             end
@@ -258,8 +256,7 @@ defmodule Alkali.BuildSteps do
                 tags
                 |> String.split(",")
                 |> Enum.map(&String.trim/1)
-                |> Enum.map(&"\"#{&1}\"")
-                |> Enum.join(", ")
+                |> Enum.map_join(", ", &"\"#{&1}\"")
 
               frontmatter_parts ++ ["tags: [#{tag_list}]"]
             else

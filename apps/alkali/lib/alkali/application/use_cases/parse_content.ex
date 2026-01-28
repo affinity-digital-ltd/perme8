@@ -95,9 +95,7 @@ defmodule Alkali.Application.UseCases.ParseContent do
 
         # Format each error with the file path
         formatted_errors =
-          reasons
-          |> Enum.map(fn reason -> "#{reason} in #{relative_path}" end)
-          |> Enum.join("; ")
+          Enum.map_join(reasons, "; ", fn reason -> "#{reason} in #{relative_path}" end)
 
         {:error, formatted_errors}
 
@@ -128,8 +126,7 @@ defmodule Alkali.Application.UseCases.ParseContent do
 
         # Format file list
         file_list =
-          conflicting_pages
-          |> Enum.map(fn page ->
+          Enum.map_join(conflicting_pages, "\n", fn page ->
             # Get relative path from file_path
             relative_path =
               page.file_path
@@ -139,7 +136,6 @@ defmodule Alkali.Application.UseCases.ParseContent do
 
             "  - #{relative_path}"
           end)
-          |> Enum.join("\n")
 
         {:error, "Duplicate slug detected: '#{slug}'\nConflicting files:\n#{file_list}"}
     end
